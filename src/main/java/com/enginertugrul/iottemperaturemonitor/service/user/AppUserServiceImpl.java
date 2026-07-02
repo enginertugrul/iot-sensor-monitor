@@ -1,11 +1,15 @@
 package com.enginertugrul.iottemperaturemonitor.service.user;
 
 import com.enginertugrul.iottemperaturemonitor.dto.auth.RegisterUserForm;
+import com.enginertugrul.iottemperaturemonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.NoSuchElementException;
 
 @Service
 public class AppUserServiceImpl implements AppUserService {
@@ -42,7 +46,34 @@ public class AppUserServiceImpl implements AppUserService {
         return appUserRepository.save(appUser);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserPreferencesForm getPreferences(Long userId) {
 
+        AppUser user = appUserRepository.findById(userId).orElseThrow(()-> new NoSuchElementException("User not found"));
+
+        UserPreferencesForm form = new UserPreferencesForm();
+        form.setPreferredLanguage(user.getPreferredLanguage());
+        form.setTemperatureUnit(user.getPreferredTemperatureUnit());
+        form.setPreferredTimezone(user.getPreferredTimezone());
+
+        return form;
+    }
+
+
+    @Override
+    @Transactional
+    @Modifying
+    public void updatePreferences(Long userId, UserPreferencesForm userPreferencesForm) {
+
+        AppUser user = appUserRepository.findById(userId).orElseThrow(()-> new NoSuchElementException("User not found"));
+
+        user.updatePreferences(userPreferencesForm.getPreferredLanguage()
+        , userPreferencesForm.getTemperatureUnit()
+        , userPreferencesForm.getPreferredTimezone()
+        );
+
+    }
 
     @Transactional(readOnly = true)
     protected void ensureEmailIsAvailable(String normalizedEmail) {

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{preferences.title}">Preferences</title>
+</head>
+<body>
+<h1 th:text="#{preferences.heading}">Preferences</h1>
+
+<a th:href="@{/}" th:text="#{nav.home}">Home</a>
+
+<p th:if="${successMessage}" th:text="#{preferences.updated}">Preferences updated.</p>
+
+<form th:action="@{/user/preferences}" th:object="${form}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+    <label th:text="#{preferences.language}">Language</label>
+    <select th:field="*{preferredLanguage}">
+        <option th:each="language : ${languages}"
+                th:value="${language}"
+                th:text="${#messages.msg('language.' + language.name())}">
+        </option>
+    </select>
+
+    <label th:text="#{preferences.temperatureUnit}">Temperature Unit</label>
+    <select th:field="*{preferredTemperatureUnit}">
+        <option th:each="unit : ${temperatureUnits}"
+                th:value="${unit}"
+                th:text="${#messages.msg('temperatureUnit.' + unit.name())}">
+        </option>
+    </select>
+
+    <label th:text="#{preferences.timezone}">Timezone</label>
+    <select th:field="*{preferredTimezone}">
+        <option th:each="timezoneOption : ${timezoneOptions}"
+                th:value="${timezoneOption.id}"
+                th:text="${timezoneOption.displayName}">
+        </option>
+    </select>
+    <p th:if="${#fields.hasErrors('preferredTimezone')}" th:errors="*{preferredTimezone}"></p>
+
+    <button type="submit" th:text="#{preferences.save}">Save</button>
+</form>
+</body>
+</html>
