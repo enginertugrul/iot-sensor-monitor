@@ -1,51 +1,115 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Create Account</title>
+    <title th:text="#{auth.register}">Register</title>
 </head>
 <body>
-<h1>Create Account</h1>
+
+<h1 th:text="#{auth.createAccount}">Create Account</h1>
 
 <form th:action="@{/register}" th:object="${form}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
-    <label>Email</label>
-    <input type="email" th:field="*{email}">
-    <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+    <div>
+        <label for="email" th:text="#{auth.email}">
+            Email
+        </label>
 
-    <label>Password</label>
-    <input type="password" th:field="*{password}">
-    <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></p>
+        <input id="email"
+               type="email"
+               th:field="*{email}"
+               autocomplete="email">
 
-    <label>Preferred Language</label>
-    <select th:field="*{preferredLanguage}">
-        <option th:each="language : ${languages}"
-                th:value="${language}"
-                th:text="${language.displayName}">
-        </option>
-    </select>
+        <div th:if="${#fields.hasErrors('email')}"
+             th:errors="*{email}">
+            Email error
+        </div>
+    </div>
 
-    <label>Preferred Temperature Unit</label>
-    <select th:field="*{preferredTemperatureUnit}">
-        <option th:each="unit : ${temperatureUnits}"
-                th:value="${unit}"
-                th:text="${unit.name()} + ' (' + ${unit.symbol} + ')'">
-        </option>
-    </select>
+    <div>
+        <label for="password" th:text="#{auth.password}">
+            Password
+        </label>
 
-    <label>Preferred Timezone</label>
-    <select th:field="*{preferredTimezone}">
-        <option th:each="timezone : ${timezones}"
-                th:value="${timezone}"
-                th:text="${timezone}">
-        </option>
-    </select>
-    <p th:if="${#fields.hasErrors('preferredTimezone')}" th:errors="*{preferredTimezone}"></p>
+        <input id="password"
+               type="password"
+               th:field="*{password}"
+               autocomplete="new-password">
 
-    <button type="submit">Register</button>
+        <div th:if="${#fields.hasErrors('password')}"
+             th:errors="*{password}">
+            Password error
+        </div>
+    </div>
+
+    <div>
+        <label for="preferredLanguage" th:text="#{preferences.language}">
+            Preferred Language
+        </label>
+
+        <select id="preferredLanguage" th:field="*{preferredLanguage}">
+            <option th:each="language : ${languages}"
+                    th:value="${language}"
+                    th:text="${#messages.msg('language.' + language.name())}">
+                English
+            </option>
+        </select>
+
+        <div th:if="${#fields.hasErrors('preferredLanguage')}"
+             th:errors="*{preferredLanguage}">
+            Language error
+        </div>
+    </div>
+
+    <div>
+        <label for="preferredTemperatureUnit" th:text="#{preferences.temperatureUnit}">
+            Preferred Temperature Unit
+        </label>
+
+        <select id="preferredTemperatureUnit" th:field="*{preferredTemperatureUnit}">
+            <option th:each="unit : ${temperatureUnits}"
+                    th:value="${unit}"
+                    th:text="${#messages.msg('temperatureUnit.' + unit.name())}">
+                Celsius
+            </option>
+        </select>
+
+        <div th:if="${#fields.hasErrors('preferredTemperatureUnit')}"
+             th:errors="*{preferredTemperatureUnit}">
+            Temperature unit error
+        </div>
+    </div>
+
+    <div>
+        <label for="preferredTimezone" th:text="#{preferences.timezone}">
+            Preferred Timezone
+        </label>
+
+        <select id="preferredTimezone" th:field="*{preferredTimezone}">
+            <option th:each="timezone : ${timezones}"
+                    th:value="${timezone}"
+                    th:text="${timezone}">
+                Europe/Istanbul
+            </option>
+        </select>
+
+        <div th:if="${#fields.hasErrors('preferredTimezone')}"
+             th:errors="*{preferredTimezone}">
+            Timezone error
+        </div>
+    </div>
+
+    <button type="submit" th:text="#{auth.register}">
+        Register
+    </button>
+
 </form>
 
-<a th:href="@{/login}">Already have an account?</a>
+<p>
+    <a th:href="@{/login}" th:text="#{auth.login}">
+        Login
+    </a>
+</p>
+
 </body>
 </html>

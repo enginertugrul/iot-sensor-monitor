@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Temperature Monitor</title>
+    <title th:text="#{app.title}"> IoT Temperature Monitor </title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
 
     <style>
@@ -182,35 +182,39 @@
 
 <form th:action="@{/logout}" method="post">
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-    <button type="submit">Logout</button>
+    <button type="submit" th:text="#{nav.logout}">Logout</button>
 </form>
 
-<h1>Recent Sensor Readings</h1>
+<h1 th:text="#{dashboard.title}">Recent Sensor Readings</h1>
 
 <div class="dashboard-actions">
-    <a class="nav-button"
-       th:if="${selectedSensorId != null}"
-       th:href="@{/statistics(sensorId=${selectedSensorId})}">
-        View Statistics
-    </a>
+<a class="nav-button"
+   th:if="${selectedSensorId != null}"
+   th:href="@{/statistics(sensorId=${selectedSensorId})}"
+   th:text="#{nav.statistics}">
+    View Statistics
+</a>
 
-    <a class="nav-button disabled"
-       th:if="${selectedSensorId == null}"
-       href="#"
-       aria-disabled="true">
-        View Statistics
-    </a>
+<a class="nav-button disabled"
+   th:if="${selectedSensorId == null}"
+   href="#"
+   aria-disabled="true"
+   th:text="#{nav.statistics}">
+    View Statistics
+</a>
 
-    <a class="nav-button" th:href="@{/user/sensors}">Manage Sensors</a>
+    <a class="nav-button" th:text="#{nav.sensors}" th:href="@{/user/sensors}">Manage Sensors</a>
+
+    <a class="nav-button" th:href="@{/user/preferences}" th:text="#{nav.preferences}">Preferences</a>
 </div>
 
 
 <form class="sensor-selector" th:action="@{/}" method="get">
-    <label for="sensorId">Sensor</label>
+    <label for="sensorId" th:text="#{dashboard.sensor}">Sensor</label>
 
     <select id="sensorId" name="sensorId"
             onchange="this.value ? this.form.submit() : window.location.href = this.form.action">
-        <option value="" th:selected="${selectedSensorId == null}">
+        <option th:text="#{dashboard.selectSensor}" value="" th:selected="${selectedSensorId == null}">
             Select sensor
         </option>
 
@@ -224,7 +228,7 @@
     <noscript>
         <button type="submit">Apply</button>
     </noscript>
-    <p th:if="${dashboardNotice}" class="empty-state" th:text="${dashboardNotice}"></p>
+    <p th:if="${dashboardNotice}" class="empty-state" th:text="#{dashboard.noSensorSelected}"></p>
 </form>
 
 
@@ -234,15 +238,18 @@
     <table>
         <thead>
         <tr>
-            <th>Location</th>
-            <th>Temperature</th>
-            <th>Timestamp</th>
-            <th>Timezone</th> </tr>
+            <th th:text="#{dashboard.location}">Location</th>
+            <th th:text="#{dashboard.temperature}">Temperature</th>
+            <th th:text="#{dashboard.timestamp}" >Timestamp</th>
+            <th th:text="#{dashboard.timezone}">Timezone</th> </tr>
         </thead>
         <tbody>
         <tr th:each="recentRecord : ${recentRecords}">
             <td th:text="${recentRecord.locationOfSensor}">Location</td>
-            <td class="temp-value" th:text="${#numbers.formatDecimal(recentRecord.temperatureValue, 1, 1)} + ' °C'">0.0 °C</td>
+            <td class="temp-value"
+                th:text="|${#numbers.formatDecimal(recentRecord.temperatureValue, 1, 1)} #{dashboard.temperatureUnitSymbol}|">
+                0.0 °C
+            </td>
 
             <td th:text="${#temporals.format(recentRecord.timestamp, 'dd-MM-yyyy HH:mm:ss.SSSSSS')}">26-06-2026 01:30:29.694723</td>
 
@@ -250,11 +257,11 @@
         </tr>
 
         <tr th:if="${selectedSensorId == null}">
-            <td colspan="4" class="empty-state">No sensor selected</td>
+            <td th:text="#{dashboard.noSensorSelected}" colspan="4" class="empty-state">No sensor selected</td>
         </tr>
 
         <tr th:if="${selectedSensorId != null and #lists.isEmpty(recentRecords)}">
-            <td colspan="4" class="empty-state">No readings available for selected sensor.</td>
+            <td th:text="#{dashboard.noReadings}" colspan="4" class="empty-state">No readings available for selected sensor.</td>
         </tr>
         </tbody>
     </table>

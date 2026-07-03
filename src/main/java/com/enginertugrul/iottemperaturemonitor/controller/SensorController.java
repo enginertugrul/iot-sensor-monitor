@@ -60,7 +60,7 @@ public class SensorController {
         try {
             createdSensor =  sensorService.createSensor(ownerId, form);
         } catch (IllegalArgumentException ex) {
-            bindingResult.rejectValue("name", "sensor.name.duplicate", ex.getMessage());
+            bindingResult.rejectValue("name", "sensors.nameDuplicate", ex.getMessage());
             addPageData(model, ownerId);
             return "sensors";
         }

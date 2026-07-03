@@ -65,7 +65,7 @@ public class AuthController {
             addRegistrationOptions(model);
             return "register";
         } catch (IllegalArgumentException ex) {
-            bindingResult.rejectValue("email", "email.registered", ex.getMessage());
+            bindingResult.rejectValue("email", "auth.alreadyRegistered", ex.getMessage());
             addRegistrationOptions(model);
             return "register";
         }
