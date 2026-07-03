@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
-    <title>Temperature Statistics</title>
+    <title th:text="#{statistics.title}">Temperature Statistics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
 
@@ -157,22 +157,25 @@
 <div class="stats-toolbar">
     <a class="nav-button"
        th:if="${selectedSensorId != null}"
-       th:href="@{/(sensorId=${selectedSensorId})}">
+       th:href="@{/(sensorId=${selectedSensorId})}"
+       th:text="#{nav.backToHome}">
         Back to Home
     </a>
 
     <a class="nav-button"
        th:if="${selectedSensorId == null}"
-       th:href="@{/}">
+       th:href="@{/}"
+       th:text="#{nav.backToHome}">
         Back to Home
     </a>
 
     <form class="sensor-selector" th:action="@{/statistics}" method="get">
-        <label for="sensorId">Sensor</label>
+        <label for="sensorId" th:text="#{statistics.sensor}">Sensor</label>
 
         <select id="sensorId" name="sensorId"
                 onchange="this.value ? this.form.submit() : window.location.href = this.form.action">
-            <option value="" th:selected="${selectedSensorId == null}">
+            <option value="" th:selected="${selectedSensorId == null}"
+            th:text="#{statistics.selectSensor}">
                 Select sensor
             </option>
 
@@ -184,20 +187,20 @@
         </select>
 
         <noscript>
-            <button type="submit">Apply</button>
+            <button type="submit" th:text="#{statistics.apply}">Apply</button>
         </noscript>
     </form>
 </div>
 
-<p th:if="${statisticsNotice}" class="empty-state" th:text="${statisticsNotice}"></p>
+<p th:if="${statisticsNoSensorSelected}" class="empty-state" th:text="#{statistics.noSensorSelected}"></p>
 <div class="chart-container" th:if="${selectedSensorId != null}">
     <div class="date-nav-row">
-        <button id="prevDayBtn" class="nav-arrow-button" aria-label="Previous day" onclick="navigateDate('prev')">&#8249;</button>
+        <button id="prevDayBtn" class="nav-arrow-button" th:aria-label="#{statistics.previousDay}" onclick="navigateDate('prev')">&#8249;</button>
         <h2 class="chart-title" id="hourlyChartTitle"
-            th:text="${selectedSensorName != null ? selectedSensorName + ' - Today''s Hourly Averages' : 'Today''s Hourly Averages'}">
+            th:text="${selectedSensorName != null ? selectedSensorName + ' - ' + #messages.msg('statistics.todayHourly') : #messages.msg('statistics.todayHourly')}">
             Today's Hourly Averages
         </h2>
-        <button id="nextDayBtn" class="nav-arrow-button" aria-label="Next day" onclick="navigateDate('next')">&#8250;</button>
+        <button id="nextDayBtn" class="nav-arrow-button" th:aria-label="#{statistics.nextDay}" onclick="navigateDate('next')">&#8250;</button>
     </div>
     <div class="chart-slide-wrapper">
         <canvas id="temperatureLineChart"></canvas>
@@ -206,17 +209,36 @@
 
 <div class="chart-container"  th:if="${selectedSensorId != null}">
     <h2 class="chart-title"
-        th:text="${selectedSensorName != null ? selectedSensorName + ' - Last 7 Days' : 'Last 7 Days'}">
+        th:text="${selectedSensorName != null ? selectedSensorName + ' - ' + #messages.msg('statistics.lastSevenDays') : #messages.msg('statistics.lastSevenDays')}">
         Last 7 Days
     </h2>
     <canvas id="temperatureBarChart"></canvas>
 </div>
 
-<script th:inline="javascript">
+<script th:inline="javascript" th:if="${selectedSensorId != null}">
     /*<![CDATA[*/
 
     Chart.defaults.color = '#9ca3af';
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    const i18n = {
+        dailyAverageTemperature: /*[[#{statistics.dailyAverageTemperature}]]*/ 'Daily Average Temperature (°C)',
+        hourlyAverageTemperature: /*[[#{statistics.hourlyAverageTemperature}]]*/ 'Hourly Average Temperature (°C)',
+        temperatureAxis: /*[[#{statistics.temperatureAxis}]]*/ 'Temperature (°C)',
+        hourAxis: /*[[#{statistics.hourAxis}]]*/ 'Hour of the Day',
+        tooltipAverage: /*[[#{statistics.tooltipAverage}]]*/ 'Average',
+        noDataRecorded: /*[[#{statistics.noDataRecorded}]]*/ 'No data recorded',
+        todayHourly: /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Averages",
+        hourlyAverages: /*[[#{statistics.hourlyAverages}]]*/ 'Hourly Averages',
+        days: [
+            /*[[#{statistics.day.sunday}]]*/ 'Sunday',
+            /*[[#{statistics.day.monday}]]*/ 'Monday',
+            /*[[#{statistics.day.tuesday}]]*/ 'Tuesday',
+            /*[[#{statistics.day.wednesday}]]*/ 'Wednesday',
+            /*[[#{statistics.day.thursday}]]*/ 'Thursday',
+            /*[[#{statistics.day.friday}]]*/ 'Friday',
+            /*[[#{statistics.day.saturday}]]*/ 'Saturday'
+        ]
+    };
 
     const darkTooltipConfig = {
         backgroundColor: 'rgba(17, 24, 39, 0.9)',
@@ -232,7 +254,7 @@
     const weeklyData = /*[[${weeklyData}]]*/ [];
     const labels = [];
     const dataValues = [];
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayNames = i18n.days;
 
     weeklyData.forEach(item => {
         const dateObj = new Date(item.date);
@@ -252,7 +274,7 @@
         data: {
             labels: labels,
             datasets: [{
-                label: 'Daily Average Temperature (°C)',
+                label: i18n.dailyAverageTemperature,
                 data: dataValues,
                 backgroundColor: (ctx) => {
                     const lastIndex = dataValues.length - 1;
@@ -286,7 +308,7 @@
                     grid: { color: 'rgba(55, 65, 81, 0.5)' },
                     title: {
                         display: true,
-                        text: 'Temperature (°C)',
+                        text: i18n.temperatureAxis,
                         color: '#9ca3af'
                     },
                     ticks: { color: '#d1d5db' }
@@ -353,7 +375,7 @@
         data: {
             labels: initialHourly.labels,
             datasets: [{
-                label: 'Hourly Average Temperature (°C)',
+                label: i18n.hourlyAverageTemperature,
                 data: initialHourly.values,
                 backgroundColor: 'rgba(6, 182, 212, 0.15)',
                 borderColor: 'rgba(6, 182, 212, 1)',
@@ -387,7 +409,7 @@
                         },
                         label: function (context) {
                             let val = context.parsed.y;
-                            return val !== null ? `Average: ${val.toFixed(2)} °C` : 'No data recorded';
+                            return val !== null ? `${i18n.tooltipAverage}: ${val.toFixed(2)} °C` : i18n.noDataRecorded;
                         }
                     }
                 }
@@ -397,7 +419,7 @@
                     grid: { color: 'rgba(55, 65, 81, 0.5)' },
                     title: {
                         display: true,
-                        text: 'Temperature (°C)',
+                        text: i18n.temperatureAxis,
                         color: '#9ca3af'
                     },
                     ticks: { color: '#d1d5db' }
@@ -406,7 +428,7 @@
                     grid: { color: 'rgba(55, 65, 81, 0.2)' },
                     title: {
                         display: true,
-                        text: 'Hour of the Day',
+                        text: i18n.hourAxis,
                         color: '#9ca3af'
                     },
                     ticks: { color: '#d1d5db' }
@@ -427,7 +449,7 @@
         const prefix = selectedSensorName !== null ? `${selectedSensorName} - ` : '';
 
         if (formatDateForApi(date) === formatDateForApi(todayDate)) {
-            hourlyChartTitleEl.textContent = `${prefix}Today's Hourly Averages`;
+            hourlyChartTitleEl.textContent = `${prefix}${i18n.todayHourly}`;
             return;
         }
 
@@ -435,7 +457,7 @@
         const dd = String(date.getDate()).padStart(2, '0');
         const mm = String(date.getMonth() + 1).padStart(2, '0');
         const yyyy = date.getFullYear();
-        hourlyChartTitleEl.textContent = `${prefix}${dayName}, ${dd}-${mm}-${yyyy} - Hourly Averages`;
+        hourlyChartTitleEl.textContent = `${prefix}${dayName}, ${dd}-${mm}-${yyyy} - ${i18n.hourlyAverages}`;
     }
 
     function updateNavButtonsAvailability() {

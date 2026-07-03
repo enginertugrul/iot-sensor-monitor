@@ -61,11 +61,11 @@ public class AuthController {
             appUserService.createUser(form);
 
         } catch (DateTimeException ex) {
-            bindingResult.rejectValue("preferredTimezone", "timezone.invalid", "Please select a valid timezone.");
+            bindingResult.rejectValue("preferredTimezone", "timezone.invalid");
             addRegistrationOptions(model);
             return "register";
         } catch (IllegalArgumentException ex) {
-            bindingResult.rejectValue("email", "email.registered", ex.getMessage());
+            bindingResult.rejectValue("email", "auth.alreadyRegistered");
             addRegistrationOptions(model);
             return "register";
         }

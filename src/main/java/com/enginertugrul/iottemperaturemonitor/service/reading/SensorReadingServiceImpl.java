@@ -1,8 +1,8 @@
 package com.enginertugrul.iottemperaturemonitor.service.reading;
 
-import com.enginertugrul.iottemperaturemonitor.dto.SensorDailyAverageDTO;
-import com.enginertugrul.iottemperaturemonitor.dto.SensorHourlyAverageDTO;
-import com.enginertugrul.iottemperaturemonitor.dto.SensorViewDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorDailyAverageDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyAverageDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorViewDTO;
 import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;

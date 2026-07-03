@@ -60,12 +60,12 @@ public class SensorController {
         try {
             createdSensor =  sensorService.createSensor(ownerId, form);
         } catch (IllegalArgumentException ex) {
-            bindingResult.rejectValue("name", "sensor.name.duplicate", ex.getMessage());
+            bindingResult.rejectValue("name", "sensors.nameDuplicate");
             addPageData(model, ownerId);
             return "sensors";
         }
 
-        redirectAttributes.addFlashAttribute("successMessage", "Sensor created successfully.");
+        redirectAttributes.addFlashAttribute("successMessage", true);
         redirectAttributes.addFlashAttribute("createdSensorName", createdSensor.sensorName());
         redirectAttributes.addFlashAttribute("createdSensorToken", createdSensor.rawIngestionToken());
 

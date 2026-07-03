@@ -3,6 +3,7 @@ package com.enginertugrul.iottemperaturemonitor.dto.auth;
 
 import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iottemperaturemonitor.validation.ValidZoneId;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +35,8 @@ public class RegisterUserForm {
     private TemperatureUnit preferredTemperatureUnit = TemperatureUnit.CELSIUS;
 
     @NotBlank
+    @Size(max = 64)
+    @ValidZoneId
     private String preferredTimezone = "UTC";
 
 }

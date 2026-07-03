@@ -1,6 +1,7 @@
 package com.enginertugrul.iottemperaturemonitor.controller;
 
-import com.enginertugrul.iottemperaturemonitor.dto.*;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyAverageDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorViewDTO;
 import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorListItemDTO;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
 import com.enginertugrul.iottemperaturemonitor.service.reading.SensorReadingService;
@@ -46,7 +47,7 @@ public class SensorReadingController {
                 recentRecords = sensorReadingService.getRecentTenRecords(sensorId, ownerId);
                 selectedSensorId = sensorId;
             } catch (NoSuchElementException ex) {
-                model.addAttribute("dashboardNotice", "No sensor selected");
+                model.addAttribute("dashboardNoSensorSelected", true);
             }
         }
 
@@ -81,7 +82,7 @@ public class SensorReadingController {
         model.addAttribute("sensors", sensors);
 
         if (sensorId == null) {
-            addEmptyStatisticsModel(model, "No sensor selected");
+            addEmptyStatisticsModel(model);
             return "statistics";
         }
 
@@ -95,7 +96,7 @@ public class SensorReadingController {
             model.addAttribute("selectedSensorName", getSensorName(sensors, sensorId));
 
         }catch (NoSuchElementException ex) {
-            addEmptyStatisticsModel(model, "No sensor selected");
+            addEmptyStatisticsModel(model);
         }
 
         return "statistics";
@@ -132,13 +133,13 @@ public class SensorReadingController {
     }
 
 
-    private void addEmptyStatisticsModel(Model model, String notice) {
+    private void addEmptyStatisticsModel(Model model) {
         model.addAttribute("weeklyData", List.of());
         model.addAttribute("hourlyData", emptyHourlyData());
         model.addAttribute("today", LocalDate.now(ZoneOffset.UTC).toString());
         model.addAttribute("selectedSensorId", null);
         model.addAttribute("selectedSensorName", null);
-        model.addAttribute("statisticsNotice", notice);
+        model.addAttribute("statisticsNoSensorSelected", true);
     }
 
     private String getSensorName(List<SensorListItemDTO> sensors, Long sensorId) {

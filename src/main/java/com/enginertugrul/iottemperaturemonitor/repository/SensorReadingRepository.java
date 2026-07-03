@@ -1,7 +1,7 @@
 package com.enginertugrul.iottemperaturemonitor.repository;
 
-import com.enginertugrul.iottemperaturemonitor.dto.SensorDailyAverageDTO;
-import com.enginertugrul.iottemperaturemonitor.dto.SensorHourlyAverageDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorDailyAverageDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyAverageDTO;
 import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
