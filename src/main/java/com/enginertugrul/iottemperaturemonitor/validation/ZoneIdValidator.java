@@ -10,6 +10,9 @@ public class ZoneIdValidator implements ConstraintValidator<ValidZoneId, String>
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
+        if (value == null || value.isBlank()) {
+            return true;
+        }
 
         try {
             ZoneId.of(value);

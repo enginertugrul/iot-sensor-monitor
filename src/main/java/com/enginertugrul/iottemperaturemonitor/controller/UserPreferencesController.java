@@ -55,7 +55,7 @@ public class UserPreferencesController {
         }
 
         appUserService.updatePreferences(user.getAppUserId(), form);
-        redirectAttributes.addFlashAttribute("successMessage", "Preferences updated.");
+        redirectAttributes.addFlashAttribute("preferencesUpdated", true);
         return "redirect:/user/preferences";
     }
 

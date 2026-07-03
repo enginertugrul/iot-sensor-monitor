@@ -192,7 +192,7 @@
     </form>
 </div>
 
-<p th:if="${statisticsNotice}" class="empty-state" th:text="#{statistics.noSensorSelected}"></p>
+<p th:if="${statisticsNoSensorSelected}" class="empty-state" th:text="#{statistics.noSensorSelected}"></p>
 <div class="chart-container" th:if="${selectedSensorId != null}">
     <div class="date-nav-row">
         <button id="prevDayBtn" class="nav-arrow-button" th:aria-label="#{statistics.previousDay}" onclick="navigateDate('prev')">&#8249;</button>

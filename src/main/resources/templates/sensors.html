@@ -14,7 +14,7 @@
 
 <a th:href="@{/}" th:text="#{nav.backToHome}">Back to Home</a>
 
-<p th:if="${successMessage}" th:text="#{sensors.created}"></p>
+<p th:if="${sensorCreated}" th:text="#{sensors.created}"></p>
 
 <div th:if="${createdSensorToken}">
     <p>
@@ -33,7 +33,7 @@
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
     <label for="type" th:text="#{sensors.type}">Sensor Type</label>
-    <select th:field="*{type}">
+    <select id="type" th:field="*{type}">
         <option th:each="type : ${sensorTypes}"
                 th:value="${type}"
                 th:text="${#messages.msg('sensorType.' + type.name())}">
@@ -42,23 +42,23 @@
     <p th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
 
     <label for="name" th:text="#{sensors.name}">Name</label>
-    <input type="text" th:field="*{name}" th:placeholder="#{sensors.placeholder.name}">
+    <input id="name" type="text" th:field="*{name}" th:placeholder="#{sensors.placeholder.name}">
     <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
 
     <label for="city" th:text="#{sensors.city}">City</label>
-    <input type="text" th:field="*{city}" th:placeholder="#{sensors.placeholder.city}">
+    <input id="city" type="text" th:field="*{city}" th:placeholder="#{sensors.placeholder.city}">
     <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></p>
 
     <label for="district" th:text="#{sensors.district}">District</label>
-    <input type="text" th:field="*{district}" th:placeholder="#{sensors.placeholder.district}">
+    <input id="district" type="text" th:field="*{district}" th:placeholder="#{sensors.placeholder.district}">
     <p th:if="${#fields.hasErrors('district')}" th:errors="*{district}"></p>
 
     <label for="homeLocation" th:text="#{sensors.homeLocation}">Location in Home</label>
-    <input type="text" th:field="*{homeLocation}" th:placeholder="#{sensors.placeholder.homeLocation}">
+    <input id="homeLocation" type="text" th:field="*{homeLocation}" th:placeholder="#{sensors.placeholder.homeLocation}">
     <p th:if="${#fields.hasErrors('homeLocation')}" th:errors="*{homeLocation}"></p>
 
     <label for="timezone" th:text="#{sensors.timezone}">Timezone</label>
-    <select th:field="*{timezone}">
+    <select id="timezone" th:field="*{timezone}">
         <option th:each="timezoneOption : ${timezoneOptions}"
                 th:value="${timezoneOption.id}"
                 th:text="${timezoneOption.displayName}">
