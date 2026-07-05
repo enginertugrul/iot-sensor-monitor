@@ -220,10 +220,13 @@
 
     Chart.defaults.color = '#9ca3af';
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+    const temperatureUnitSymbol = /*[[${temperatureUnitSymbol}]]*/ '°C';
+
     const i18n = {
-        dailyAverageTemperature: /*[[#{statistics.dailyAverageTemperature}]]*/ 'Daily Average Temperature (°C)',
-        hourlyAverageTemperature: /*[[#{statistics.hourlyAverageTemperature}]]*/ 'Hourly Average Temperature (°C)',
-        temperatureAxis: /*[[#{statistics.temperatureAxis}]]*/ 'Temperature (°C)',
+        dailyAverageTemperature: /*[[#{statistics.dailyAverageTemperature}]]*/ 'Daily Average Temperature',
+        hourlyAverageTemperature: /*[[#{statistics.hourlyAverageTemperature}]]*/ 'Hourly Average Temperature',
+        temperatureAxis: /*[[#{statistics.temperatureAxis}]]*/ 'Temperature',
         hourAxis: /*[[#{statistics.hourAxis}]]*/ 'Hour of the Day',
         tooltipAverage: /*[[#{statistics.tooltipAverage}]]*/ 'Average',
         noDataRecorded: /*[[#{statistics.noDataRecorded}]]*/ 'No data recorded',
@@ -274,7 +277,7 @@
         data: {
             labels: labels,
             datasets: [{
-                label: i18n.dailyAverageTemperature,
+                label: `${i18n.dailyAverageTemperature} (${temperatureUnitSymbol})`,
                 data: dataValues,
                 backgroundColor: (ctx) => {
                     const lastIndex = dataValues.length - 1;
@@ -308,7 +311,7 @@
                     grid: { color: 'rgba(55, 65, 81, 0.5)' },
                     title: {
                         display: true,
-                        text: i18n.temperatureAxis,
+                        text: `${i18n.temperatureAxis} (${temperatureUnitSymbol})`,
                         color: '#9ca3af'
                     },
                     ticks: { color: '#d1d5db' }
@@ -375,7 +378,7 @@
         data: {
             labels: initialHourly.labels,
             datasets: [{
-                label: i18n.hourlyAverageTemperature,
+                label: `${i18n.hourlyAverageTemperature} (${temperatureUnitSymbol})`,
                 data: initialHourly.values,
                 backgroundColor: 'rgba(6, 182, 212, 0.15)',
                 borderColor: 'rgba(6, 182, 212, 1)',
@@ -409,7 +412,9 @@
                         },
                         label: function (context) {
                             let val = context.parsed.y;
-                            return val !== null ? `${i18n.tooltipAverage}: ${val.toFixed(2)} °C` : i18n.noDataRecorded;
+                            return val !== null
+                                ? `${i18n.tooltipAverage}: ${val.toFixed(2)} ${temperatureUnitSymbol}`
+                                : i18n.noDataRecorded;
                         }
                     }
                 }
@@ -419,7 +424,7 @@
                     grid: { color: 'rgba(55, 65, 81, 0.5)' },
                     title: {
                         display: true,
-                        text: i18n.temperatureAxis,
+                        text: `${i18n.temperatureAxis} (${temperatureUnitSymbol})`,
                         color: '#9ca3af'
                     },
                     ticks: { color: '#d1d5db' }
