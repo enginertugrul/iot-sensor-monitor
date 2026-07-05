@@ -5,7 +5,7 @@ import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorForm;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
 import com.enginertugrul.iottemperaturemonitor.service.sensor.SensorService;
-import com.enginertugrul.iottemperaturemonitor.timezone.TimezoneCatalog;
+import com.enginertugrul.iottemperaturemonitor.support.timezone.TimezoneCatalog;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;

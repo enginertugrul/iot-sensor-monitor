@@ -89,7 +89,7 @@ public class SensorReadingController {
         try {
             LocalDate today = sensorReadingService.getTodayForSensor(sensorId, ownerId);
 
-            model.addAttribute("weeklyData", sensorReadingService.getDailyAverageFromLastWeek(sensorId, ownerId));
+            model.addAttribute("weeklyData", sensorReadingService.getDailyAverageForNumericValueFromLastWeek(sensorId, ownerId));
             model.addAttribute("hourlyData", sensorReadingService.getHourlyAverageForDate(sensorId, ownerId, today));
             model.addAttribute("today", today.toString());
             model.addAttribute("selectedSensorId", sensorId);

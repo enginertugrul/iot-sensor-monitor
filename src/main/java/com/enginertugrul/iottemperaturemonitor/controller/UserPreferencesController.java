@@ -5,7 +5,7 @@ import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
 import com.enginertugrul.iottemperaturemonitor.service.user.AppUserService;
-import com.enginertugrul.iottemperaturemonitor.timezone.TimezoneCatalog;
+import com.enginertugrul.iottemperaturemonitor.support.timezone.TimezoneCatalog;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
