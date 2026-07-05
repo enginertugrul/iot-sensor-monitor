@@ -5,8 +5,8 @@ import lombok.Getter;
 @Getter
 public enum TemperatureUnit {
 
-    CELSIUS("C"),
-    FAHRENHEIT("F"),
+    CELSIUS("°C"),
+    FAHRENHEIT("°F"),
     KELVIN("K");
 
     private final String symbol;

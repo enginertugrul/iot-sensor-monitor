@@ -1,4 +1,4 @@
-package com.enginertugrul.iottemperaturemonitor.timezone;
+package com.enginertugrul.iottemperaturemonitor.support.timezone;
 
 import org.springframework.stereotype.Component;
 

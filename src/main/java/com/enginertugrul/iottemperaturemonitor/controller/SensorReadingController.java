@@ -3,9 +3,12 @@ package com.enginertugrul.iottemperaturemonitor.controller;
 import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyAverageDTO;
 import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorViewDTO;
 import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorListItemDTO;
+import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
 import com.enginertugrul.iottemperaturemonitor.service.reading.SensorReadingService;
 import com.enginertugrul.iottemperaturemonitor.service.sensor.SensorService;
+import com.enginertugrul.iottemperaturemonitor.service.user.AppUserService;
+import com.enginertugrul.iottemperaturemonitor.support.temperature.TemperatureUnitConverter;
 import org.slf4j.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -24,10 +27,14 @@ public class SensorReadingController {
     private final Logger logger = LoggerFactory.getLogger(SensorReadingController.class);
     private final SensorReadingService sensorReadingService;
     private final SensorService sensorService;
+    private final AppUserService appUserService;
+    private final TemperatureUnitConverter temperatureUnitConverter;
 
-    public SensorReadingController(SensorReadingService sensorReadingService, SensorService sensorService) {
+    public SensorReadingController(SensorReadingService sensorReadingService, SensorService sensorService, AppUserService appUserService, TemperatureUnitConverter temperatureUnitConverter) {
         this.sensorReadingService = sensorReadingService;
         this.sensorService = sensorService;
+        this.appUserService = appUserService;
+        this.temperatureUnitConverter = temperatureUnitConverter;
     }
 
     @GetMapping("/")
@@ -38,13 +45,15 @@ public class SensorReadingController {
     ) {
 
         Long ownerId = authenticatedUser.getAppUserId();
+        TemperatureUnit preferredTemperatureUnit = appUserService.getPreferredTemperatureUnit(ownerId);
+        addTemperatureUnitModel(model, preferredTemperatureUnit);
 
         List<SensorViewDTO> recentRecords = List.of();
         Long selectedSensorId = null;
 
         if(sensorId != null) {
             try {
-                recentRecords = sensorReadingService.getRecentTenRecords(sensorId, ownerId);
+                recentRecords = sensorReadingService.getRecentTenRecords(sensorId, ownerId, preferredTemperatureUnit);
                 selectedSensorId = sensorId;
             } catch (NoSuchElementException ex) {
                 model.addAttribute("dashboardNoSensorSelected", true);
@@ -78,25 +87,28 @@ public class SensorReadingController {
             Model model
     ) {
         Long ownerId = authenticatedUser.getAppUserId();
+        TemperatureUnit preferredTemperatureUnit = appUserService.getPreferredTemperatureUnit(ownerId);
+        addTemperatureUnitModel(model, preferredTemperatureUnit);
+
         List<SensorListItemDTO> sensors = sensorService.getSensorsForUser(ownerId);
         model.addAttribute("sensors", sensors);
 
         if (sensorId == null) {
-            addEmptyStatisticsModel(model);
+            addEmptyStatisticsModel(model,preferredTemperatureUnit);
             return "statistics";
         }
 
         try {
             LocalDate today = sensorReadingService.getTodayForSensor(sensorId, ownerId);
 
-            model.addAttribute("weeklyData", sensorReadingService.getDailyAverageFromLastWeek(sensorId, ownerId));
-            model.addAttribute("hourlyData", sensorReadingService.getHourlyAverageForDate(sensorId, ownerId, today));
+            model.addAttribute("weeklyData", sensorReadingService.getDailyAverageForNumericValueFromLastWeek(sensorId, ownerId,preferredTemperatureUnit));
+            model.addAttribute("hourlyData", sensorReadingService.getHourlyAverageForDate(sensorId, ownerId, today, preferredTemperatureUnit));
             model.addAttribute("today", today.toString());
             model.addAttribute("selectedSensorId", sensorId);
             model.addAttribute("selectedSensorName", getSensorName(sensors, sensorId));
 
         }catch (NoSuchElementException ex) {
-            addEmptyStatisticsModel(model);
+            addEmptyStatisticsModel(model,preferredTemperatureUnit);
         }
 
         return "statistics";
@@ -112,9 +124,13 @@ public class SensorReadingController {
         if (sensorId == null) {
             return ResponseEntity.ok(emptyHourlyData());
         }
+        TemperatureUnit preferredTemperatureUnit = appUserService.getPreferredTemperatureUnit(authenticatedUser.getAppUserId());
         try {
             return ResponseEntity.ok(
-                    sensorReadingService.getHourlyAverageForDate(sensorId, authenticatedUser.getAppUserId(), date)
+                    sensorReadingService.getHourlyAverageForDate(sensorId,
+                            authenticatedUser.getAppUserId(),
+                            date,
+                            preferredTemperatureUnit)
             );
 
         }catch (NoSuchElementException ex) {
@@ -133,13 +149,14 @@ public class SensorReadingController {
     }
 
 
-    private void addEmptyStatisticsModel(Model model) {
+    private void addEmptyStatisticsModel(Model model, TemperatureUnit temperatureUnit) {
         model.addAttribute("weeklyData", List.of());
         model.addAttribute("hourlyData", emptyHourlyData());
         model.addAttribute("today", LocalDate.now(ZoneOffset.UTC).toString());
         model.addAttribute("selectedSensorId", null);
         model.addAttribute("selectedSensorName", null);
         model.addAttribute("statisticsNoSensorSelected", true);
+        addTemperatureUnitModel(model, temperatureUnit);
     }
 
     private String getSensorName(List<SensorListItemDTO> sensors, Long sensorId) {
@@ -148,6 +165,12 @@ public class SensorReadingController {
                 .map(SensorListItemDTO::name)
                 .findFirst()
                 .orElse(null);
+    }
+
+
+    private void addTemperatureUnitModel(Model model, TemperatureUnit temperatureUnit) {
+        model.addAttribute("temperatureUnit", temperatureUnit);
+        model.addAttribute("temperatureUnitSymbol", temperatureUnitConverter.getSymbol(temperatureUnit));
     }
 
 

@@ -247,7 +247,7 @@
         <tr th:each="recentRecord : ${recentRecords}">
             <td th:text="${recentRecord.locationOfSensor}">Location</td>
             <td class="temp-value"
-                th:text="|${#numbers.formatDecimal(recentRecord.temperatureValue, 1, 1)} #{dashboard.temperatureUnitSymbol}|">
+                th:text="${#numbers.formatDecimal(recentRecord.temperatureValue, 1, 1)} + ' ' + ${temperatureUnitSymbol}">
                 0.0 °C
             </td>
 

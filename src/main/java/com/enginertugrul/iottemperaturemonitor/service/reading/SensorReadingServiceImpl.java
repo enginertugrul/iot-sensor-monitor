@@ -6,10 +6,12 @@ import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorViewDTO;
 import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
+import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.exception.InvalidSensorTokenException;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorReadingRepository;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorRepository;
 import com.enginertugrul.iottemperaturemonitor.security.ingestion.SensorIngestionTokenGenerator;
+import com.enginertugrul.iottemperaturemonitor.support.temperature.TemperatureUnitConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +31,14 @@ public class SensorReadingServiceImpl implements SensorReadingService {
     private final SensorReadingRepository sensorReadingRepository;
     private final SensorRepository sensorRepository;
     private final SensorIngestionTokenGenerator sensorIngestionTokenGenerator;
+    private final TemperatureUnitConverter temperatureUnitConverter;
 
 
-    public SensorReadingServiceImpl(SensorReadingRepository sensorReadingRepository, SensorRepository sensorRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator) {
+    public SensorReadingServiceImpl(SensorReadingRepository sensorReadingRepository, SensorRepository sensorRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator, TemperatureUnitConverter temperatureUnitConverter) {
         this.sensorReadingRepository = sensorReadingRepository;
         this.sensorRepository = sensorRepository;
         this.sensorIngestionTokenGenerator = sensorIngestionTokenGenerator;
+        this.temperatureUnitConverter = temperatureUnitConverter;
     }
 
     @Override
@@ -63,19 +67,19 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorViewDTO> getRecentTenRecords(Long sensorId, Long ownerId) {
+    public List<SensorViewDTO> getRecentTenRecords(Long sensorId, Long ownerId , TemperatureUnit temperatureUnit) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
 
        return sensorReadingRepository.findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(sensorId, ownerId)
                 .stream()
-                .map(reading -> toViewDTO(reading, sensor))
+                .map(reading -> toViewDTO(reading, sensor, temperatureUnit))
                 .toList();
 
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorDailyAverageDTO> getDailyAverageFromLastWeek(Long sensorId, Long ownerId) {
+    public List<SensorDailyAverageDTO> getDailyAverageForNumericValueFromLastWeek(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
         ZoneId zoneId = ZoneId.of(sensor.getTimezone());
         LocalDate today = LocalDate.now(zoneId);
@@ -85,7 +89,9 @@ public class SensorReadingServiceImpl implements SensorReadingService {
                 sensorReadingRepository.findDailyAverageValuesSince(sensorId, untilDate, sensor.getTimezone());
 
         Map<LocalDate, Double> dataMap = dbResults.stream()
-                .collect(Collectors.toMap(SensorDailyAverageDTO::date, SensorDailyAverageDTO::averageTemperature));
+                .collect(Collectors.toMap(SensorDailyAverageDTO::date,
+                dto -> temperatureUnitConverter.convertFromCelsius( dto.averageTemperature(), temperatureUnit)
+                ));
 
         List<SensorDailyAverageDTO> result = new ArrayList<>();
 
@@ -99,7 +105,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorHourlyAverageDTO> getHourlyAverageForDate(Long sensorId, Long ownerId, LocalDate date) {
+    public List<SensorHourlyAverageDTO> getHourlyAverageForDate(Long sensorId, Long ownerId, LocalDate date, TemperatureUnit temperatureUnit) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
         ZoneId zoneId = ZoneId.of(sensor.getTimezone());
 
@@ -115,12 +121,13 @@ public class SensorReadingServiceImpl implements SensorReadingService {
                 );
 
         Map<Short, Double> dataMap = dbResults.stream()
-                .collect(Collectors.toMap(SensorHourlyAverageDTO::hour, SensorHourlyAverageDTO::average));
+                .collect(Collectors.toMap(SensorHourlyAverageDTO::hour, dto ->
+                        temperatureUnitConverter.convertFromCelsius(dto.average(), temperatureUnit) ));
 
         List<SensorHourlyAverageDTO> result = new ArrayList<>();
 
         for (short hour = 0; hour <= 23; hour++) {
-            result.add(new SensorHourlyAverageDTO(hour, dataMap.get(hour)));
+            result.add(new SensorHourlyAverageDTO(hour,  dataMap.get(hour)) );
         }
 
         return result;
@@ -138,10 +145,11 @@ public class SensorReadingServiceImpl implements SensorReadingService {
                 .orElseThrow(() -> new NoSuchElementException("Sensor not found"));
     }
 
-    private SensorViewDTO toViewDTO(SensorReading reading, Sensor sensor) {
+    private SensorViewDTO toViewDTO(SensorReading reading, Sensor sensor, TemperatureUnit temperatureUnit) {
+        Double convertedTemperatureValue = temperatureUnitConverter.convertFromCelsius(reading.getNumericValue(), temperatureUnit);
         return new SensorViewDTO(
                 sensor.getHomeLocation(),
-                reading.getNumericValue(),
+                convertedTemperatureValue,
                 reading.getRecordedAt().atZone(ZoneId.of(sensor.getTimezone()))
         );
     }

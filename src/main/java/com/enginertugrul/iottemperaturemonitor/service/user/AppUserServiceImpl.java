@@ -3,6 +3,7 @@ package com.enginertugrul.iottemperaturemonitor.service.user;
 import com.enginertugrul.iottemperaturemonitor.dto.auth.RegisterUserForm;
 import com.enginertugrul.iottemperaturemonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
+import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -83,7 +84,12 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
 
-
-
+    @Override
+    @Transactional(readOnly = true)
+    public TemperatureUnit getPreferredTemperatureUnit(Long userId) {
+        return appUserRepository.findById(userId)
+                .map(AppUser::getPreferredTemperatureUnit)
+                .orElseThrow( ()-> new NoSuchElementException("User not found"));
+    }
 }
 

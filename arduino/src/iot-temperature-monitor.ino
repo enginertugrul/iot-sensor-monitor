@@ -86,10 +86,13 @@ void send_post_request(double value_to_send) {
   if (client.connect(server, port)) {
     Serial.println("Connected!");
 
-    // Construct the payload as x-www-form-urlencoded (e.g., "value=123")
-    String post_data =
-        "sensorToken=" + String(SENSOR_TOKEN) +
-        "&celsiusValue=" + String(value_to_send, 2);
+    // 1. Convert only the temperature to a String (uses minimal memory)
+    String tempStr = String(value_to_send, 2);
+
+    // 2. Manually calculate the exact Content-Length mathematically
+    // Length of "sensorToken=" is 12
+    // Length of "&celsiusValue=" is 14
+    int contentLength = 12 + strlen(SENSOR_TOKEN) + 14 + tempStr.length();
 
     // --- Send standard HTTP POST request headers ---
     client.print("POST ");
@@ -100,18 +103,22 @@ void send_post_request(double value_to_send) {
     client.println(server);
 
     client.println("Content-Type: application/x-www-form-urlencoded");
-    client.println("Connection: close"); // Tell server to drop connection after responding
+    client.println("Connection: close");
 
     client.print("Content-Length: ");
-    client.println(post_data.length());
+    client.println(contentLength);
 
     // An empty line marks the end of the headers and the beginning of the body
     client.println();
 
-    // --- Send the payload ---
-    client.println(post_data);
+    // --- Send the payload piece-by-piece ---
+    // Use print() instead of println() so we don't accidentally add \r\n to the end of the body!
+    client.print("sensorToken=");
+    client.print(SENSOR_TOKEN);
+    client.print("&celsiusValue=");
+    client.print(tempStr);
 
-    // Record the time this request was sent to reset the 5-second timer
+    // Record the time this request was sent to reset the timer
     last_connection_time = millis();
 
     Serial.println("POST request dispatched.");
