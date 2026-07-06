@@ -30,7 +30,7 @@ public class AlertRule {
     private Sensor sensor;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "alert_rule_type",  nullable = false, length = 40)
+    @Column(name = "rule_type",  nullable = false, length = 40)
     private AlertRuleType ruleType;
 
     @Enumerated(EnumType.STRING)
@@ -44,7 +44,7 @@ public class AlertRule {
     private String thresholdUnit;
 
     @Enumerated(EnumType.STRING)
-    @Column( name = "alert_event_type" , length = 40)
+    @Column( name = "event_type" , length = 40)
     private AlertEventType eventType;
 
     @Column(name = "enabled", nullable = false)
