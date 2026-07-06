@@ -5,11 +5,13 @@ import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.Objects;
 
+@Getter
 @Entity
 @Table(name = "alert_rules")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -91,7 +93,7 @@ public class AlertRule {
                 sensor,
                 AlertRuleType.NUMERIC_THRESHOLD,
                 Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null"),
-                requireFinite(thresholdValue, "thresholdValue"),
+                DomainChecks.requireFiniteDouble(thresholdValue, "thresholdValue"),
                 DomainChecks.requireText(thresholdUnit, "thresholdUnit"),
                 null
         );
@@ -157,7 +159,7 @@ public class AlertRule {
             throw new IllegalArgumentException("comparisonOperator must not be null for numeric threshold rules");
         }
 
-        requireFinite(thresholdValue, "thresholdValue");
+        DomainChecks.requireFiniteDouble(thresholdValue, "thresholdValue");
         thresholdUnit = DomainChecks.requireText(thresholdUnit, "thresholdUnit");
 
         if (eventType != null) {
@@ -174,15 +176,6 @@ public class AlertRule {
             throw new IllegalArgumentException("threshold fields must be null for event detected rules");
         }
     }
-
-    private static Double requireFinite(Double value, String fieldName) {
-        if (value == null || value.isNaN() || value.isInfinite()) {
-            throw new IllegalArgumentException(fieldName + " must be a finite number");
-        }
-
-        return value;
-    }
-
 
 
 

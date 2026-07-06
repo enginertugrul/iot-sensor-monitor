@@ -13,4 +13,14 @@ public final class DomainChecks {
     }
 
 
+    public static Double requireFiniteDouble(Double value, String fieldName) {
+
+        if (value == null || value.isNaN() || value.isInfinite()) {
+            throw new IllegalArgumentException(fieldName + " must be a finite number");
+        }
+
+        return value;
+    }
+
+
 }
