@@ -1,5 +1,6 @@
 package com.enginertugrul.iottemperaturemonitor.entity.sensor;
 
+import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -69,10 +70,10 @@ public class Sensor {
     ) {
         this.owner = Objects.requireNonNull(owner, "owner must not be null");
         this.type = Objects.requireNonNull(type, "type must not be null");
-        this.name = requireText(name, "name");
-        this.city = requireText(city, "city");
-        this.district = requireText(district, "district");
-        this.homeLocation = requireText(homeLocation, "homeLocation");
+        this.name = DomainChecks.requireText(name, "name");
+        this.city = DomainChecks.requireText(city, "city");
+        this.district = DomainChecks.requireText(district, "district");
+        this.homeLocation = DomainChecks.requireText(homeLocation, "homeLocation");
         this.timezone = normalizeTimezone(timezone);
 
         Instant now = Instant.now();
@@ -89,10 +90,10 @@ public class Sensor {
             String timezone
     ) {
         this.type = Objects.requireNonNull(type, "type must not be null");
-        this.name = requireText(name, "name");
-        this.city = requireText(city, "city");
-        this.district = requireText(district, "district");
-        this.homeLocation = requireText(homeLocation, "homeLocation");
+        this.name = DomainChecks.requireText(name, "name");
+        this.city = DomainChecks.requireText(city, "city");
+        this.district = DomainChecks.requireText(district, "district");
+        this.homeLocation = DomainChecks.requireText(homeLocation, "homeLocation");
         this.timezone = normalizeTimezone(timezone);
         this.updatedAt = Instant.now();
     }
@@ -126,16 +127,8 @@ public class Sensor {
     }
 
     private static String normalizeTimezone(String value) {
-        String timezone = requireText(value, "timezone");
+        String timezone = DomainChecks.requireText(value, "timezone");
         return ZoneId.of(timezone).getId();
-    }
-
-    private static String requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-
-        return value.trim();
     }
 
 
@@ -143,7 +136,6 @@ public class Sensor {
         this.ingestionTokenHash = ingestionTokenHash;
         this.updatedAt = Instant.now();
     }
-
 
     public void markSeen(Instant seenAt) {
         this.lastSeenAt = seenAt;

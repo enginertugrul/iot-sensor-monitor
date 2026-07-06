@@ -1,5 +1,6 @@
 package com.enginertugrul.iottemperaturemonitor.entity.user;
 
+import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -77,7 +78,7 @@ public class AppUser {
             String preferredTimezone
     ) {
         this.email = normalizeEmail(email);
-        this.passwordHash = requireText(passwordHash, "passwordHash");
+        this.passwordHash = DomainChecks.requireText(passwordHash, "passwordHash");
         this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage, DEFAULT_PREFERRED_LANGUAGE);
         this.preferredTemperatureUnit = Objects.requireNonNullElse(
                 preferredTemperatureUnit,
@@ -149,19 +150,12 @@ public class AppUser {
     }
 
     public static String normalizeEmail(String value) {
-        return requireText(value, "email").toLowerCase(Locale.ROOT);
+        return DomainChecks.requireText(value, "email").toLowerCase(Locale.ROOT);
     }
 
     private static String normalizeTimezone(String value) {
-        String timezone = requireText(value, "preferredTimezone");
+        String timezone = DomainChecks.requireText(value, "preferredTimezone");
         return ZoneId.of(timezone).getId();
     }
 
-    private static String requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-
-        return value.trim();
-    }
 }

@@ -1,5 +1,6 @@
 package com.enginertugrul.iottemperaturemonitor.entity.reading;
 
+import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import jakarta.persistence.*;
@@ -49,21 +50,17 @@ public class SensorReading {
     }
 
     public static SensorReading temperature(Sensor sensor, Double celsiusValue, Instant recordedAt) {
-        requireSensorType(sensor, SensorType.TEMPERATURE);
 
-        if (celsiusValue == null || celsiusValue.isNaN() || celsiusValue.isInfinite()) {
-            throw new IllegalArgumentException("celsiusValue must be a finite number");
-        }
+        requireSensorType(sensor, SensorType.TEMPERATURE);
+        DomainChecks.requireFiniteDouble(celsiusValue,"celciusValue");
 
         return new SensorReading(sensor, celsiusValue, null, "C", recordedAt);
     }
 
     public static SensorReading humidity(Sensor sensor, Double humidityPercentage, Instant recordedAt) {
-        requireSensorType(sensor, SensorType.HUMIDITY);
 
-        if (humidityPercentage == null || humidityPercentage.isNaN() || humidityPercentage.isInfinite()) {
-            throw new IllegalArgumentException("humidityPercentage must be a finite number");
-        }
+        requireSensorType(sensor, SensorType.HUMIDITY);
+        DomainChecks.requireFiniteDouble(humidityPercentage,"humidityPercentage");
 
         return new SensorReading(sensor, humidityPercentage, null, "PERCENT", recordedAt);
     }
