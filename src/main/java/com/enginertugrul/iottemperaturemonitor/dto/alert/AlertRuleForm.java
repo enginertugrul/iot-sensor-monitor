@@ -1,8 +1,11 @@
 package com.enginertugrul.iottemperaturemonitor.dto.alert;
 
 
+import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertCooldownPolicy;
 import com.enginertugrul.iottemperaturemonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iottemperaturemonitor.validation.IsFiniteDouble;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,5 +23,10 @@ public class AlertRuleForm {
     @NotNull(message = "{alertRules.thresholdRequired}")
     @IsFiniteDouble
     private Double thresholdValue;
+
+    @NotNull
+    @Min( value= AlertCooldownPolicy.MIN_MINUTES, message = "{alertRules.cooldownMin}")
+    @Max( value= AlertCooldownPolicy.MAX_MINUTES, message = "{alertRules.cooldownMax}")
+    private Integer cooldownMinutes = AlertCooldownPolicy.DEFAULT_MINUTES;
 
 }

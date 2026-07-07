@@ -59,6 +59,17 @@
     <input id="thresholdValue" type="number" step="0.01" th:field="*{thresholdValue}">
     <p th:if="${#fields.hasErrors('thresholdValue')}" th:errors="*{thresholdValue}"></p>
 
+    <label for="cooldownMinutes" th:text="#{alertRules.cooldownMinutes}">
+        Cooldown (minutes)
+    </label>
+    <input id="cooldownMinutes"
+           type="number"
+           min="1"
+           max="1440"
+           step="1"
+           th:field="*{cooldownMinutes}">
+    <p th:if="${#fields.hasErrors('cooldownMinutes')}" th:errors="*{cooldownMinutes}"></p>
+
     <button type="submit" th:text="#{alertRules.createButton}">Create Alert Rule</button>
 </form>
 
@@ -71,6 +82,7 @@
         <th th:text="#{alertRules.ruleType}">Rule Type</th>
         <th th:text="#{alertRules.condition}">Condition</th>
         <th th:text="#{alertRules.threshold}">Threshold</th>
+        <th th:text="#{alertRules.cooldown}">Cooldown</th>
         <th th:text="#{alertRules.status}">Status</th>
         <th th:text="#{alertRules.actions}">Actions</th>
     </tr>
@@ -103,6 +115,10 @@
             <span th:if="${rule.thresholdValue == null}">-</span>
         </td>
 
+        <td th:text="|${rule.cooldownMinutes} #{alertRules.minutes}|">
+            60 minutes
+        </td>
+
         <td th:text="${rule.enabled ? #messages.msg('alertRules.status.enabled') : #messages.msg('alertRules.status.disabled')}">
             Enabled
         </td>
@@ -126,7 +142,7 @@
     </tr>
 
     <tr th:if="${#lists.isEmpty(alertRules)}">
-        <td colspan="6" th:text="#{alertRules.empty}">You do not have alert rules yet.</td>
+        <td colspan="7" th:text="#{alertRules.empty}">You do not have alert rules yet.</td>
     </tr>
     </tbody>
 </table>
