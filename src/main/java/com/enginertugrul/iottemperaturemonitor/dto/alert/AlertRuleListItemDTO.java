@@ -16,6 +16,7 @@ public record AlertRuleListItemDTO(
         AlertEventType eventType,
         Double thresholdValue,
         String thresholdUnitSymbol,
+        Integer cooldownMinutes,
         boolean enabled
 ) {
 }

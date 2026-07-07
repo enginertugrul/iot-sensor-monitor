@@ -66,7 +66,8 @@ public class AlertRuleServiceImpl implements AlertRuleService {
                 sensor,
                 form.getComparisonOperator(),
                 thresholdInCelsius,
-                TEMPERATURE_CANONICAL_UNIT);
+                TEMPERATURE_CANONICAL_UNIT,
+                form.getCooldownMinutes());
 
         alertRuleRepository.save(alertRule);
 
@@ -89,7 +90,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
     @Override
     @Transactional
-    public void deleteAlertRule(Long alertRuleId, Long ownerId) {
+    public void deleteAlertRule(Long ownerId, Long alertRuleId) {
         AlertRule alertRule = getOwnedAlertRule(alertRuleId,ownerId);
         alertRuleRepository.delete(alertRule);
     }
@@ -130,6 +131,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
                 rule.getEventType(),
                 displayThreshold,
                 displayUnit,
+                rule.getCooldownMinutes(),
                 rule.isEnabled()
         );
     }
