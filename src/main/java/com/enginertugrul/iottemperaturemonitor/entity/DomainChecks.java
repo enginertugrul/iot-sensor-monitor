@@ -23,4 +23,25 @@ public final class DomainChecks {
     }
 
 
+    public static Integer requireIntegerBetween(Integer value,
+                                                int minInclusive,
+                                                int maxInclusive,
+                                                String fieldName) {
+
+
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+
+        if (value < minInclusive || value > maxInclusive) {
+            throw new IllegalArgumentException(
+                    fieldName + " must be between " + minInclusive + " and " + maxInclusive
+            );
+        }
+
+        return value;
+
+    }
+
+
 }

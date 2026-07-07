@@ -73,7 +73,7 @@ public class AlertRuleController {
         try {
             alertRuleService.createTemperatureThresholdRule(ownerId, form, preferredTemperatureUnit);
         } catch (IllegalArgumentException ex) {
-            bindingResult.reject("alertRule.invalid", ex.getMessage());
+            bindingResult.reject("alertRules.invalid", ex.getMessage());
             addPageData(model,ownerId);
             return "alert-rules";
         }
@@ -110,7 +110,7 @@ public class AlertRuleController {
     }
 
 
-    @PostMapping("{alertRuleId}/delete")
+    @PostMapping("/{alertRuleId}/delete")
     public String deleteAlertRule(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long alertRuleId,

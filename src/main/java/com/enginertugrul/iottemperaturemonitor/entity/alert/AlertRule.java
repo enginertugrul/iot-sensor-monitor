@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -56,6 +57,12 @@ public class AlertRule {
     @Column(name = "updated_at", nullable= false)
     private Instant updatedAt;
 
+    @Column(name= "cooldown_minutes" , nullable = false)
+    private Integer cooldownMinutes = AlertCooldownPolicy.DEFAULT_MINUTES;
+
+    @Column(name= "last_triggered_at")
+    private Instant lastTriggeredAt;
+
 
     private AlertRule(
             AppUser owner,
@@ -64,7 +71,8 @@ public class AlertRule {
             ComparisonOperator comparisonOperator,
             Double thresholdValue,
             String thresholdUnit,
-            AlertEventType eventType
+            AlertEventType eventType,
+            Integer cooldownMinutes
     ) {
         this.owner = Objects.requireNonNull(owner, "owner must not be null");
         this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
@@ -73,6 +81,10 @@ public class AlertRule {
         this.thresholdValue = thresholdValue;
         this.thresholdUnit = thresholdUnit;
         this.eventType = eventType;
+        this.cooldownMinutes = DomainChecks.requireIntegerBetween(cooldownMinutes,
+                AlertCooldownPolicy.MIN_MINUTES,
+                AlertCooldownPolicy.MAX_MINUTES,
+                "cooldownMinutes");
 
         validateRuleShape();
 
@@ -86,7 +98,8 @@ public class AlertRule {
             Sensor sensor,
             ComparisonOperator comparisonOperator,
             Double thresholdValue,
-            String thresholdUnit
+            String thresholdUnit,
+            Integer cooldownMinutes
     ) {
         return new AlertRule(
                 owner,
@@ -95,14 +108,16 @@ public class AlertRule {
                 Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null"),
                 DomainChecks.requireFiniteDouble(thresholdValue, "thresholdValue"),
                 DomainChecks.requireText(thresholdUnit, "thresholdUnit"),
-                null
+                null,
+                cooldownMinutes
         );
     }
 
     public static AlertRule eventDetected(
             AppUser owner,
             Sensor sensor,
-            AlertEventType eventType
+            AlertEventType eventType,
+            Integer cooldownMinutes
     ) {
         return new AlertRule(
                 owner,
@@ -111,7 +126,8 @@ public class AlertRule {
                 null,
                 null,
                 null,
-                Objects.requireNonNull(eventType, "eventType must not be null")
+                Objects.requireNonNull(eventType, "eventType must not be null"),
+                cooldownMinutes
         );
     }
 
@@ -153,6 +169,32 @@ public class AlertRule {
             requireEventDetectedShape();
         }
     }
+
+
+    public boolean isCooldownActiveAt(Instant checkedAt) {
+        Objects.requireNonNull(checkedAt, "checkedAt must not be null");
+
+        if (lastTriggeredAt == null) {
+            return false;
+        }
+
+        Instant cooldownEndsAt = lastTriggeredAt.plus(Duration.ofMinutes(cooldownMinutes));
+        return cooldownEndsAt.isAfter(checkedAt);
+    }
+
+    public boolean canTriggerAt(Instant checkedAt) {
+        return enabled && !isCooldownActiveAt(checkedAt);
+    }
+
+
+
+    public void markTriggered(Instant triggeredAt) {
+        this.lastTriggeredAt = Objects.requireNonNull(triggeredAt, "triggeredAt must not be null");
+        this.updatedAt = Instant.now();
+    }
+
+
+
 
     private void requireNumericThresholdShape() {
         if (comparisonOperator == null) {
