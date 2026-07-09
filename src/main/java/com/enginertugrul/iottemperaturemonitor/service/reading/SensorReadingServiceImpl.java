@@ -11,6 +11,7 @@ import com.enginertugrul.iottemperaturemonitor.exception.InvalidSensorTokenExcep
 import com.enginertugrul.iottemperaturemonitor.repository.SensorReadingRepository;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorRepository;
 import com.enginertugrul.iottemperaturemonitor.security.ingestion.SensorIngestionTokenGenerator;
+import com.enginertugrul.iottemperaturemonitor.service.alert.AlertEvaluationService;
 import com.enginertugrul.iottemperaturemonitor.support.temperature.TemperatureUnitConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,13 +33,15 @@ public class SensorReadingServiceImpl implements SensorReadingService {
     private final SensorRepository sensorRepository;
     private final SensorIngestionTokenGenerator sensorIngestionTokenGenerator;
     private final TemperatureUnitConverter temperatureUnitConverter;
+    private final AlertEvaluationService alertEvaluationService;
 
 
-    public SensorReadingServiceImpl(SensorReadingRepository sensorReadingRepository, SensorRepository sensorRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator, TemperatureUnitConverter temperatureUnitConverter) {
+    public SensorReadingServiceImpl(SensorReadingRepository sensorReadingRepository, SensorRepository sensorRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator, TemperatureUnitConverter temperatureUnitConverter, AlertEvaluationService alertEvaluationService) {
         this.sensorReadingRepository = sensorReadingRepository;
         this.sensorRepository = sensorRepository;
         this.sensorIngestionTokenGenerator = sensorIngestionTokenGenerator;
         this.temperatureUnitConverter = temperatureUnitConverter;
+        this.alertEvaluationService = alertEvaluationService;
     }
 
     @Override
@@ -63,6 +66,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
         SensorReading reading = SensorReading.temperature(sensor, celsiusValue, now);
         sensor.markSeen(now);
         sensorReadingRepository.save(reading);
+        alertEvaluationService.evaluateTemperatureReading(sensor,celsiusValue,now);
     }
 
     @Override
