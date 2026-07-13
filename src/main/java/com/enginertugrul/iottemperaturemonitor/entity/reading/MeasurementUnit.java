@@ -5,13 +5,8 @@ import lombok.Getter;
 @Getter
 public enum MeasurementUnit {
 
-    CELSIUS("C"),
-    PERCENT("PERCENT");
+    C, // Celsius
+    PERCENT
 
-    private final String databaseValue;
-
-    MeasurementUnit(String databaseValue) {
-        this.databaseValue = databaseValue;
-    }
 
 }

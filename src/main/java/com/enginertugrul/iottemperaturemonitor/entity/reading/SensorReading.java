@@ -106,7 +106,7 @@ public class SensorReading {
         return new SensorReading(
                 sensor,
                 celsiusValue,
-                MeasurementUnit.CELSIUS,
+                MeasurementUnit.C,
                 recordedAt
         );
     }
