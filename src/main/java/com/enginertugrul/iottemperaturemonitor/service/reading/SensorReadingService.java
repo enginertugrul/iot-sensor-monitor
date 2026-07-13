@@ -11,8 +11,6 @@ import java.util.List;
 public interface SensorReadingService {
 
 
-    void saveTemperatureReading(String sensorToken, Double celsiusValue);
-
     List<SensorViewDTO> getRecentTenRecords(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit);
 
     List<SensorDailyAverageDTO> getDailyAverageForNumericValueFromLastWeek(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit);
