@@ -82,14 +82,12 @@ public class Sensor {
     }
 
     public void updateDetails(
-            SensorType type,
             String name,
             String city,
             String district,
             String homeLocation,
             String timezone
     ) {
-        this.type = Objects.requireNonNull(type, "type must not be null");
         this.name = DomainChecks.requireText(name, "name");
         this.city = DomainChecks.requireText(city, "city");
         this.district = DomainChecks.requireText(district, "district");

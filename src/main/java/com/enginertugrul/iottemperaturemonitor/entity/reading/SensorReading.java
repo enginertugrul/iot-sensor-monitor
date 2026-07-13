@@ -17,6 +17,11 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SensorReading {
 
+
+    private static final double ABSOLUTE_ZERO_CELSIUS = -273.15;
+    private static final double MIN_HUMIDITY_PERCENT = 0.0;
+    private static final double MAX_HUMIDITY_PERCENT = 100.0;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,48 +36,116 @@ public class SensorReading {
     @Column(name = "boolean_value")
     private Boolean booleanValue;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "unit", length = 20)
-    private String unit;
+    private MeasurementUnit unit;
 
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt;
 
-    private SensorReading(Sensor sensor, Double numericValue, Boolean booleanValue, String unit, Instant recordedAt) {
-        this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
+    private SensorReading(
+            Sensor sensor,
+            double numericValue,
+            MeasurementUnit unit,
+            Instant recordedAt
+    ) {
+        this.sensor = Objects.requireNonNull(
+                sensor,
+                "sensor must not be null"
+        );
+
+        this.unit = Objects.requireNonNull(
+                unit,
+                "unit must not be null for numeric readings"
+        );
+
+        this.recordedAt = Objects.requireNonNull(
+                recordedAt,
+                "recordedAt must not be null"
+        );
+
         this.numericValue = numericValue;
+        this.booleanValue = null;
+    }
+
+    private SensorReading(
+            Sensor sensor,
+            boolean booleanValue,
+            Instant recordedAt
+    ) {
+        this.sensor = Objects.requireNonNull(
+                sensor,
+                "sensor must not be null"
+        );
+
+        this.recordedAt = Objects.requireNonNull(
+                recordedAt,
+                "recordedAt must not be null"
+        );
+
+        this.numericValue = null;
         this.booleanValue = booleanValue;
-        this.unit = unit;
-        this.recordedAt = Objects.requireNonNull(recordedAt, "recordedAt must not be null");
-
-        if ((numericValue == null && booleanValue == null) || (numericValue != null && booleanValue != null)) {
-            throw new IllegalArgumentException("reading must contain exactly one value");
-        }
+        this.unit = null;
     }
 
-    public static SensorReading temperature(Sensor sensor, Double celsiusValue, Instant recordedAt) {
 
+    public static SensorReading temperature(
+            Sensor sensor,
+            Double celsiusValue,
+            Instant recordedAt
+    ) {
         requireSensorType(sensor, SensorType.TEMPERATURE);
-        DomainChecks.requireFiniteDouble(celsiusValue,"celciusValue");
+        DomainChecks.requireFiniteDouble(celsiusValue, "celsiusValue");
 
-        return new SensorReading(sensor, celsiusValue, null, "C", recordedAt);
+        if (celsiusValue < ABSOLUTE_ZERO_CELSIUS) {
+            throw new IllegalArgumentException(
+                    "celsiusValue cannot be below absolute zero"
+            );
+        }
+
+        return new SensorReading(
+                sensor,
+                celsiusValue,
+                MeasurementUnit.C,
+                recordedAt
+        );
     }
 
-    public static SensorReading humidity(Sensor sensor, Double humidityPercentage, Instant recordedAt) {
-
+    public static SensorReading humidity(
+            Sensor sensor,
+            Double humidityPercentage,
+            Instant recordedAt
+    ) {
         requireSensorType(sensor, SensorType.HUMIDITY);
-        DomainChecks.requireFiniteDouble(humidityPercentage,"humidityPercentage");
+        DomainChecks.requireFiniteDouble(humidityPercentage, "humidityPercentage");
 
-        return new SensorReading(sensor, humidityPercentage, null, "PERCENT", recordedAt);
+        if (humidityPercentage < MIN_HUMIDITY_PERCENT
+                || humidityPercentage > MAX_HUMIDITY_PERCENT) {
+            throw new IllegalArgumentException(
+                    "humidityPercentage must be between 0 and 100"
+            );
+        }
+
+        return new SensorReading(
+                sensor,
+                humidityPercentage,
+                MeasurementUnit.PERCENT,
+                recordedAt
+        );
     }
 
-    public static SensorReading motion(Sensor sensor, Boolean motionDetected, Instant recordedAt) {
+    public static SensorReading motion(
+            Sensor sensor,
+            boolean motionDetected,
+            Instant recordedAt
+    ) {
         requireSensorType(sensor, SensorType.MOTION);
 
-        if (motionDetected == null) {
-            throw new IllegalArgumentException("motionDetected must not be null");
-        }
-
-        return new SensorReading(sensor, null, motionDetected, null, recordedAt);
+        return new SensorReading(
+                sensor,
+                motionDetected,
+                recordedAt
+        );
     }
 
     private static void requireSensorType(Sensor sensor, SensorType expectedType) {
