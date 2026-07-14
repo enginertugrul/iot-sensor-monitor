@@ -1,8 +1,9 @@
 package com.enginertugrul.iottemperaturemonitor.dto.reading;
 
-
 import java.time.LocalDate;
 
-public record SensorDailyAverageDTO(LocalDate date, Double averageTemperature) {
-
+public record SensorDailyStatisticDTO(
+        LocalDate date,
+        Double value
+) {
 }
