@@ -1,11 +1,16 @@
 package com.enginertugrul.iottemperaturemonitor.service.reading;
 
-import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorDailyAverageDTO;
-import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyAverageDTO;
-import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorViewDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorDailyStatisticDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorHourlyStatisticDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorReadingViewDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.reading.SensorStatisticsDTO;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.MeasurementUnit;
 import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
+import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iottemperaturemonitor.repository.DailySensorStatisticProjection;
+import com.enginertugrul.iottemperaturemonitor.repository.HourlySensorStatisticProjection;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorReadingRepository;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorRepository;
 import com.enginertugrul.iottemperaturemonitor.support.temperature.TemperatureUnitConverter;
@@ -38,90 +43,298 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorViewDTO> getRecentTenRecords(Long sensorId, Long ownerId , TemperatureUnit temperatureUnit) {
+    public List<SensorReadingViewDTO> getRecentReadings(
+            Long sensorId,
+            Long ownerId,
+            TemperatureUnit temperatureUnit
+    ) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
 
-       return sensorReadingRepository.findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(sensorId, ownerId)
+        return sensorReadingRepository
+                .findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(
+                        sensorId,
+                        ownerId
+                )
                 .stream()
-                .map(reading -> toViewDTO(reading, sensor, temperatureUnit))
+                .map(reading -> toViewDTO(
+                        reading,
+                        sensor,
+                        temperatureUnit
+                ))
                 .toList();
-
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorDailyAverageDTO> getDailyAverageForNumericValueFromLastWeek(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit) {
+    public SensorStatisticsDTO getStatistics(
+            Long sensorId,
+            Long ownerId,
+            TemperatureUnit temperatureUnit
+    ) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
         ZoneId zoneId = ZoneId.of(sensor.getTimezone());
         LocalDate today = LocalDate.now(zoneId);
-        Instant untilDate = today.minusDays(6).atStartOfDay(zoneId).toInstant();
 
-        List<SensorDailyAverageDTO> dbResults =
-                sensorReadingRepository.findDailyAverageValuesSince(sensorId, untilDate, sensor.getTimezone());
-
-        Map<LocalDate, Double> dataMap = dbResults.stream()
-                .collect(Collectors.toMap(SensorDailyAverageDTO::date,
-                dto -> temperatureUnitConverter.convertFromCelsius( dto.averageTemperature(), temperatureUnit)
-                ));
-
-        List<SensorDailyAverageDTO> result = new ArrayList<>();
-
-        for (int i = 6; i >= 0; i--) {
-            LocalDate date = today.minusDays(i);
-            result.add(new SensorDailyAverageDTO(date, dataMap.getOrDefault(date, 0.0)));
-        }
-
-        return result;
+        return new SensorStatisticsDTO(
+                sensor.getType(),
+                getDisplayUnitSymbol(
+                        sensor.getType(),
+                        temperatureUnit
+                ),
+                today,
+                getLastSevenDays(
+                        sensor,
+                        today,
+                        temperatureUnit
+                ),
+                getHourlyStatistics(
+                        sensor,
+                        today,
+                        temperatureUnit
+                )
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SensorHourlyAverageDTO> getHourlyAverageForDate(Long sensorId, Long ownerId, LocalDate date, TemperatureUnit temperatureUnit) {
+    public List<SensorHourlyStatisticDTO>
+    getHourlyStatisticsForDate(
+            Long sensorId,
+            Long ownerId,
+            LocalDate date,
+            TemperatureUnit temperatureUnit
+    ) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
+
+        return getHourlyStatistics(
+                sensor,
+                date,
+                temperatureUnit
+        );
+    }
+
+    private List<SensorDailyStatisticDTO> getLastSevenDays(
+            Sensor sensor,
+            LocalDate today,
+            TemperatureUnit temperatureUnit
+    ) {
         ZoneId zoneId = ZoneId.of(sensor.getTimezone());
 
-        Instant startOfDay = date.atStartOfDay(zoneId).toInstant();
-        Instant endOfDay = date.plusDays(1).atStartOfDay(zoneId).toInstant();
+        Instant startInclusive = today
+                .minusDays(6)
+                .atStartOfDay(zoneId)
+                .toInstant();
 
-        List<SensorHourlyAverageDTO> dbResults =
-                sensorReadingRepository.findHourlyAverageValuesForDate(
-                        sensorId,
-                        startOfDay,
-                        endOfDay,
-                        sensor.getTimezone()
-                );
+        Instant endExclusive = today
+                .plusDays(1)
+                .atStartOfDay(zoneId)
+                .toInstant();
 
-        Map<Short, Double> dataMap = dbResults.stream()
-                .collect(Collectors.toMap(SensorHourlyAverageDTO::hour, dto ->
-                        temperatureUnitConverter.convertFromCelsius(dto.average(), temperatureUnit) ));
+        List<DailySensorStatisticProjection> databaseResults;
 
-        List<SensorHourlyAverageDTO> result = new ArrayList<>();
+        if (sensor.getType() == SensorType.MOTION) {
+            databaseResults =
+                    sensorReadingRepository
+                            .findDailyMotionDetectionCounts(
+                                    sensor.getId(),
+                                    startInclusive,
+                                    endExclusive,
+                                    sensor.getTimezone()
+                            );
+        } else {
+            databaseResults =
+                    sensorReadingRepository.findDailyNumericStatistics(
+                            sensor.getId(),
+                            getCanonicalUnit(sensor.getType()).name(),
+                            startInclusive,
+                            endExclusive,
+                            sensor.getTimezone()
+                    );
+        }
 
-        for (short hour = 0; hour <= 23; hour++) {
-            result.add(new SensorHourlyAverageDTO(hour,  dataMap.get(hour)) );
+        Map<LocalDate, Double> valuesByDate =
+                databaseResults.stream()
+                        .collect(Collectors.toMap(
+                                DailySensorStatisticProjection::getDate,
+                                result -> toDisplayValue(
+                                        sensor.getType(),
+                                        result.getValue(),
+                                        temperatureUnit
+                                )
+                        ));
+
+        List<SensorDailyStatisticDTO> result =
+                new ArrayList<>(7);
+
+        for (int daysAgo = 6; daysAgo >= 0; daysAgo--) {
+            LocalDate date = today.minusDays(daysAgo);
+            Double value = valuesByDate.get(date);
+
+            if (value == null
+                    && sensor.getType() == SensorType.MOTION) {
+                value = 0.0;
+            }
+
+            result.add(
+                    new SensorDailyStatisticDTO(date, value)
+            );
         }
 
         return result;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public LocalDate getTodayForSensor(Long sensorId, Long ownerId) {
-        Sensor sensor = getOwnedSensor(sensorId, ownerId);
-        return LocalDate.now(ZoneId.of(sensor.getTimezone()));
+    private List<SensorHourlyStatisticDTO> getHourlyStatistics(
+            Sensor sensor,
+            LocalDate date,
+            TemperatureUnit temperatureUnit
+    ) {
+        ZoneId zoneId = ZoneId.of(sensor.getTimezone());
+
+        Instant startInclusive = date
+                .atStartOfDay(zoneId)
+                .toInstant();
+
+        Instant endExclusive = date
+                .plusDays(1)
+                .atStartOfDay(zoneId)
+                .toInstant();
+
+        List<HourlySensorStatisticProjection> databaseResults;
+
+        if (sensor.getType() == SensorType.MOTION) {
+            databaseResults =
+                    sensorReadingRepository
+                            .findHourlyMotionDetectionCounts(
+                                    sensor.getId(),
+                                    startInclusive,
+                                    endExclusive,
+                                    sensor.getTimezone()
+                            );
+        } else {
+            databaseResults =
+                    sensorReadingRepository
+                            .findHourlyNumericStatistics(
+                                    sensor.getId(),
+                                    getCanonicalUnit(
+                                            sensor.getType()
+                                    ).name(),
+                                    startInclusive,
+                                    endExclusive,
+                                    sensor.getTimezone()
+                            );
+        }
+
+        Map<Short, Double> valuesByHour =
+                databaseResults.stream()
+                        .collect(Collectors.toMap(
+                                HourlySensorStatisticProjection::getHour,
+                                result -> toDisplayValue(
+                                        sensor.getType(),
+                                        result.getValue(),
+                                        temperatureUnit
+                                )
+                        ));
+
+        List<SensorHourlyStatisticDTO> result =
+                new ArrayList<>(24);
+
+        for (short hour = 0; hour < 24; hour++) {
+            Double value = valuesByHour.get(hour);
+
+            if (value == null
+                    && sensor.getType() == SensorType.MOTION) {
+                value = 0.0;
+            }
+
+            result.add(
+                    new SensorHourlyStatisticDTO(hour, value)
+            );
+        }
+
+        return result;
     }
 
-    private Sensor getOwnedSensor(Long sensorId, Long ownerId) {
-        return sensorRepository.findByIdAndOwnerId(sensorId, ownerId)
-                .orElseThrow(() -> new NoSuchElementException("Sensor not found"));
-    }
-
-    private SensorViewDTO toViewDTO(SensorReading reading, Sensor sensor, TemperatureUnit temperatureUnit) {
-        Double convertedTemperatureValue = temperatureUnitConverter.convertFromCelsius(reading.getNumericValue(), temperatureUnit);
-        return new SensorViewDTO(
+    private SensorReadingViewDTO toViewDTO(
+            SensorReading reading,
+            Sensor sensor,
+            TemperatureUnit temperatureUnit
+    ) {
+        return new SensorReadingViewDTO(
+                sensor.getType(),
                 sensor.getHomeLocation(),
-                convertedTemperatureValue,
-                reading.getRecordedAt().atZone(ZoneId.of(sensor.getTimezone()))
+                toDisplayValue(
+                        sensor.getType(),
+                        reading.getNumericValue(),
+                        temperatureUnit
+                ),
+                reading.getBooleanValue(),
+                getDisplayUnitSymbol(
+                        sensor.getType(),
+                        temperatureUnit
+                ),
+                reading.getRecordedAt().atZone(
+                        ZoneId.of(sensor.getTimezone())
+                )
         );
+    }
+
+    private Double toDisplayValue(
+            SensorType sensorType,
+            Double canonicalValue,
+            TemperatureUnit temperatureUnit
+    ) {
+        if (canonicalValue == null) {
+            return null;
+        }
+
+        if (sensorType == SensorType.TEMPERATURE) {
+            return temperatureUnitConverter.convertFromCelsius(
+                    canonicalValue,
+                    temperatureUnit
+            );
+        }
+
+        return canonicalValue;
+    }
+
+    private String getDisplayUnitSymbol(
+            SensorType sensorType,
+            TemperatureUnit temperatureUnit
+    ) {
+        return switch (sensorType) {
+            case TEMPERATURE ->
+                    temperatureUnitConverter.getSymbol(
+                            temperatureUnit
+                    );
+
+            case HUMIDITY -> "% RH";
+            case MOTION -> "";
+        };
+    }
+
+    private MeasurementUnit getCanonicalUnit(
+            SensorType sensorType
+    ) {
+        return switch (sensorType) {
+            case TEMPERATURE -> MeasurementUnit.C;
+            case HUMIDITY -> MeasurementUnit.PERCENT;
+
+            case MOTION -> throw new IllegalArgumentException(
+                    "Motion sensors do not have a numeric unit"
+            );
+        };
+    }
+
+    private Sensor getOwnedSensor(
+            Long sensorId,
+            Long ownerId
+    ) {
+        return sensorRepository
+                .findByIdAndOwnerId(sensorId, ownerId)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "Sensor not found"
+                        )
+                );
     }
 }

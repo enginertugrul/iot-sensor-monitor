@@ -2,8 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
-    <title th:text="#{statistics.title}">Temperature Statistics</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title th:text="#{statistics.title}">
+        Sensor Statistics
+    </title>
+    <script th:src="@{/js/vendor/chart.umd.min.js}"></script>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
 
     <style>
@@ -181,8 +183,15 @@
 
             <option th:each="sensor : ${sensors}"
                     th:value="${sensor.id}"
-                    th:selected="${selectedSensorId != null and sensor.id == selectedSensorId}"
-                    th:text="${sensor.name} + ' - ' + ${sensor.homeLocation}">
+                    th:selected="${selectedSensorId != null
+            and sensor.id == selectedSensorId}"
+                    th:text="${sensor.name
+            + ' — '
+            + #messages.msg(
+                'sensorType.' + sensor.type.name()
+            )
+            + ' — '
+            + sensor.homeLocation}">
             </option>
         </select>
 
@@ -192,46 +201,140 @@
     </form>
 </div>
 
-<p th:if="${statisticsNoSensorSelected}" class="empty-state" th:text="#{statistics.noSensorSelected}"></p>
-<div class="chart-container" th:if="${selectedSensorId != null}">
+<p th:if="${statisticsNoSensorSelected}"
+   class="empty-state"
+   th:text="#{statistics.noSensorSelected}">
+    No sensor selected.
+</p>
+
+<p th:if="${statisticsSensorNotFound}"
+   class="empty-state"
+   th:text="#{statistics.sensorNotFound}">
+    Selected sensor could not be found.
+</p>
+
+<div class="chart-container"
+     th:if="${selectedSensorId != null}">
     <div class="date-nav-row">
-        <button id="prevDayBtn" class="nav-arrow-button" th:aria-label="#{statistics.previousDay}" onclick="navigateDate('prev')">&#8249;</button>
-        <h2 class="chart-title" id="hourlyChartTitle"
-            th:text="${selectedSensorName != null ? selectedSensorName + ' - ' + #messages.msg('statistics.todayHourly') : #messages.msg('statistics.todayHourly')}">
-            Today's Hourly Averages
+        <button id="prevDayBtn"
+                type="button"
+                class="nav-arrow-button"
+                th:aria-label="#{statistics.previousDay}">
+            &#8249;
+        </button>
+
+        <h2 class="chart-title"
+            id="hourlyChartTitle"
+            th:text="${selectedSensorName
+                + ' — '
+                + #messages.msg(
+                    'statistics.todayHourly'
+                )}">
+            Sensor — Today's Hourly Statistics
         </h2>
-        <button id="nextDayBtn" class="nav-arrow-button" th:aria-label="#{statistics.nextDay}" onclick="navigateDate('next')">&#8250;</button>
+
+        <button id="nextDayBtn"
+                type="button"
+                class="nav-arrow-button"
+                th:aria-label="#{statistics.nextDay}">
+            &#8250;
+        </button>
     </div>
+
     <div class="chart-slide-wrapper">
-        <canvas id="temperatureLineChart"></canvas>
+        <canvas id="sensorHourlyChart"></canvas>
     </div>
 </div>
 
-<div class="chart-container"  th:if="${selectedSensorId != null}">
+<div class="chart-container"
+     th:if="${selectedSensorId != null}">
     <h2 class="chart-title"
-        th:text="${selectedSensorName != null ? selectedSensorName + ' - ' + #messages.msg('statistics.lastSevenDays') : #messages.msg('statistics.lastSevenDays')}">
-        Last 7 Days
+        th:text="${selectedSensorName
+            + ' — '
+            + #messages.msg(
+                'statistics.lastSevenDays'
+            )}">
+        Sensor — Last 7 Days
     </h2>
-    <canvas id="temperatureBarChart"></canvas>
+
+    <canvas id="sensorWeeklyChart"></canvas>
 </div>
 
-<script th:inline="javascript" th:if="${selectedSensorId != null}">
+<script th:inline="javascript"
+        th:if="${selectedSensorId != null}">
     /*<![CDATA[*/
 
     Chart.defaults.color = '#9ca3af';
-    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    Chart.defaults.font.family =
+        '-apple-system, BlinkMacSystemFont, '
+        + '"Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
-    const temperatureUnitSymbol = /*[[${temperatureUnitSymbol}]]*/ '°C';
+    const selectedSensorId =
+        /*[[${selectedSensorId}]]*/ 1;
+
+    const selectedSensorName =
+        /*[[${selectedSensorName}]]*/ 'Sensor';
+
+    const sensorType =
+        /*[[${selectedSensorType.name()}]]*/ 'TEMPERATURE';
+
+    const measurementUnitSymbol =
+        /*[[${measurementUnitSymbol}]]*/ '°C';
+
+    const motionSensor = sensorType === 'MOTION';
 
     const i18n = {
-        dailyAverageTemperature: /*[[#{statistics.dailyAverageTemperature}]]*/ 'Daily Average Temperature',
-        hourlyAverageTemperature: /*[[#{statistics.hourlyAverageTemperature}]]*/ 'Hourly Average Temperature',
-        temperatureAxis: /*[[#{statistics.temperatureAxis}]]*/ 'Temperature',
-        hourAxis: /*[[#{statistics.hourAxis}]]*/ 'Hour of the Day',
-        tooltipAverage: /*[[#{statistics.tooltipAverage}]]*/ 'Average',
-        noDataRecorded: /*[[#{statistics.noDataRecorded}]]*/ 'No data recorded',
-        todayHourly: /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Averages",
-        hourlyAverages: /*[[#{statistics.hourlyAverages}]]*/ 'Hourly Averages',
+        dailyDataset: {
+            TEMPERATURE:
+            /*[[#{statistics.dataset.daily.TEMPERATURE}]]*/ 'Daily Average Temperature',
+
+            HUMIDITY:
+            /*[[#{statistics.dataset.daily.HUMIDITY}]]*/ 'Daily Average Humidity',
+
+            MOTION:
+            /*[[#{statistics.dataset.daily.MOTION}]]*/ 'Daily Motion Detections'
+        },
+
+        hourlyDataset: {
+            TEMPERATURE:
+            /*[[#{statistics.dataset.hourly.TEMPERATURE}]]*/ 'Hourly Average Temperature',
+
+            HUMIDITY:
+            /*[[#{statistics.dataset.hourly.HUMIDITY}]]*/ 'Hourly Average Humidity',
+
+            MOTION:
+            /*[[#{statistics.dataset.hourly.MOTION}]]*/ 'Hourly Motion Detections'
+        },
+
+        axis: {
+            TEMPERATURE:
+            /*[[#{statistics.axis.TEMPERATURE}]]*/ 'Temperature',
+
+            HUMIDITY:
+            /*[[#{statistics.axis.HUMIDITY}]]*/ 'Relative Humidity',
+
+            MOTION:
+            /*[[#{statistics.axis.MOTION}]]*/ 'Motion Detections'
+        },
+
+        tooltipAverage:
+        /*[[#{statistics.tooltipAverage}]]*/ 'Average',
+
+        tooltipDetections:
+        /*[[#{statistics.tooltipDetections}]]*/ 'Detections',
+
+        noDataRecorded:
+        /*[[#{statistics.noDataRecorded}]]*/ 'No data recorded',
+
+        todayHourly:
+        /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
+
+        hourlyStatistics:
+        /*[[#{statistics.hourlyStatistics}]]*/ 'Hourly Statistics',
+
+        hourAxis:
+        /*[[#{statistics.hourAxis}]]*/ 'Hour of the Day',
+
         days: [
             /*[[#{statistics.day.sunday}]]*/ 'Sunday',
             /*[[#{statistics.day.monday}]]*/ 'Monday',
@@ -243,7 +346,7 @@
         ]
     };
 
-    const darkTooltipConfig = {
+    const darkTooltip = {
         backgroundColor: 'rgba(17, 24, 39, 0.9)',
         titleColor: '#f3f4f6',
         bodyColor: '#d1d5db',
@@ -253,303 +356,448 @@
         boxPadding: 4
     };
 
-    // --- Weekly Bar Chart Logic ---
-    const weeklyData = /*[[${weeklyData}]]*/ [];
-    const labels = [];
-    const dataValues = [];
-    const dayNames = i18n.days;
+    function labelWithUnit(label) {
+        return measurementUnitSymbol
+            ? `${label} (${measurementUnitSymbol})`
+            : label;
+    }
+
+    function formatMetricValue(value) {
+        if (value === null || value === undefined) {
+            return i18n.noDataRecorded;
+        }
+
+        if (motionSensor) {
+            return `${i18n.tooltipDetections}: `
+                + Math.round(value);
+        }
+
+        return `${i18n.tooltipAverage}: `
+            + `${Number(value).toFixed(2)} `
+            + measurementUnitSymbol;
+    }
+
+    function createYAxis() {
+        const scale = {
+            beginAtZero: sensorType !== 'TEMPERATURE',
+
+            grid: {
+                color: 'rgba(55, 65, 81, 0.5)'
+            },
+
+            title: {
+                display: true,
+                text: labelWithUnit(
+                    i18n.axis[sensorType]
+                ),
+                color: '#9ca3af'
+            },
+
+            ticks: {
+                color: '#d1d5db'
+            }
+        };
+
+        if (sensorType === 'HUMIDITY') {
+            scale.min = 0;
+            scale.max = 100;
+        }
+
+        if (motionSensor) {
+            scale.ticks.precision = 0;
+        }
+
+        return scale;
+    }
+
+    /*
+     * Do not use new Date("YYYY-MM-DD"). Browsers parse that
+     * form as UTC, which can display the previous day in some
+     * local timezones.
+     */
+    function parseDateString(value) {
+        const [year, month, day] =
+            value.split('-').map(Number);
+
+        return new Date(year, month - 1, day);
+    }
+
+    function formatDateForApi(date) {
+        const year = date.getFullYear();
+
+        const month = String(
+            date.getMonth() + 1
+        ).padStart(2, '0');
+
+        const day = String(
+            date.getDate()
+        ).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+
+    const weeklyData =
+        /*[[${weeklyData}]]*/ [];
+
+    const weeklyLabels = [];
+    const weeklyValues = [];
 
     weeklyData.forEach(item => {
-        const dateObj = new Date(item.date);
-        const dayName = dayNames[dateObj.getDay()];
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        const formattedDate = `${day}-${month}-${year}`;
+        const date = parseDateString(item.date);
+        const dayName = i18n.days[date.getDay()];
 
-        labels.push([dayName, formattedDate]);
-        dataValues.push(item.averageTemperature);
+        const day = String(
+            date.getDate()
+        ).padStart(2, '0');
+
+        const month = String(
+            date.getMonth() + 1
+        ).padStart(2, '0');
+
+        const year = date.getFullYear();
+
+        weeklyLabels.push([
+            dayName,
+            `${day}-${month}-${year}`
+        ]);
+
+        weeklyValues.push(item.value);
     });
 
-    const ctx = document.getElementById('temperatureBarChart').getContext('2d');
-    new Chart(ctx, {
+    const weeklyContext = document
+        .getElementById('sensorWeeklyChart')
+        .getContext('2d');
+
+    new Chart(weeklyContext, {
         type: 'bar',
+
         data: {
-            labels: labels,
+            labels: weeklyLabels,
+
             datasets: [{
-                label: `${i18n.dailyAverageTemperature} (${temperatureUnitSymbol})`,
-                data: dataValues,
-                backgroundColor: (ctx) => {
-                    const lastIndex = dataValues.length - 1;
-                    return ctx.dataIndex === lastIndex
+                label: labelWithUnit(
+                    i18n.dailyDataset[sensorType]
+                ),
+
+                data: weeklyValues,
+
+                backgroundColor: context =>
+                    context.dataIndex
+                    === weeklyValues.length - 1
                         ? 'rgba(245, 158, 11, 0.85)'
-                        : 'rgba(59, 130, 246, 0.7)';
-                },
-                borderColor: (ctx) => {
-                    const lastIndex = dataValues.length - 1;
-                    return ctx.dataIndex === lastIndex
+                        : 'rgba(59, 130, 246, 0.7)',
+
+                borderColor: context =>
+                    context.dataIndex
+                    === weeklyValues.length - 1
                         ? 'rgba(245, 158, 11, 1)'
-                        : 'rgba(59, 130, 246, 1)';
-                },
+                        : 'rgba(59, 130, 246, 1)',
+
                 borderWidth: 1,
                 borderRadius: 4
             }]
         },
+
         options: {
             responsive: true,
+
             plugins: {
                 legend: {
                     display: true,
                     position: 'top',
-                    labels: { color: '#e5e7eb' }
-                },
-                tooltip: darkTooltipConfig
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(55, 65, 81, 0.5)' },
-                    title: {
-                        display: true,
-                        text: `${i18n.temperatureAxis} (${temperatureUnitSymbol})`,
-                        color: '#9ca3af'
-                    },
-                    ticks: { color: '#d1d5db' }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: {
-                        color: (context) => {
-                            const lastIndex = dataValues.length - 1;
-                            return context.index === lastIndex
-                                ? 'rgba(245, 158, 11, 1)'
-                                : '#9ca3af';
-                        },
-                        font: (context) => {
-                            const lastIndex = dataValues.length - 1;
-                            return {
-                                weight: context.index === lastIndex ? 'bold' : 'normal'
-                            };
-                        }
+
+                    labels: {
+                        color: '#e5e7eb'
                     }
-                }
-            }
-        }
-    });
-
-    // --- Hourly Line Chart Logic ---
-
-    // The server tells us its notion of "today" (Europe/Istanbul) so date-boundary
-    // checks don't depend on the visitor's own browser clock/timezone.
-    const todayStr = /*[[${today}]]*/ null;
-
-    function parseDateStr(str) {
-        const [y, m, d] = str.split('-').map(Number);
-        return new Date(y, m - 1, d); // local midnight representing that calendar date
-    }
-
-    function formatDateForApi(date) {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    const todayDate = parseDateStr(todayStr);
-    let currentDate = new Date(todayDate); // initial render is always "today"
-
-    const hourlyData = /*[[${hourlyData}]]*/ [];
-
-    function toLabelsAndValues(data) {
-        const labels = [];
-        const values = [];
-        data.forEach(item => {
-            labels.push(String(item.hour).padStart(2, '0') + ":00");
-            values.push(item.average);
-        });
-        return { labels, values };
-    }
-
-    const initialHourly = toLabelsAndValues(hourlyData);
-
-    const lineCtx = document.getElementById('temperatureLineChart').getContext('2d');
-    const lineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: initialHourly.labels,
-            datasets: [{
-                label: `${i18n.hourlyAverageTemperature} (${temperatureUnitSymbol})`,
-                data: initialHourly.values,
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                borderColor: 'rgba(6, 182, 212, 1)',
-                borderWidth: 2,
-                pointBackgroundColor: 'rgba(6, 182, 212, 1)',
-                pointBorderColor: '#1f2937',
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.3,
-                spanGaps: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: { color: '#e5e7eb' }
                 },
+
                 tooltip: {
-                    ...darkTooltipConfig,
+                    ...darkTooltip,
+
                     callbacks: {
-                        title: function (tooltipItems) {
-                            const currentHourStr = tooltipItems[0].label;
-                            const currentHour = parseInt(currentHourStr.split(':')[0], 10);
-                            const nextHour = (currentHour + 1) % 24;
-                            const nextHourStr = String(nextHour).padStart(2, '0') + ":00";
-                            return `${currentHourStr} - ${nextHourStr}`;
-                        },
-                        label: function (context) {
-                            let val = context.parsed.y;
-                            return val !== null
-                                ? `${i18n.tooltipAverage}: ${val.toFixed(2)} ${temperatureUnitSymbol}`
-                                : i18n.noDataRecorded;
-                        }
+                        label: context =>
+                            formatMetricValue(
+                                context.parsed.y
+                            )
                     }
                 }
             },
+
             scales: {
-                y: {
-                    grid: { color: 'rgba(55, 65, 81, 0.5)' },
-                    title: {
-                        display: true,
-                        text: `${i18n.temperatureAxis} (${temperatureUnitSymbol})`,
-                        color: '#9ca3af'
-                    },
-                    ticks: { color: '#d1d5db' }
-                },
+                y: createYAxis(),
+
                 x: {
-                    grid: { color: 'rgba(55, 65, 81, 0.2)' },
-                    title: {
-                        display: true,
-                        text: i18n.hourAxis,
-                        color: '#9ca3af'
+                    grid: {
+                        display: false
                     },
-                    ticks: { color: '#d1d5db' }
+
+                    ticks: {
+                        color: context =>
+                            context.index
+                            === weeklyValues.length - 1
+                                ? 'rgba(245, 158, 11, 1)'
+                                : '#9ca3af'
+                    }
                 }
             }
         }
     });
 
-    // --- Date navigation (prev/next day) ---
+    function toHourlyChartData(data) {
+        return {
+            labels: data.map(item =>
+                `${String(item.hour)
+                    .padStart(2, '0')}:00`
+            ),
 
-    const hourlyChartTitleEl = document.getElementById('hourlyChartTitle');
-    const slideWrapperEl = document.querySelector('.chart-slide-wrapper');
-    const prevDayBtn = document.getElementById('prevDayBtn');
-    const nextDayBtn = document.getElementById('nextDayBtn');
+            values: data.map(item => item.value)
+        };
+    }
+
+    const initialHourlyData =
+        toHourlyChartData(
+            /*[[${hourlyData}]]*/ []
+        );
+
+    const hourlyContext = document
+        .getElementById('sensorHourlyChart')
+        .getContext('2d');
+
+    const hourlyChart = new Chart(
+        hourlyContext,
+        {
+            type: motionSensor ? 'bar' : 'line',
+
+            data: {
+                labels: initialHourlyData.labels,
+
+                datasets: [{
+                    label: labelWithUnit(
+                        i18n.hourlyDataset[sensorType]
+                    ),
+
+                    data: initialHourlyData.values,
+
+                    backgroundColor:
+                        'rgba(6, 182, 212, 0.20)',
+
+                    borderColor:
+                        'rgba(6, 182, 212, 1)',
+
+                    borderWidth: 2,
+                    pointRadius: motionSensor ? 0 : 4,
+                    pointHoverRadius:
+                        motionSensor ? 0 : 6,
+
+                    fill: !motionSensor,
+                    tension: 0.3,
+                    spanGaps: false
+                }]
+            },
+
+            options: {
+                responsive: true,
+
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+
+                        labels: {
+                            color: '#e5e7eb'
+                        }
+                    },
+
+                    tooltip: {
+                        ...darkTooltip,
+
+                        callbacks: {
+                            title: tooltipItems => {
+                                const currentHour =
+                                    Number.parseInt(
+                                        tooltipItems[0]
+                                            .label
+                                            .split(':')[0],
+                                        10
+                                    );
+
+                                const nextHour =
+                                    String(
+                                        (currentHour + 1) % 24
+                                    ).padStart(2, '0');
+
+                                return `${tooltipItems[0].label}`
+                                    + ` - ${nextHour}:00`;
+                            },
+
+                            label: context =>
+                                formatMetricValue(
+                                    context.parsed.y
+                                )
+                        }
+                    }
+                },
+
+                scales: {
+                    y: createYAxis(),
+
+                    x: {
+                        grid: {
+                            color:
+                                'rgba(55, 65, 81, 0.2)'
+                        },
+
+                        title: {
+                            display: true,
+                            text: i18n.hourAxis,
+                            color: '#9ca3af'
+                        },
+
+                        ticks: {
+                            color: '#d1d5db'
+                        }
+                    }
+                }
+            }
+        }
+    );
+
+    const todayDate = parseDateString(
+        /*[[${today}]]*/ '2026-07-14'
+    );
+
+    let currentDate = new Date(todayDate);
+
+    const hourlyChartTitle = document
+        .getElementById('hourlyChartTitle');
+
+    const previousDayButton = document
+        .getElementById('prevDayBtn');
+
+    const nextDayButton = document
+        .getElementById('nextDayBtn');
 
     function updateChartTitle(date) {
-        const selectedSensorName = /*[[${selectedSensorName}]]*/ null;
-        const prefix = selectedSensorName !== null ? `${selectedSensorName} - ` : '';
+        if (formatDateForApi(date)
+            === formatDateForApi(todayDate)) {
+            hourlyChartTitle.textContent =
+                `${selectedSensorName} — `
+                + i18n.todayHourly;
 
-        if (formatDateForApi(date) === formatDateForApi(todayDate)) {
-            hourlyChartTitleEl.textContent = `${prefix}${i18n.todayHourly}`;
             return;
         }
 
-        const dayName = dayNames[date.getDay()];
-        const dd = String(date.getDate()).padStart(2, '0');
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const yyyy = date.getFullYear();
-        hourlyChartTitleEl.textContent = `${prefix}${dayName}, ${dd}-${mm}-${yyyy} - ${i18n.hourlyAverages}`;
+        const dayName =
+            i18n.days[date.getDay()];
+
+        const day = String(
+            date.getDate()
+        ).padStart(2, '0');
+
+        const month = String(
+            date.getMonth() + 1
+        ).padStart(2, '0');
+
+        hourlyChartTitle.textContent =
+            `${selectedSensorName} — `
+            + `${dayName}, `
+            + `${day}-${month}-${date.getFullYear()} — `
+            + i18n.hourlyStatistics;
     }
 
-    function updateNavButtonsAvailability() {
-        // Can't navigate into the future relative to the server's "today".
-        nextDayBtn.disabled = formatDateForApi(currentDate) >= formatDateForApi(todayDate);
+    function updateNavigationState(loading = false) {
+        previousDayButton.disabled = loading;
+
+        nextDayButton.disabled =
+            loading
+            || formatDateForApi(currentDate)
+            >= formatDateForApi(todayDate);
     }
 
-    function setNavButtonsDisabled(disabled) {
-        prevDayBtn.disabled = disabled;
-        nextDayBtn.disabled = disabled || formatDateForApi(currentDate) >= formatDateForApi(todayDate);
-    }
-
-    async function fetchHourlyDataForDate(date) {
-        const sensorId = /*[[${selectedSensorId}]]*/ null;
-
-        if (sensorId === null) {
-            return [];
-        }
-
-        const params = new URLSearchParams({
-            date: formatDateForApi(date),
-            sensorId: sensorId
+    async function fetchHourlyData(date) {
+        const parameters = new URLSearchParams({
+            date: formatDateForApi(date)
         });
 
-        const response = await fetch(`/api/statistics/hourly?${params.toString()}`);
+        const response = await fetch(
+            `/api/sensors/${
+                encodeURIComponent(selectedSensorId)
+            }/statistics/hourly?${
+                parameters.toString()
+            }`
+        );
 
         if (!response.ok) {
-            throw new Error(`Failed to load hourly data (status ${response.status})`);
+            throw new Error(
+                `Failed to load hourly statistics `
+                + `(HTTP ${response.status})`
+            );
         }
 
         return response.json();
     }
 
     function applyHourlyData(data, date) {
-        const { labels, values } = toLabelsAndValues(data);
-        lineChart.data.labels = labels;
-        lineChart.data.datasets[0].data = values;
-        lineChart.update();
+        const chartData =
+            toHourlyChartData(data);
+
+        hourlyChart.data.labels =
+            chartData.labels;
+
+        hourlyChart.data.datasets[0].data =
+            chartData.values;
+
+        hourlyChart.update();
         updateChartTitle(date);
     }
 
-    // Slides the chart out, swaps in new data while hidden, then slides it back in.
-    function navigateDate(direction) {
-        if (prevDayBtn.disabled && nextDayBtn.disabled) return;
-        if (direction === 'next' && nextDayBtn.disabled) return;
+    async function navigateDate(direction) {
+        if (direction === 'next'
+            && nextDayButton.disabled) {
+            return;
+        }
 
-        const targetDate = new Date(currentDate);
-        targetDate.setDate(targetDate.getDate() + (direction === 'next' ? 1 : -1));
+        const targetDate =
+            new Date(currentDate);
 
-        setNavButtonsDisabled(true);
+        targetDate.setDate(
+            targetDate.getDate()
+            + (direction === 'next' ? 1 : -1)
+        );
 
-        const exitOffset = direction === 'next' ? '-28px' : '28px';
-        const enterOffset = direction === 'next' ? '28px' : '-28px';
+        updateNavigationState(true);
 
-        slideWrapperEl.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-        slideWrapperEl.style.transform = `translateX(${exitOffset})`;
-        slideWrapperEl.style.opacity = '0';
+        try {
+            const data =
+                await fetchHourlyData(targetDate);
 
-        setTimeout(async () => {
-            try {
-                const data = await fetchHourlyDataForDate(targetDate);
-                currentDate = targetDate;
-                applyHourlyData(data, currentDate);
-            } catch (err) {
-                console.error(err);
-            }
+            currentDate = targetDate;
 
-            // Position the (now updated) chart on the entry side with no transition...
-            slideWrapperEl.style.transition = 'none';
-            slideWrapperEl.style.transform = `translateX(${enterOffset})`;
-
-            // ...then let the browser paint that position before animating back to center.
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    slideWrapperEl.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-                    slideWrapperEl.style.transform = 'translateX(0)';
-                    slideWrapperEl.style.opacity = '1';
-                });
-            });
-
-            setNavButtonsDisabled(false);
-        }, 250);
+            applyHourlyData(
+                data,
+                currentDate
+            );
+        } catch (error) {
+            console.error(error);
+        } finally {
+            updateNavigationState(false);
+        }
     }
 
-    updateNavButtonsAvailability();
+    previousDayButton.addEventListener(
+        'click',
+        () => navigateDate('previous')
+    );
+
+    nextDayButton.addEventListener(
+        'click',
+        () => navigateDate('next')
+    );
+
+    updateNavigationState();
 
     /*]]>*/
 </script>
+
 </body>
 </html>
