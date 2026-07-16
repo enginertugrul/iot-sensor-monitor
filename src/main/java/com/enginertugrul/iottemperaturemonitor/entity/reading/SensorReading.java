@@ -1,6 +1,7 @@
 package com.enginertugrul.iottemperaturemonitor.entity.reading;
 
 import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
+import com.enginertugrul.iottemperaturemonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import jakarta.persistence.*;
@@ -18,9 +19,6 @@ import java.util.Objects;
 public class SensorReading {
 
 
-    private static final double ABSOLUTE_ZERO_CELSIUS = -273.15;
-    private static final double MIN_HUMIDITY_PERCENT = 0.0;
-    private static final double MAX_HUMIDITY_PERCENT = 100.0;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -97,16 +95,14 @@ public class SensorReading {
         requireSensorType(sensor, SensorType.TEMPERATURE);
         DomainChecks.requireFiniteDouble(celsiusValue, "celsiusValue");
 
-        if (celsiusValue < ABSOLUTE_ZERO_CELSIUS) {
-            throw new IllegalArgumentException(
-                    "celsiusValue cannot be below absolute zero"
-            );
-        }
+        double validValue = SensorMeasurementPolicy.requireValidNumericValue(sensor.getType(),
+                celsiusValue,
+                "celsiusValue");
 
         return new SensorReading(
                 sensor,
-                celsiusValue,
-                MeasurementUnit.C,
+                validValue,
+                SensorMeasurementPolicy.requireCanonicalUnit(sensor.getType()),
                 recordedAt
         );
     }
@@ -119,17 +115,14 @@ public class SensorReading {
         requireSensorType(sensor, SensorType.HUMIDITY);
         DomainChecks.requireFiniteDouble(humidityPercentage, "humidityPercentage");
 
-        if (humidityPercentage < MIN_HUMIDITY_PERCENT
-                || humidityPercentage > MAX_HUMIDITY_PERCENT) {
-            throw new IllegalArgumentException(
-                    "humidityPercentage must be between 0 and 100"
-            );
-        }
+        double validValue = SensorMeasurementPolicy.requireValidNumericValue(sensor.getType(),
+                humidityPercentage,
+                "humidityPercentage");
 
         return new SensorReading(
                 sensor,
-                humidityPercentage,
-                MeasurementUnit.PERCENT,
+                validValue,
+                SensorMeasurementPolicy.requireCanonicalUnit(sensor.getType()),
                 recordedAt
         );
     }
@@ -149,8 +142,12 @@ public class SensorReading {
     }
 
     private static void requireSensorType(Sensor sensor, SensorType expectedType) {
-        if (sensor == null || sensor.getType() != expectedType) {
+
+        Objects.requireNonNull(sensor, "sensor must not be null");
+
+        if (sensor.getType() != expectedType) {
             throw new IllegalArgumentException("sensor type must be " + expectedType);
         }
     }
+
 }
