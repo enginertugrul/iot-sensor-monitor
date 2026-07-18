@@ -1,72 +1,49 @@
-:root {
-    --bg-gradient-start: #111827;
-    --bg-gradient-end: #1f2937;
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
-
-    --table-bg: #1f2937;
-    --border-color: #374151;
-    --header-bg: #111827;
-    --header-text: #e5e7eb;
-    --row-hover: #374151;
-
-    --temp-color: #f87171;
-    --button-bg: #3b82f6;
-    --button-hover: #2563eb;
-    --button-text: #ffffff;
-}
-
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-    min-height: 100vh;
-    color: var(--text-main);
-    margin: 0;
-    padding: 3rem 1rem;
+    padding: var(--space-12) var(--space-4);
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 h1 {
-    font-size: 2rem;
-    color: var(--text-main);
-    margin-bottom: 1.5rem;
-    font-weight: 600;
+    margin-bottom: var(--space-6);
+    color: var(--color-text);
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-semibold);
     letter-spacing: 0.02em;
 }
 
 .nav-button {
     display: inline-block;
-    background-color: var(--button-bg);
-    color: var(--button-text);
-    padding: 0.75rem 1.5rem;
+    margin-bottom: var(--space-8);
     border: none;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    margin-bottom: 2rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
     cursor: pointer;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    font-size: 0.95rem;
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-3) var(--space-6);
+    text-decoration: none;
+    box-shadow: var(--shadow-md);
+    transition: background-color var(--transition-normal), color var(--transition-normal), transform var(--transition-normal);
 }
 
 .nav-button:hover {
-    background-color: var(--button-hover);
-    transform: translateY(-1px);
+    background-color: var(--color-primary-hover);
+    color: var(--color-on-primary);
     text-decoration: none;
-    color: var(--button-text);
+    transform: translateY(-1px);
 }
 
 .table-wrapper {
     width: 100%;
-    max-width: 900px;
-    background-color: var(--table-bg);
-    border-radius: 10px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
+    max-width: var(--content-width-dashboard);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
     overflow: hidden;
+    box-shadow: var(--shadow-lg);
 }
 
 table {
@@ -76,28 +53,28 @@ table {
 }
 
 thead {
-    background-color: var(--header-bg);
-    color: var(--header-text);
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--color-border);
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-soft);
 }
 
 th {
-    padding: 1rem 1.5rem;
-    font-weight: 600;
-    text-transform: uppercase;
+    padding: var(--space-4) var(--space-6);
     font-size: 0.85rem;
+    font-weight: var(--font-weight-semibold);
     letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 td {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
     vertical-align: middle;
-    color: var(--text-main);
 }
 
 tbody tr {
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-normal);
 }
 
 tbody tr:last-of-type td {
@@ -105,76 +82,76 @@ tbody tr:last-of-type td {
 }
 
 tbody tr:hover {
-    background-color: var(--row-hover);
+    background-color: var(--color-surface-hover);
 }
 
 .reading-value {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
 }
 
 .reading-temperature {
-    color: #f87171;
+    color: var(--color-danger);
 }
 
 .reading-humidity {
-    color: #22d3ee;
+    color: var(--color-info);
 }
 
 .motion-state {
     display: inline-block;
-    padding: 0.25rem 0.65rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 0.9rem;
+    padding: var(--space-1) 0.65rem;
 }
 
 .motion-detected {
-    color: #fef3c7;
-    background-color: rgba(245, 158, 11, 0.22);
+    background-color: var(--color-warning-surface);
+    color: var(--color-warning-text);
 }
 
 .motion-clear {
-    color: #bbf7d0;
-    background-color: rgba(34, 197, 94, 0.18);
+    background-color: var(--color-success-surface);
+    color: var(--color-success-text);
 }
 
 .empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-muted);
+    padding: var(--space-12);
+    color: var(--color-text-muted);
     font-style: italic;
+    text-align: center;
 }
 
 .dashboard-actions {
     display: flex;
-    gap: 1rem;
+    margin-bottom: var(--space-6);
     flex-wrap: wrap;
+    gap: var(--space-4);
     justify-content: center;
-    margin-bottom: 1.5rem;
 }
 
 .sensor-selector {
-    width: 100%;
-    max-width: 900px;
-    margin-bottom: 1.5rem;
     display: flex;
+    width: 100%;
+    max-width: var(--content-width-dashboard);
+    margin-bottom: var(--space-6);
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
 .sensor-selector label {
-    color: var(--text-muted);
-    font-weight: 600;
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-semibold);
 }
 
 .sensor-selector select {
     flex: 1;
-    background-color: var(--table-bg);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
     font-size: 0.95rem;
+    padding: var(--space-3) var(--space-4);
 }
 
 .nav-button.disabled {

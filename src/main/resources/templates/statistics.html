@@ -2,11 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
-    <title th:text="#{statistics.title}">
-        Sensor Statistics
-    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{statistics.title}"> Sensor Statistics </title>
     <script th:src="@{/js/vendor/chart.umd.min.js}"></script>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/pages/statistics.css}">
 
 </head>
