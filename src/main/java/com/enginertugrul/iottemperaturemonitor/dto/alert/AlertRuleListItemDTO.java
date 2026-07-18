@@ -15,7 +15,6 @@ public record AlertRuleListItemDTO(
         ComparisonOperator comparisonOperator,
         AlertEventType eventType,
         Double thresholdValue,
-        String thresholdUnitSymbol,
         Integer cooldownMinutes,
         boolean enabled
 ) {

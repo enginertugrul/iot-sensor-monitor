@@ -1,7 +1,10 @@
 package com.enginertugrul.iottemperaturemonitor.entity.alert;
 
-import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
+import com.enginertugrul.iottemperaturemonitor.entity.measurement.SensorMeasurementPolicy;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
+import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -41,8 +44,9 @@ public class AlertRule {
     @Column(name = "threshold_value")
     private Double thresholdValue;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "threshold_unit", length = 25)
-    private String thresholdUnit;
+    private MeasurementUnit thresholdUnit;
 
     @Enumerated(EnumType.STRING)
     @Column( name = "event_type" , length = 40)
@@ -64,72 +68,90 @@ public class AlertRule {
     private Instant lastTriggeredAt;
 
 
-    private AlertRule(
-            AppUser owner,
-            Sensor sensor,
-            AlertRuleType ruleType,
-            ComparisonOperator comparisonOperator,
-            Double thresholdValue,
-            String thresholdUnit,
-            AlertEventType eventType,
-            Integer cooldownMinutes
-    ) {
-        this.owner = Objects.requireNonNull(owner, "owner must not be null");
+    private AlertRule(Sensor sensor,int cooldownMinutes) {
+
         this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
-        this.ruleType = Objects.requireNonNull(ruleType, "ruleType must not be null");
-        this.comparisonOperator = comparisonOperator;
-        this.thresholdValue = thresholdValue;
-        this.thresholdUnit = thresholdUnit;
-        this.eventType = eventType;
-        this.cooldownMinutes = DomainChecks.requireIntegerBetween(cooldownMinutes,
-                AlertCooldownPolicy.MIN_MINUTES,
-                AlertCooldownPolicy.MAX_MINUTES,
-                "cooldownMinutes");
-
-        validateRuleShape();
-
+        this.owner = Objects.requireNonNull(sensor.getOwner(), "sensor owner must not be null");
+        this.cooldownMinutes = cooldownMinutes;
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    public static AlertRule numericThreshold(
-            AppUser owner,
-            Sensor sensor,
-            ComparisonOperator comparisonOperator,
-            Double thresholdValue,
-            String thresholdUnit,
-            Integer cooldownMinutes
-    ) {
+
+    private AlertRule(Sensor sensor, AlertEventType eventType, int cooldownMinutes) {
+
+        this(sensor, cooldownMinutes);
+        this.ruleType = AlertRuleType.EVENT_DETECTED;
+        this.eventType = Objects.requireNonNull(eventType, "eventType must not be null");
+    }
+
+
+    private AlertRule(Sensor sensor, ComparisonOperator comparisonOperator, double thresholdValue, MeasurementUnit thresholdUnit, int cooldownMinutes) {
+
+        this(sensor, cooldownMinutes);
+        this.ruleType = AlertRuleType.NUMERIC_THRESHOLD;
+        this.comparisonOperator = Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null");
+        this.thresholdValue = thresholdValue;
+        this.thresholdUnit = Objects.requireNonNull(thresholdUnit, "thresholdUnit must not be null");
+    }
+
+
+
+
+    public static AlertRule numericThreshold(Sensor sensor, ComparisonOperator comparisonOperator, Double canonicalThresholdValue, Integer cooldownMinutes) {
+
+        Sensor requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
+
+        double validThreshold = SensorMeasurementPolicy.requireValidNumericValue(
+                requiredSensor.getType(),
+                                canonicalThresholdValue,
+                                "canonicalThresholdValue");
+
         return new AlertRule(
-                owner,
-                sensor,
-                AlertRuleType.NUMERIC_THRESHOLD,
+                requiredSensor,
                 Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null"),
-                DomainChecks.requireFiniteDouble(thresholdValue, "thresholdValue"),
-                DomainChecks.requireText(thresholdUnit, "thresholdUnit"),
-                null,
-                cooldownMinutes
+                validThreshold,
+                SensorMeasurementPolicy.requireCanonicalUnit(requiredSensor.getType()),
+                AlertCooldownPolicy.requireValid(cooldownMinutes)
         );
     }
 
-    public static AlertRule eventDetected(
-            AppUser owner,
-            Sensor sensor,
-            AlertEventType eventType,
-            Integer cooldownMinutes
-    ) {
-        return new AlertRule(
-                owner,
-                sensor,
-                AlertRuleType.EVENT_DETECTED,
-                null,
-                null,
-                null,
-                Objects.requireNonNull(eventType, "eventType must not be null"),
-                cooldownMinutes
+
+    public static AlertRule motionDetected(Sensor sensor, Integer cooldownMinutes) {
+
+        Sensor requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
+
+        if(requiredSensor.getType() != SensorType.MOTION) {
+            throw new IllegalArgumentException("Motion rules require a motion sensor type");
+        }
+
+        return new AlertRule( requiredSensor,
+                AlertEventType.MOTION_DETECTED,
+                AlertCooldownPolicy.requireValid(cooldownMinutes)
         );
+
     }
+
+
+
+    public boolean isTriggeredBy(SensorReading reading) {
+
+        SensorReading requiredReading = Objects.requireNonNull(reading,"sensorReading must not be null");
+
+        if(!belongsToSameSensor(requiredReading)) {
+            return false;
+        }
+
+        return switch (ruleType) {
+            case NUMERIC_THRESHOLD -> matchesNumericReading(requiredReading);
+            case EVENT_DETECTED ->  matchesEventReading(requiredReading);
+        };
+
+    }
+
+
+
 
     public void enable() {
         this.enabled = true;
@@ -141,34 +163,7 @@ public class AlertRule {
         this.updatedAt = Instant.now();
     }
 
-    @PrePersist
-    void prePersist() {
-        Instant now = Instant.now();
 
-        if (createdAt == null) {
-            createdAt = now;
-        }
-
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
-    }
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = Instant.now();
-    }
-
-    private void validateRuleShape() {
-        if (ruleType == AlertRuleType.NUMERIC_THRESHOLD) {
-            requireNumericThresholdShape();
-            return;
-        }
-
-        if (ruleType == AlertRuleType.EVENT_DETECTED) {
-            requireEventDetectedShape();
-        }
-    }
 
 
     public boolean isCooldownActiveAt(Instant checkedAt) {
@@ -195,14 +190,102 @@ public class AlertRule {
 
 
 
-
-    private void requireNumericThresholdShape() {
-        if (comparisonOperator == null) {
-            throw new IllegalArgumentException("comparisonOperator must not be null for numeric threshold rules");
+    private boolean belongsToSameSensor(SensorReading reading) {
+        Sensor readingSensor = Objects.requireNonNull(reading.getSensor(), "reading sensor must not be null");
+        if (sensor == readingSensor) {
+            return true;
         }
 
-        DomainChecks.requireFiniteDouble(thresholdValue, "thresholdValue");
-        thresholdUnit = DomainChecks.requireText(thresholdUnit, "thresholdUnit");
+        Long ruleSensorId = sensor.getId();
+        Long readingSensorId = readingSensor.getId();
+
+        return ruleSensorId.equals(readingSensorId);
+    }
+
+
+    private boolean matchesNumericReading(SensorReading reading) {
+        return reading.getNumericValue() != null
+                && reading.getBooleanValue() == null
+                && reading.getUnit() == thresholdUnit
+                && comparisonOperator.matches(
+                reading.getNumericValue(),
+                thresholdValue
+        );
+    }
+
+
+    private boolean matchesEventReading(SensorReading reading) {
+
+        return switch (eventType) {
+            case MOTION_DETECTED ->
+                    reading.getNumericValue() == null
+                            && reading.getUnit() == null
+                            && Boolean.TRUE.equals(
+                            reading.getBooleanValue()
+                    );
+        };
+    }
+
+
+
+
+    @PrePersist
+    void prePersist() {
+        Instant now = Instant.now();
+
+        validateRuleShape();
+
+        if (createdAt == null) {
+            createdAt = now;
+        }
+
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        validateRuleShape();
+        updatedAt = Instant.now();
+    }
+
+
+
+    private void validateRuleShape() {
+
+        Objects.requireNonNull(owner, "owner must not be null");
+        Objects.requireNonNull(sensor, "sensor must not be null");
+
+        requireOwnerMatchesSensor();
+
+        cooldownMinutes = AlertCooldownPolicy.requireValid(cooldownMinutes);
+
+        switch (Objects.requireNonNull(ruleType,"ruleType must not be null")) {
+            case NUMERIC_THRESHOLD -> requireNumericThresholdShape();
+            case EVENT_DETECTED -> requireEventDetectedShape();
+        }
+    }
+
+
+
+
+
+
+
+    private void requireNumericThresholdShape() {
+
+        Objects.requireNonNull(comparisonOperator,"comparisonOperator must not be null for numeric thresholds");
+
+        thresholdValue = SensorMeasurementPolicy.requireValidNumericValue(sensor.getType(),
+                thresholdValue,
+                "thresholdValue");
+
+        MeasurementUnit expectedUnit = SensorMeasurementPolicy.requireCanonicalUnit(sensor.getType());
+
+        if(thresholdUnit != expectedUnit) {
+            throw new IllegalArgumentException("Threshold unit does not match sensor type");
+        }
 
         if (eventType != null) {
             throw new IllegalArgumentException("eventType must be null for numeric threshold rules");
@@ -210,12 +293,33 @@ public class AlertRule {
     }
 
     private void requireEventDetectedShape() {
-        if (eventType == null) {
-            throw new IllegalArgumentException("eventType must not be null for event detected rules");
+
+        if (sensor.getType() != SensorType.MOTION) {
+            throw new IllegalArgumentException("Event rules require a motion sensor");
+        }
+
+        if (eventType != AlertEventType.MOTION_DETECTED) {
+            throw new IllegalArgumentException("Motion rules require MOTION_DETECTED");
         }
 
         if (comparisonOperator != null || thresholdValue != null || thresholdUnit != null) {
-            throw new IllegalArgumentException("threshold fields must be null for event detected rules");
+            throw new IllegalArgumentException("Threshold fields must be null for event rules");
+        }
+
+    }
+
+    private void requireOwnerMatchesSensor() {
+        AppUser sensorOwner = Objects.requireNonNull(sensor.getOwner(), "sensor owner must not be null");
+
+        if (owner == sensorOwner) {
+            return;
+        }
+
+        Long ownerId = owner.getId();
+        Long sensorOwnerId = sensorOwner.getId();
+
+        if (ownerId == null || !ownerId.equals(sensorOwnerId)) {
+            throw new IllegalArgumentException("Alert rule owner must own the sensor");
         }
     }
 

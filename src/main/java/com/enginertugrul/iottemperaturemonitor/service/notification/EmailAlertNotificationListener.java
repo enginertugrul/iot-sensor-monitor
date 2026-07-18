@@ -22,7 +22,7 @@ public class EmailAlertNotificationListener {
         try {
             emailAlertNotificationSender.send(event);
         } catch (MailException ex) {
-            logger.error("Failed to send alert email. alertRuleId={}", event.alertRuleId(), ex);
+            logger.error("Failed to send alert email. alertRuleId={}", event.context().alertRuleId(), ex);
         }
     }
 }

@@ -1,10 +1,8 @@
 package com.enginertugrul.iottemperaturemonitor.service.alert;
 
-import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
-
-import java.time.Instant;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 
 public interface AlertEvaluationService {
 
-    void evaluateTemperatureReading(Sensor sensor, Double celsiusValue, Instant recordedAt);
+    void evaluateReading(SensorReading reading);
 }
