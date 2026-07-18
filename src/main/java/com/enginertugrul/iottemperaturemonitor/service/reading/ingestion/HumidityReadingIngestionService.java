@@ -5,6 +5,7 @@ import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.exception.InvalidSensorReadingException;
 import com.enginertugrul.iottemperaturemonitor.repository.SensorReadingRepository;
+import com.enginertugrul.iottemperaturemonitor.service.alert.AlertEvaluationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,13 +16,13 @@ public class HumidityReadingIngestionService {
 
     private final SensorIngestionAccessService sensorIngestionAccessService;
     private final SensorReadingRepository readingRepository;
+    private final AlertEvaluationService alertEvaluationService;
 
-    public HumidityReadingIngestionService(
-            SensorIngestionAccessService sensorIngestionAccessService,
-            SensorReadingRepository readingRepository
-    ) {
+
+    public HumidityReadingIngestionService(SensorIngestionAccessService sensorIngestionAccessService, SensorReadingRepository readingRepository, AlertEvaluationService alertEvaluationService) {
         this.sensorIngestionAccessService = sensorIngestionAccessService;
         this.readingRepository = readingRepository;
+        this.alertEvaluationService = alertEvaluationService;
     }
 
     @Transactional
@@ -52,5 +53,6 @@ public class HumidityReadingIngestionService {
 
         sensor.markSeen(recordedAt);
         readingRepository.save(reading);
+        alertEvaluationService.evaluateReading(reading);
     }
 }

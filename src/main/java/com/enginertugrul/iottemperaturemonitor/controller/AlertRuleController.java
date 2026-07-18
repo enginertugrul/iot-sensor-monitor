@@ -1,9 +1,11 @@
 package com.enginertugrul.iottemperaturemonitor.controller;
 
 
-import com.enginertugrul.iottemperaturemonitor.dto.alert.AlertRuleForm;
+import com.enginertugrul.iottemperaturemonitor.dto.alert.MotionEventAlertRuleForm;
+import com.enginertugrul.iottemperaturemonitor.dto.alert.NumericThresholdAlertRuleForm;
 import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorListItemDTO;
 import com.enginertugrul.iottemperaturemonitor.entity.alert.ComparisonOperator;
+import com.enginertugrul.iottemperaturemonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Controller
 @RequestMapping("/user/alert-rules")
@@ -40,30 +43,30 @@ public class AlertRuleController {
 
 
 
+
+
+
     @GetMapping
     public String getAlertRulesPage(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
-        Long ownerId = user.getAppUserId();
 
-        if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new AlertRuleForm());
-        }
+        addPageData(model,user.getAppUserId());
 
-        addPageData(model,ownerId);
         return "alert-rules";
     }
 
 
 
-    @PostMapping
-    public String createAlertRuleForm(@AuthenticationPrincipal AuthenticatedUser user,
-                                      @Valid @ModelAttribute("form") AlertRuleForm form,
-                                      BindingResult bindingResult,
-                                      Model model,
-                                      RedirectAttributes redirectAttributes) {
+
+
+    @PostMapping("/numeric-threshold")
+    public String createNumericThresholdRule(@AuthenticationPrincipal AuthenticatedUser user,
+                                             @Valid @ModelAttribute("numericForm") NumericThresholdAlertRuleForm form,
+                                             BindingResult bindingResult,
+                                             Model model,
+                                             RedirectAttributes redirectAttributes) {
 
         Long ownerId = user.getAppUserId();
-
-        if (bindingResult.hasErrors()) {
+        if(bindingResult.hasErrors()){
             addPageData(model,ownerId);
             return "alert-rules";
         }
@@ -71,17 +74,52 @@ public class AlertRuleController {
         TemperatureUnit preferredTemperatureUnit = appUserService.getPreferredTemperatureUnit(ownerId);
 
         try {
-            alertRuleService.createTemperatureThresholdRule(ownerId, form, preferredTemperatureUnit);
-        } catch (IllegalArgumentException ex) {
-            bindingResult.reject("alertRules.invalid", ex.getMessage());
+            alertRuleService.createNumericThresholdRule(ownerId, form, preferredTemperatureUnit);
+        } catch (IllegalArgumentException | NoSuchElementException e) {
+            bindingResult.reject("alertRules.invalid");
             addPageData(model,ownerId);
             return "alert-rules";
         }
 
-        redirectAttributes.addFlashAttribute("alertRuleCreated", true);
+        redirectAttributes.addFlashAttribute("alertRuleCreated",true);
+
         return "redirect:/user/alert-rules";
 
     }
+
+
+
+
+    @PostMapping("/motion-detected")
+    public String createMotionDetectedRule(@AuthenticationPrincipal AuthenticatedUser user,
+                                           @Valid @ModelAttribute("motionForm") MotionEventAlertRuleForm form,
+                                           BindingResult bindingResult,
+                                           Model model,
+                                           RedirectAttributes redirectAttributes) {
+
+        Long ownerId = user.getAppUserId();
+
+        if(bindingResult.hasErrors()){
+            addPageData(model,ownerId);
+            return "alert-rules";
+        }
+
+        try {
+            alertRuleService.createMotionDetectedRule(ownerId, form);
+
+        }catch (IllegalArgumentException | NoSuchElementException e){
+
+            bindingResult.reject("alertRules.invalid");
+            addPageData(model,ownerId);
+            return "alert-rules";
+        }
+
+        redirectAttributes.addFlashAttribute("alertRuleCreated",true);
+        return "redirect:/user/alert-rules";
+
+    }
+
+
 
 
     @PostMapping("/{alertRuleId}/enable")
@@ -96,6 +134,8 @@ public class AlertRuleController {
         return "redirect:/user/alert-rules";
 
     }
+
+
 
 
     @PostMapping("/{alertRuleId}/disable")
@@ -136,14 +176,35 @@ public class AlertRuleController {
 
 
     private void addPageData(Model model, Long ownerId) {
+
+        if (!model.containsAttribute("numericForm")) {
+            model.addAttribute("numericForm",
+                    new NumericThresholdAlertRuleForm());
+        }
+
+        if (!model.containsAttribute("motionForm")) {
+            model.addAttribute("motionForm",
+                    new MotionEventAlertRuleForm());
+        }
+
+
+
+
         TemperatureUnit preferredTemperatureUnit = appUserService.getPreferredTemperatureUnit(ownerId);
 
-        List<SensorListItemDTO> temperatureSensors = sensorService.getSensorsForUser(ownerId)
-                .stream()
-                .filter(sensor -> sensor.type() == SensorType.TEMPERATURE)
-                .toList();
+        List<SensorListItemDTO> sensors = sensorService.getSensorsForUser(ownerId);
 
-        model.addAttribute("sensors", temperatureSensors);
+        model.addAttribute(
+                "numericSensors",
+                sensors.stream()
+                        .filter(sensor -> SensorMeasurementPolicy.supportsNumericMeasurements(sensor.type())
+                        ).toList());
+
+        model.addAttribute("motionSensors",
+                sensors.stream()
+                        .filter(sensor -> sensor.type() == SensorType.MOTION)
+                        .toList());
+
         model.addAttribute("comparisonOperators", ComparisonOperator.values());
         model.addAttribute("alertRules", alertRuleService.getAlertRulesForUser(ownerId, preferredTemperatureUnit));
         model.addAttribute("temperatureUnitSymbol", temperatureUnitConverter.getSymbol(preferredTemperatureUnit));

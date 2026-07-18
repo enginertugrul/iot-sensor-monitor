@@ -1,6 +1,5 @@
 package com.enginertugrul.iottemperaturemonitor.entity.reading;
 
-import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
 import com.enginertugrul.iottemperaturemonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
@@ -45,22 +44,13 @@ public class SensorReading {
             Sensor sensor,
             double numericValue,
             MeasurementUnit unit,
-            Instant recordedAt
-    ) {
-        this.sensor = Objects.requireNonNull(
-                sensor,
-                "sensor must not be null"
-        );
+            Instant recordedAt) {
 
-        this.unit = Objects.requireNonNull(
-                unit,
-                "unit must not be null for numeric readings"
-        );
+        this.sensor = Objects.requireNonNull(sensor,"sensor must not be null");
 
-        this.recordedAt = Objects.requireNonNull(
-                recordedAt,
-                "recordedAt must not be null"
-        );
+        this.unit = Objects.requireNonNull(unit, "unit must not be null for numeric readings");
+
+        this.recordedAt = Objects.requireNonNull(recordedAt, "recordedAt must not be null");
 
         this.numericValue = numericValue;
         this.booleanValue = null;
@@ -69,17 +59,11 @@ public class SensorReading {
     private SensorReading(
             Sensor sensor,
             boolean booleanValue,
-            Instant recordedAt
-    ) {
-        this.sensor = Objects.requireNonNull(
-                sensor,
-                "sensor must not be null"
-        );
+            Instant recordedAt) {
 
-        this.recordedAt = Objects.requireNonNull(
-                recordedAt,
-                "recordedAt must not be null"
-        );
+        this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
+
+        this.recordedAt = Objects.requireNonNull(recordedAt, "recordedAt must not be null");
 
         this.numericValue = null;
         this.booleanValue = booleanValue;
@@ -90,10 +74,9 @@ public class SensorReading {
     public static SensorReading temperature(
             Sensor sensor,
             Double celsiusValue,
-            Instant recordedAt
-    ) {
+            Instant recordedAt) {
+
         requireSensorType(sensor, SensorType.TEMPERATURE);
-        DomainChecks.requireFiniteDouble(celsiusValue, "celsiusValue");
 
         double validValue = SensorMeasurementPolicy.requireValidNumericValue(sensor.getType(),
                 celsiusValue,
@@ -103,43 +86,39 @@ public class SensorReading {
                 sensor,
                 validValue,
                 SensorMeasurementPolicy.requireCanonicalUnit(sensor.getType()),
-                recordedAt
-        );
+                recordedAt);
     }
 
     public static SensorReading humidity(
             Sensor sensor,
             Double humidityPercentage,
-            Instant recordedAt
-    ) {
+            Instant recordedAt) {
+
         requireSensorType(sensor, SensorType.HUMIDITY);
-        DomainChecks.requireFiniteDouble(humidityPercentage, "humidityPercentage");
 
         double validValue = SensorMeasurementPolicy.requireValidNumericValue(sensor.getType(),
                 humidityPercentage,
                 "humidityPercentage");
 
-        return new SensorReading(
-                sensor,
+        return new SensorReading(sensor,
                 validValue,
                 SensorMeasurementPolicy.requireCanonicalUnit(sensor.getType()),
-                recordedAt
-        );
+                recordedAt);
     }
+
 
     public static SensorReading motion(
             Sensor sensor,
             boolean motionDetected,
-            Instant recordedAt
-    ) {
+            Instant recordedAt) {
+
         requireSensorType(sensor, SensorType.MOTION);
 
-        return new SensorReading(
-                sensor,
+        return new SensorReading( sensor,
                 motionDetected,
-                recordedAt
-        );
+                recordedAt);
     }
+
 
     private static void requireSensorType(Sensor sensor, SensorType expectedType) {
 

@@ -1,14 +1,11 @@
 package com.enginertugrul.iottemperaturemonitor.service.alert;
 
 import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertRule;
-import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertRuleType;
-import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
-import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.SensorReading;
 import com.enginertugrul.iottemperaturemonitor.repository.AlertRuleRepository;
 import org.slf4j.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -16,49 +13,64 @@ import java.util.Objects;
 @Service
 public class AlertEvaluationServiceImpl implements AlertEvaluationService {
 
-    private static final String TEMPERATURE_CANONICAL_UNIT = "C";
 
-    private final Logger logger = LoggerFactory.getLogger(AlertEvaluationServiceImpl.class);
+
+    private final Logger LOGGER = LoggerFactory.getLogger(AlertEvaluationServiceImpl.class);
     private final AlertRuleRepository alertRuleRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AlertTriggeredEventFactory alertTriggeredEventFactory;
 
-    public AlertEvaluationServiceImpl(
-            AlertRuleRepository alertRuleRepository,
-            ApplicationEventPublisher eventPublisher
-    ) {
+    public AlertEvaluationServiceImpl(AlertRuleRepository alertRuleRepository, ApplicationEventPublisher eventPublisher, AlertTriggeredEventFactory alertTriggeredEventFactory) {
         this.alertRuleRepository = alertRuleRepository;
         this.eventPublisher = eventPublisher;
+        this.alertTriggeredEventFactory = alertTriggeredEventFactory;
     }
+
+
 
     @Override
-    @Transactional
-    public void evaluateTemperatureReading(Sensor sensor, Double celsiusValue, Instant recordedAt) {
-        Objects.requireNonNull(sensor, "sensor must not be null");
-        Objects.requireNonNull(recordedAt, "recordedAt must not be null");
-        Objects.requireNonNull(celsiusValue, "celsiusValue must not be null");
+    public void evaluateReading(SensorReading reading) {
 
-        alertRuleRepository.findBySensorIdAndEnabledTrue(sensor.getId())
-                .stream()
-                .filter(this::isTemperatureThresholdRule)
-                .filter(rule -> rule.getComparisonOperator().matches(celsiusValue, rule.getThresholdValue()))
-                .forEach(rule -> triggerIfCooldownAllows(rule, celsiusValue, recordedAt));
+        SensorReading requiredReading = Objects.requireNonNull(reading, "reading must not be null");
+
+        Long sensorId = requiredReading.getSensor().getId();
+
+        alertRuleRepository.findEnabledForEvaluationBySensorId(sensorId).stream()
+                .filter( rule -> rule.isTriggeredBy(requiredReading))
+                .forEach( rule -> triggerIfCooldownAllows(rule,requiredReading));
+
+
     }
 
-    private boolean isTemperatureThresholdRule(AlertRule rule) {
-        return rule.getRuleType() == AlertRuleType.NUMERIC_THRESHOLD
-                && rule.getSensor().getType() == SensorType.TEMPERATURE
-                && TEMPERATURE_CANONICAL_UNIT.equals(rule.getThresholdUnit());
-    }
 
-    private void triggerIfCooldownAllows(AlertRule rule, Double celsiusValue, Instant recordedAt) {
+
+    private void triggerIfCooldownAllows(AlertRule rule, SensorReading reading) {
+
+        Instant recordedAt = reading.getRecordedAt();
+
+
         if (!rule.canTriggerAt(recordedAt)) {
-            logger.info("Alert suppressed by cooldown. alertRuleId={}", rule.getId());
+            LOGGER.info(
+                    "Alert suppressed by cooldown. "
+                            + "alertRuleId={}, sensorId={}",
+                    rule.getId(),
+                    reading.getSensor().getId()
+            );
+
             return;
         }
 
         rule.markTriggered(recordedAt);
-        eventPublisher.publishEvent(AlertTriggeredEvent.from(rule, celsiusValue, recordedAt));
+        eventPublisher.publishEvent(alertTriggeredEventFactory.from(rule,reading));
 
-        logger.info("Alert triggered. alertRuleId={}, sensorId={}", rule.getId(), rule.getSensor().getId());
+        LOGGER.info( "Alert triggered. alertRuleId={}, " + "sensorId={}, sensorType={}",
+                rule.getId(),
+                reading.getSensor().getId(),
+                reading.getSensor().getType()
+        );
+
     }
+
+
+
 }

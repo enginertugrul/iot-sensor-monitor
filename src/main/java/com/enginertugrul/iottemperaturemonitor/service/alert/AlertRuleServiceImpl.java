@@ -1,9 +1,12 @@
 package com.enginertugrul.iottemperaturemonitor.service.alert;
 
-import com.enginertugrul.iottemperaturemonitor.dto.alert.AlertRuleForm;
 import com.enginertugrul.iottemperaturemonitor.dto.alert.AlertRuleListItemDTO;
+import com.enginertugrul.iottemperaturemonitor.dto.alert.MotionEventAlertRuleForm;
+import com.enginertugrul.iottemperaturemonitor.dto.alert.NumericThresholdAlertRuleForm;
 import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertRule;
 import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertRuleType;
+import com.enginertugrul.iottemperaturemonitor.entity.measurement.SensorMeasurementPolicy;
+import com.enginertugrul.iottemperaturemonitor.entity.reading.MeasurementUnit;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
@@ -19,9 +22,6 @@ import java.util.NoSuchElementException;
 @Service
 public class AlertRuleServiceImpl implements AlertRuleService {
 
-
-    private static final String TEMPERATURE_CANONICAL_UNIT = "C";
-    private static final double ABSOLUTE_ZERO_CELSIUS = -273.15;
 
     private final AlertRuleRepository alertRuleRepository;
     private final SensorService sensorService;
@@ -39,47 +39,50 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     @Override
     @Transactional(readOnly = true)
     public List<AlertRuleListItemDTO> getAlertRulesForUser(Long ownerId, TemperatureUnit preferredTemperatureUnit) {
+
         return alertRuleRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId)
                 .stream().map( rule -> toListItem(rule,preferredTemperatureUnit))
                 .toList();
+
     }
-
-
 
     @Override
     @Transactional
-    public void createTemperatureThresholdRule(Long ownerId, AlertRuleForm form, TemperatureUnit preferredTemperatureUnit) {
+    public void createNumericThresholdRule(Long ownerId, NumericThresholdAlertRuleForm form, TemperatureUnit preferredTemperatureUnit) {
 
         Sensor sensor = sensorService.getSensorForUser(form.getSensorId(), ownerId);
 
-        if(sensor.getType() != SensorType.TEMPERATURE) {
-            throw new IllegalArgumentException("Only temperature threshold rules are supported by this form");
-        }
+        Double canonicalThreshold = toCanonicalThreshold(sensor,form.getThresholdValue(),preferredTemperatureUnit);
 
-        Double thresholdInCelsius = temperatureUnitConverter.convertToCelsius( form.getThresholdValue() , preferredTemperatureUnit);
-
-        if(thresholdInCelsius < ABSOLUTE_ZERO_CELSIUS) {
-            throw new IllegalArgumentException("Temperature threshold cannot be below absolute zero");
-        }
-
-        AlertRule alertRule = AlertRule.numericThreshold(sensor.getOwner(),
-                sensor,
+        AlertRule rule = AlertRule.numericThreshold(sensor,
                 form.getComparisonOperator(),
-                thresholdInCelsius,
-                TEMPERATURE_CANONICAL_UNIT,
+                canonicalThreshold,
                 form.getCooldownMinutes());
 
-        alertRuleRepository.save(alertRule);
+        alertRuleRepository.save( rule);
 
+
+    }
+
+    @Override
+    @Transactional
+    public void createMotionDetectedRule(Long ownerId, MotionEventAlertRuleForm form) {
+
+        Sensor sensor = sensorService.getSensorForUser(form.getSensorId(), ownerId);
+
+        AlertRule rule = AlertRule.motionDetected(sensor,form.getCooldownMinutes());
+
+        alertRuleRepository.save(rule);
 
     }
 
 
 
+
     @Override
     @Transactional
-    public void setAlertRuleEnabled(Long ownerId, Long id, Boolean enabled) {
-        AlertRule alertRule = getOwnedAlertRule(id, ownerId);
+    public void setAlertRuleEnabled(Long ownerId, Long alertRuleId, Boolean enabled) {
+        AlertRule alertRule = getOwnedAlertRule(alertRuleId, ownerId);
         if (enabled) {
             alertRule.enable();
         } else {
@@ -87,6 +90,10 @@ public class AlertRuleServiceImpl implements AlertRuleService {
         }
 
     }
+
+
+
+
 
     @Override
     @Transactional
@@ -96,29 +103,40 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     }
 
 
-    private AlertRule getOwnedAlertRule(Long alertRuleId, Long ownerId) {
-        return alertRuleRepository.findByIdAndOwnerId(alertRuleId, ownerId)
-                .orElseThrow( ()-> new NoSuchElementException("Alert rule not found"));
+
+
+    private AlertRule getOwnedAlertRule(Long alertRuleId, Long ownerId ) {
+
+        return alertRuleRepository
+                .findByIdAndOwnerId(alertRuleId, ownerId)
+                .orElseThrow(() -> new NoSuchElementException("Alert rule not found"));
     }
 
 
-    private AlertRuleListItemDTO toListItem(AlertRule rule, TemperatureUnit preferredTemperatureUnit) {
+
+
+
+    private Double toCanonicalThreshold(Sensor sensor, Double submittedThreshold, TemperatureUnit preferredTemperatureUnit) {
+
+        return switch (sensor.getType()) {
+            case TEMPERATURE ->
+                    temperatureUnitConverter.convertToCelsius(
+                                    submittedThreshold,
+                                    preferredTemperatureUnit);
+
+            case HUMIDITY -> submittedThreshold;
+
+            default -> throw new IllegalArgumentException("Numeric sensor required");
+        };
+
+    }
+
+
+
+
+    private AlertRuleListItemDTO toListItem( AlertRule rule, TemperatureUnit preferredTemperatureUnit) {
+
         Sensor sensor = rule.getSensor();
-
-        Double displayThreshold = rule.getThresholdValue();
-        String displayUnit = rule.getThresholdUnit();
-
-        if (
-                rule.getRuleType() == AlertRuleType.NUMERIC_THRESHOLD
-                        && sensor.getType() == SensorType.TEMPERATURE
-                        && TEMPERATURE_CANONICAL_UNIT.equals(rule.getThresholdUnit())
-        ) {
-            displayThreshold = temperatureUnitConverter.convertFromCelsius(
-                    rule.getThresholdValue(),
-                    preferredTemperatureUnit
-            );
-            displayUnit = temperatureUnitConverter.getSymbol(preferredTemperatureUnit);
-        }
 
         return new AlertRuleListItemDTO(
                 rule.getId(),
@@ -129,11 +147,44 @@ public class AlertRuleServiceImpl implements AlertRuleService {
                 rule.getRuleType(),
                 rule.getComparisonOperator(),
                 rule.getEventType(),
-                displayThreshold,
-                displayUnit,
+                toDisplayThreshold(
+                        rule,
+                        preferredTemperatureUnit
+                ),
                 rule.getCooldownMinutes(),
                 rule.isEnabled()
         );
+    }
+
+
+
+
+    private Double toDisplayThreshold(AlertRule rule, TemperatureUnit preferredTemperatureUnit) {
+
+        if (rule.getRuleType() == AlertRuleType.EVENT_DETECTED) {
+            return null;
+        }
+
+        SensorType sensorType = rule.getSensor().getType();
+
+        if (!SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)) {
+            throw new IllegalStateException("Numeric rule belongs to a non-numeric sensor");
+        }
+
+        MeasurementUnit expectedUnit = SensorMeasurementPolicy.requireCanonicalUnit(sensorType);
+
+        if (rule.getThresholdUnit() != expectedUnit) {
+            throw new IllegalStateException("Stored threshold unit does not match sensor type");
+        }
+
+        if (sensorType == SensorType.TEMPERATURE) {
+
+            return temperatureUnitConverter.convertFromCelsius(
+                            rule.getThresholdValue(),
+                            preferredTemperatureUnit);
+        }
+
+        return rule.getThresholdValue();
     }
 
 

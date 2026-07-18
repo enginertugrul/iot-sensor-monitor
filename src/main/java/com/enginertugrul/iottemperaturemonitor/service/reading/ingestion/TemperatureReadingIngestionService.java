@@ -57,10 +57,6 @@ public class TemperatureReadingIngestionService {
         sensor.markSeen(recordedAt);
         readingRepository.save(reading);
 
-        alertEvaluationService.evaluateTemperatureReading(
-                sensor,
-                celsiusValue,
-                recordedAt
-        );
+        alertEvaluationService.evaluateReading(reading);
     }
 }
