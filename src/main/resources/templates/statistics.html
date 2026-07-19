@@ -7,116 +7,116 @@
     <script th:src="@{/js/vendor/chart.umd.min.js}"></script>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
     <link rel="stylesheet" th:href="@{/css/pages/statistics.css}">
 
 </head>
+
 <body>
 
-<div class="stats-toolbar">
-    <a class="nav-button"
-       th:if="${selectedSensorId != null}"
-       th:href="@{/(sensorId=${selectedSensorId})}"
-       th:text="#{nav.backToHome}">
-        Back to Home
-    </a>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('statistics', ${selectedSensorId})}"></header>
 
-    <a class="nav-button"
-       th:if="${selectedSensorId == null}"
-       th:href="@{/}"
-       th:text="#{nav.backToHome}">
-        Back to Home
-    </a>
+<main id="main-content" class="app-main app-main--statistics">
+    <h1 class="visually-hidden" th:text="#{statistics.heading}">
+        Sensor Statistics
+    </h1>
 
-    <form class="sensor-selector" th:action="@{/statistics}" method="get">
-        <label for="sensorId" th:text="#{statistics.sensor}">Sensor</label>
+    <div class="stats-toolbar">
 
-        <select id="sensorId"
-                name="sensorId"
-                data-auto-submit-select>
-            <option value="" th:selected="${selectedSensorId == null}"
-                    th:text="#{statistics.selectSensor}">
-                Select sensor
-            </option>
 
-            <option th:each="sensor : ${sensors}"
-                    th:value="${sensor.id}"
-                    th:selected="${selectedSensorId != null
+        <form class="sensor-selector" th:action="@{/statistics}" method="get">
+            <label for="sensorId" th:text="#{statistics.sensor}">Sensor</label>
+
+            <select id="sensorId"
+                    name="sensorId"
+                    data-auto-submit-select>
+                <option value="" th:selected="${selectedSensorId == null}"
+                        th:text="#{statistics.selectSensor}">
+                    Select sensor
+                </option>
+
+                <option th:each="sensor : ${sensors}"
+                        th:value="${sensor.id}"
+                        th:selected="${selectedSensorId != null
             and sensor.id == selectedSensorId}"
-                    th:text="${sensor.name
+                        th:text="${sensor.name
             + ' — '
             + #messages.msg(
                 'sensorType.' + sensor.type.name()
             )
             + ' — '
             + sensor.homeLocation}">
-            </option>
-        </select>
+                </option>
+            </select>
 
-        <noscript>
-            <button type="submit" th:text="#{statistics.apply}">Apply</button>
-        </noscript>
-    </form>
-</div>
+            <noscript>
+                <button type="submit" th:text="#{statistics.apply}">Apply</button>
+            </noscript>
+        </form>
+    </div>
 
-<p th:if="${statisticsNoSensorSelected}"
-   class="empty-state"
-   th:text="#{statistics.noSensorSelected}">
-    No sensor selected.
-</p>
+    <p th:if="${statisticsNoSensorSelected}"
+       class="empty-state"
+       th:text="#{statistics.noSensorSelected}">
+        No sensor selected.
+    </p>
 
-<p th:if="${statisticsSensorNotFound}"
-   class="empty-state"
-   th:text="#{statistics.sensorNotFound}">
-    Selected sensor could not be found.
-</p>
+    <p th:if="${statisticsSensorNotFound}"
+       class="empty-state"
+       th:text="#{statistics.sensorNotFound}">
+        Selected sensor could not be found.
+    </p>
 
-<div class="chart-container"
-     th:if="${selectedSensorId != null}">
-    <div class="date-nav-row">
-        <button id="prevDayBtn"
-                type="button"
-                class="nav-arrow-button"
-                th:aria-label="#{statistics.previousDay}">
-            &#8249;
-        </button>
+    <div class="chart-container"
+         th:if="${selectedSensorId != null}">
+        <div class="date-nav-row">
+            <button id="prevDayBtn"
+                    type="button"
+                    class="nav-arrow-button"
+                    th:aria-label="#{statistics.previousDay}">
+                &#8249;
+            </button>
 
-        <h2 class="chart-title"
-            id="hourlyChartTitle"
-            th:text="${selectedSensorName
+            <h2 class="chart-title"
+                id="hourlyChartTitle"
+                th:text="${selectedSensorName
                 + ' — '
                 + #messages.msg(
                     'statistics.todayHourly'
                 )}">
-            Sensor — Today's Hourly Statistics
-        </h2>
+                Sensor — Today's Hourly Statistics
+            </h2>
 
-        <button id="nextDayBtn"
-                type="button"
-                class="nav-arrow-button"
-                th:aria-label="#{statistics.nextDay}">
-            &#8250;
-        </button>
+            <button id="nextDayBtn"
+                    type="button"
+                    class="nav-arrow-button"
+                    th:aria-label="#{statistics.nextDay}">
+                &#8250;
+            </button>
+        </div>
+
+        <div class="chart-slide-wrapper">
+            <canvas id="sensorHourlyChart"></canvas>
+        </div>
     </div>
 
-    <div class="chart-slide-wrapper">
-        <canvas id="sensorHourlyChart"></canvas>
-    </div>
-</div>
-
-<div class="chart-container"
-     th:if="${selectedSensorId != null}">
-    <h2 class="chart-title"
-        th:text="${selectedSensorName
+    <div class="chart-container"
+         th:if="${selectedSensorId != null}">
+        <h2 class="chart-title"
+            th:text="${selectedSensorName
             + ' — '
             + #messages.msg(
                 'statistics.lastSevenDays'
             )}">
-        Sensor — Last 7 Days
-    </h2>
+            Sensor — Last 7 Days
+        </h2>
 
-    <canvas id="sensorWeeklyChart"></canvas>
-</div>
+        <canvas id="sensorWeeklyChart"></canvas>
+    </div>
 
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/components/auto-submit-select.js}"></script>
 

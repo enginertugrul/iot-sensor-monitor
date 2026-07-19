@@ -1,29 +1,4 @@
-body {
-    padding: var(--space-8);
-}
 
-.nav-button {
-    display: inline-block;
-    margin-bottom: var(--space-8);
-    border: none;
-    border-radius: var(--radius-sm);
-    background-color: var(--color-primary);
-    color: var(--color-on-primary);
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: var(--font-weight-medium);
-    padding: var(--space-3) var(--space-6);
-    text-decoration: none;
-    box-shadow: var(--shadow-md);
-    transition: background-color var(--transition-normal), color var(--transition-normal), transform var(--transition-normal);
-}
-
-.nav-button:hover {
-    background-color: var(--color-primary-hover);
-    color: var(--color-on-primary);
-    text-decoration: none;
-    transform: translateY(-1px);
-}
 
 .chart-container {
     width: 80%;

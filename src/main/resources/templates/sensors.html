@@ -6,101 +6,109 @@
     <title th:text="#{sensors.title}">Your Sensors</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
 </head>
+
 <body>
-<h1 th:text="#{sensors.heading}">Your Sensors</h1>
 
-<form th:action="@{/logout}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-    <button type="submit" th:text="#{nav.logout}">Logout</button>
-</form>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('sensors', ${null})}"></header>
 
-<a th:href="@{/}" th:text="#{nav.backToHome}">Back to Home</a>
+<main id="main-content" class="app-main app-main--sensors">
 
-<p th:if="${sensorCreated}" th:text="#{sensors.created}"></p>
+    <h1 th:text="#{sensors.heading}">Your Sensors</h1>
 
-<div th:if="${createdSensorToken}">
-    <p>
-        <span th:text="#{sensors.tokenFor}">Sensor token for</span>
-        <strong th:text="${createdSensorName}">Sensor</strong>
-    </p>
-    <p th:text="#{sensors.tokenCopyWarning}">
-        Copy this token now. It will not be shown again.
-    </p>
-    <code th:text="${createdSensorToken}">token</code>
-</div>
 
-<h2 th:text="#{sensors.addHeading}">Add Sensor</h2>
+    <p th:if="${sensorCreated}" th:text="#{sensors.created}"></p>
 
-<form th:action="@{/user/sensors}" th:object="${form}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <div th:if="${createdSensorToken}">
+        <p>
+            <span th:text="#{sensors.tokenFor}">Sensor token for</span>
+            <strong th:text="${createdSensorName}">Sensor</strong>
+        </p>
+        <p th:text="#{sensors.tokenCopyWarning}">
+            Copy this token now. It will not be shown again.
+        </p>
+        <code th:text="${createdSensorToken}">token</code>
+    </div>
 
-    <label for="type" th:text="#{sensors.type}">Sensor Type</label>
-    <select id="type" th:field="*{type}">
-        <option th:each="type : ${sensorTypes}"
-                th:value="${type}"
-                th:text="${#messages.msg('sensorType.' + type.name())}">
-        </option>
-    </select>
-    <p th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+    <h2 th:text="#{sensors.addHeading}">Add Sensor</h2>
 
-    <label for="name" th:text="#{sensors.name}">Name</label>
-    <input id="name" type="text" th:field="*{name}" th:placeholder="#{sensors.placeholder.name}">
-    <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+    <form th:action="@{/user/sensors}" th:object="${form}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
-    <label for="city" th:text="#{sensors.city}">City</label>
-    <input id="city" type="text" th:field="*{city}" th:placeholder="#{sensors.placeholder.city}">
-    <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></p>
+        <label for="type" th:text="#{sensors.type}">Sensor Type</label>
+        <select id="type" th:field="*{type}">
+            <option th:each="type : ${sensorTypes}"
+                    th:value="${type}"
+                    th:text="${#messages.msg('sensorType.' + type.name())}">
+            </option>
+        </select>
+        <p th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
 
-    <label for="district" th:text="#{sensors.district}">District</label>
-    <input id="district" type="text" th:field="*{district}" th:placeholder="#{sensors.placeholder.district}">
-    <p th:if="${#fields.hasErrors('district')}" th:errors="*{district}"></p>
+        <label for="name" th:text="#{sensors.name}">Name</label>
+        <input id="name" type="text" th:field="*{name}" th:placeholder="#{sensors.placeholder.name}">
+        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
 
-    <label for="homeLocation" th:text="#{sensors.homeLocation}">Location in Home</label>
-    <input id="homeLocation" type="text" th:field="*{homeLocation}" th:placeholder="#{sensors.placeholder.homeLocation}">
-    <p th:if="${#fields.hasErrors('homeLocation')}" th:errors="*{homeLocation}"></p>
+        <label for="city" th:text="#{sensors.city}">City</label>
+        <input id="city" type="text" th:field="*{city}" th:placeholder="#{sensors.placeholder.city}">
+        <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></p>
 
-    <label for="timezone" th:text="#{sensors.timezone}">Timezone</label>
-    <select id="timezone" th:field="*{timezone}">
-        <option th:each="timezoneOption : ${timezoneOptions}"
-                th:value="${timezoneOption.id}"
-                th:text="${timezoneOption.displayName}">
-        </option>
-    </select>
-    <p th:if="${#fields.hasErrors('timezone')}" th:errors="*{timezone}"></p>
+        <label for="district" th:text="#{sensors.district}">District</label>
+        <input id="district" type="text" th:field="*{district}" th:placeholder="#{sensors.placeholder.district}">
+        <p th:if="${#fields.hasErrors('district')}" th:errors="*{district}"></p>
 
-    <button type="submit" th:text="#{sensors.addButton}">Add Sensor</button>
-</form>
+        <label for="homeLocation" th:text="#{sensors.homeLocation}">Location in Home</label>
+        <input id="homeLocation" type="text" th:field="*{homeLocation}"
+               th:placeholder="#{sensors.placeholder.homeLocation}">
+        <p th:if="${#fields.hasErrors('homeLocation')}" th:errors="*{homeLocation}"></p>
 
-<h2 th:text="#{sensors.registeredHeading}">Registered Sensors</h2>
+        <label for="timezone" th:text="#{sensors.timezone}">Timezone</label>
+        <select id="timezone" th:field="*{timezone}">
+            <option th:each="timezoneOption : ${timezoneOptions}"
+                    th:value="${timezoneOption.id}"
+                    th:text="${timezoneOption.displayName}">
+            </option>
+        </select>
+        <p th:if="${#fields.hasErrors('timezone')}" th:errors="*{timezone}"></p>
 
-<table>
-    <thead>
-    <tr>
-        <th th:text="#{sensors.name}">Name</th>
-        <th th:text="#{sensors.typeShort}">Type</th>
-        <th th:text="#{sensors.city}">City</th>
-        <th th:text="#{sensors.district}">District</th>
-        <th th:text="#{sensors.homeLocationShort}">Home Location</th>
-        <th th:text="#{sensors.timezone}">Timezone</th>
-        <th th:text="#{sensors.status}">Status</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="sensor : ${sensors}">
-        <td th:text="${sensor.name}">Living Room Sensor</td>
-        <td th:text="${#messages.msg('sensorType.' + sensor.type.name())}">Temperature sensor</td>
-        <td th:text="${sensor.city}">Istanbul</td>
-        <td th:text="${sensor.district}">Kadikoy</td>
-        <td th:text="${sensor.homeLocation}">Hall</td>
-        <td th:text="${sensor.timezone}">Europe/Istanbul</td>
-        <td th:text="${sensor.active ? #messages.msg('sensors.status.active') : #messages.msg('sensors.status.inactive')}">Active</td>
-    </tr>
+        <button type="submit" th:text="#{sensors.addButton}">Add Sensor</button>
+    </form>
 
-    <tr th:if="${#lists.isEmpty(sensors)}">
-        <td colspan="7" th:text="#{sensors.empty}">You do not have any sensors yet.</td>
-    </tr>
-    </tbody>
-</table>
+    <h2 th:text="#{sensors.registeredHeading}">Registered Sensors</h2>
+
+    <table>
+        <thead>
+        <tr>
+            <th th:text="#{sensors.name}">Name</th>
+            <th th:text="#{sensors.typeShort}">Type</th>
+            <th th:text="#{sensors.city}">City</th>
+            <th th:text="#{sensors.district}">District</th>
+            <th th:text="#{sensors.homeLocationShort}">Home Location</th>
+            <th th:text="#{sensors.timezone}">Timezone</th>
+            <th th:text="#{sensors.status}">Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="sensor : ${sensors}">
+            <td th:text="${sensor.name}">Living Room Sensor</td>
+            <td th:text="${#messages.msg('sensorType.' + sensor.type.name())}">Temperature sensor</td>
+            <td th:text="${sensor.city}">Istanbul</td>
+            <td th:text="${sensor.district}">Kadikoy</td>
+            <td th:text="${sensor.homeLocation}">Hall</td>
+            <td th:text="${sensor.timezone}">Europe/Istanbul</td>
+            <td th:text="${sensor.active ? #messages.msg('sensors.status.active') : #messages.msg('sensors.status.inactive')}">
+                Active
+            </td>
+        </tr>
+
+        <tr th:if="${#lists.isEmpty(sensors)}">
+            <td colspan="7" th:text="#{sensors.empty}">You do not have any sensors yet.</td>
+        </tr>
+        </tbody>
+    </table>
+
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
 </body>
 </html>

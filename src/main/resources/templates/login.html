@@ -6,34 +6,45 @@
     <title th:text="#{auth.login}">Login</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
 </head>
+
 <body>
-<h1 th:text="#{auth.login}">Login</h1>
 
-<p th:if="${param.error}" th:text="#{auth.invalid}">
-    Invalid email or password.
-</p>
+<header th:replace="~{fragments/app-shell :: publicHeader('login')}"></header>
 
-<p th:if="${param.logout}" th:text="#{auth.loggedOut}">
-    You have been logged out.
-</p>
+<main id="main-content" class="app-main app-main--auth">
 
-<p th:if="${param.registered}" th:text="#{auth.registered}">
-    Registration completed. You can log in.
-</p>
+    <h1 th:text="#{auth.login}">Login</h1>
 
-<form th:action="@{/login}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <p th:if="${param.error}" th:text="#{auth.invalid}">
+        Invalid email or password.
+    </p>
 
-    <label for="username" th:text="#{auth.email}">Email</label>
-    <input id="username" type="email" name="username" autocomplete="email" required>
+    <p th:if="${param.logout}" th:text="#{auth.loggedOut}">
+        You have been logged out.
+    </p>
 
-    <label for="password" th:text="#{auth.password}">Password</label>
-    <input id="password" type="password" name="password" autocomplete="current-password" required>
+    <p th:if="${param.registered}" th:text="#{auth.registered}">
+        Registration completed. You can log in.
+    </p>
 
-    <button type="submit" th:text="#{auth.login}">Login</button>
-</form>
+    <form th:action="@{/login}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
-<a th:href="@{/register}" th:text="#{auth.createAccount}">Create an account</a>
+        <label for="username" th:text="#{auth.email}">Email</label>
+        <input id="username" type="email" name="username" autocomplete="email" required>
+
+        <label for="password" th:text="#{auth.password}">Password</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required>
+
+        <button type="submit" th:text="#{auth.login}">Login</button>
+    </form>
+
+    <a th:href="@{/register}" th:text="#{auth.createAccount}">Create an account</a>
+
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
 </body>
 </html>

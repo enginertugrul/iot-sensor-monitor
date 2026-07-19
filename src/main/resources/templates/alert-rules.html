@@ -7,94 +7,87 @@
     <title th:text="#{alertRules.title}"> Alert Rules </title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
 </head>
+
 <body>
-<h1 th:text="#{alertRules.heading}">
-    Alert Rules
-</h1>
 
-<form th:action="@{/logout}" method="post">
-    <input type="hidden"
-           th:name="${_csrf.parameterName}"
-           th:value="${_csrf.token}">
-    <button type="submit"
-            th:text="#{nav.logout}">
-        Logout
-    </button>
-</form>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('alert-rules', ${null})}"></header>
 
-<a th:href="@{/}"
-   th:text="#{nav.backToHome}">
-    Back to Home
-</a>
+<main id="main-content" class="app-main app-main--alert-rules">
 
-<p th:if="${alertRuleCreated}"
-   th:text="#{alertRules.created}">
-    Alert rule created.
-</p>
+    <h1 th:text="#{alertRules.heading}">
+        Alert Rules
+    </h1>
 
-<p th:if="${alertRuleEnabled}"
-   th:text="#{alertRules.enabled}">
-    Alert rule enabled.
-</p>
 
-<p th:if="${alertRuleDisabled}"
-   th:text="#{alertRules.disabled}">
-    Alert rule disabled.
-</p>
-
-<p th:if="${alertRuleDeleted}"
-   th:text="#{alertRules.deleted}">
-    Alert rule deleted.
-</p>
-
-<h2 th:text="#{alertRules.addHeading}">
-    Add Alert Rule
-</h2>
-
-<section>
-    <h3 th:text="#{alertRules.numericHeading}">
-        Numeric Threshold Rule
-    </h3>
-
-    <p th:if="${#lists.isEmpty(numericSensors)}"
-       th:text="#{alertRules.noNumericSensors}">
-        Add a temperature or humidity sensor first.
+    <p th:if="${alertRuleCreated}"
+       th:text="#{alertRules.created}">
+        Alert rule created.
     </p>
 
-    <form id="numericRuleForm"
-          th:if="${!#lists.isEmpty(numericSensors)}"
-          th:action="@{/user/alert-rules/numeric-threshold}"
-          th:object="${numericForm}"
-          method="post">
+    <p th:if="${alertRuleEnabled}"
+       th:text="#{alertRules.enabled}">
+        Alert rule enabled.
+    </p>
 
-        <input type="hidden"
-               th:name="${_csrf.parameterName}"
-               th:value="${_csrf.token}">
+    <p th:if="${alertRuleDisabled}"
+       th:text="#{alertRules.disabled}">
+        Alert rule disabled.
+    </p>
 
-        <div th:if="${#fields.hasGlobalErrors()}">
-            <p th:each="error : ${#fields.globalErrors()}"
-               th:text="${error}">
-                Alert rule could not be created.
-            </p>
-        </div>
+    <p th:if="${alertRuleDeleted}"
+       th:text="#{alertRules.deleted}">
+        Alert rule deleted.
+    </p>
 
-        <label for="numericSensorId"
-               th:text="#{alertRules.sensor}">
-            Sensor
-        </label>
+    <h2 th:text="#{alertRules.addHeading}">
+        Add Alert Rule
+    </h2>
 
-        <select id="numericSensorId"
-                th:field="*{sensorId}"
-                required>
-            <option value=""
-                    th:text="#{alertRules.selectSensor}">
-                Select sensor
-            </option>
+    <section>
+        <h3 th:text="#{alertRules.numericHeading}">
+            Numeric Threshold Rule
+        </h3>
 
-            <option th:each="sensor : ${numericSensors}"
-                    th:value="${sensor.id}"
-                    th:attr="
+        <p th:if="${#lists.isEmpty(numericSensors)}"
+           th:text="#{alertRules.noNumericSensors}">
+            Add a temperature or humidity sensor first.
+        </p>
+
+        <form id="numericRuleForm"
+              th:if="${!#lists.isEmpty(numericSensors)}"
+              th:action="@{/user/alert-rules/numeric-threshold}"
+              th:object="${numericForm}"
+              method="post">
+
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <div th:if="${#fields.hasGlobalErrors()}">
+                <p th:each="error : ${#fields.globalErrors()}"
+                   th:text="${error}">
+                    Alert rule could not be created.
+                </p>
+            </div>
+
+            <label for="numericSensorId"
+                   th:text="#{alertRules.sensor}">
+                Sensor
+            </label>
+
+            <select id="numericSensorId"
+                    th:field="*{sensorId}"
+                    required>
+                <option value=""
+                        th:text="#{alertRules.selectSensor}">
+                    Select sensor
+                </option>
+
+                <option th:each="sensor : ${numericSensors}"
+                        th:value="${sensor.id}"
+                        th:attr="
                         data-sensor-type=${sensor.type.name()},
                         data-unit=${sensor.type.name() == 'TEMPERATURE'
                             ? temperatureUnitSymbol
@@ -102,227 +95,227 @@
                                 'measurement.relativeHumidity.symbol'
                             )}
                     "
-                    th:text="${sensor.name
+                        th:text="${sensor.name
                         + ' — '
                         + #messages.msg(
                             'sensorType.' + sensor.type.name()
                         )
                         + ' — '
                         + sensor.homeLocation}">
-                Living Room Sensor
-            </option>
-        </select>
+                    Living Room Sensor
+                </option>
+            </select>
 
-        <p th:if="${#fields.hasErrors('sensorId')}"
-           th:errors="*{sensorId}">
-            Sensor error
-        </p>
+            <p th:if="${#fields.hasErrors('sensorId')}"
+               th:errors="*{sensorId}">
+                Sensor error
+            </p>
 
-        <label for="numericComparisonOperator"
-               th:text="#{alertRules.condition}">
-            Condition
-        </label>
+            <label for="numericComparisonOperator"
+                   th:text="#{alertRules.condition}">
+                Condition
+            </label>
 
-        <select id="numericComparisonOperator"
-                th:field="*{comparisonOperator}"
-                required>
-            <option value=""
-                    th:text="#{alertRules.selectCondition}">
-                Select condition
-            </option>
+            <select id="numericComparisonOperator"
+                    th:field="*{comparisonOperator}"
+                    required>
+                <option value=""
+                        th:text="#{alertRules.selectCondition}">
+                    Select condition
+                </option>
 
-            <option th:each="operator : ${comparisonOperators}"
-                    th:value="${operator}"
-                    th:text="${#messages.msg(
+                <option th:each="operator : ${comparisonOperators}"
+                        th:value="${operator}"
+                        th:text="${#messages.msg(
                         'comparisonOperator.' + operator.name()
                     )}">
-                Above threshold
-            </option>
-        </select>
+                    Above threshold
+                </option>
+            </select>
 
-        <p th:if="${#fields.hasErrors('comparisonOperator')}"
-           th:errors="*{comparisonOperator}">
-            Condition error
-        </p>
+            <p th:if="${#fields.hasErrors('comparisonOperator')}"
+               th:errors="*{comparisonOperator}">
+                Condition error
+            </p>
 
-        <label for="numericThresholdValue">
+            <label for="numericThresholdValue">
             <span th:text="#{alertRules.threshold}">
                 Threshold
             </span>
 
-            <span id="numericThresholdUnitWrapper"
-                  hidden>
+                <span id="numericThresholdUnitWrapper"
+                      hidden>
                 (<span id="numericThresholdUnit"></span>)
             </span>
-        </label>
+            </label>
 
-        <input id="numericThresholdValue"
-               type="number"
-               step="0.01"
-               th:field="*{thresholdValue}"
-               required>
+            <input id="numericThresholdValue"
+                   type="number"
+                   step="0.01"
+                   th:field="*{thresholdValue}"
+                   required>
 
-        <p th:if="${#fields.hasErrors('thresholdValue')}"
-           th:errors="*{thresholdValue}">
-            Threshold error
-        </p>
-
-        <label for="numericCooldownMinutes"
-               th:text="#{alertRules.cooldownMinutes}">
-            Cooldown (minutes)
-        </label>
-
-        <input id="numericCooldownMinutes"
-               type="number"
-               min="1"
-               max="10080"
-               step="1"
-               th:field="*{cooldownMinutes}"
-               required>
-
-        <p th:if="${#fields.hasErrors('cooldownMinutes')}"
-           th:errors="*{cooldownMinutes}">
-            Cooldown error
-        </p>
-
-        <button type="submit"
-                th:text="#{alertRules.createNumericButton}">
-            Create Numeric Rule
-        </button>
-    </form>
-</section>
-
-<section>
-    <h3 th:text="#{alertRules.motionHeading}">
-        Motion Detection Rule
-    </h3>
-
-    <p th:if="${#lists.isEmpty(motionSensors)}"
-       th:text="#{alertRules.noMotionSensors}">
-        Add a motion sensor first.
-    </p>
-
-    <form th:if="${!#lists.isEmpty(motionSensors)}"
-          th:action="@{/user/alert-rules/motion-detected}"
-          th:object="${motionForm}"
-          method="post">
-
-        <input type="hidden"
-               th:name="${_csrf.parameterName}"
-               th:value="${_csrf.token}">
-
-        <div th:if="${#fields.hasGlobalErrors()}">
-            <p th:each="error : ${#fields.globalErrors()}"
-               th:text="${error}">
-                Alert rule could not be created.
+            <p th:if="${#fields.hasErrors('thresholdValue')}"
+               th:errors="*{thresholdValue}">
+                Threshold error
             </p>
-        </div>
 
-        <label for="motionSensorId"
-               th:text="#{alertRules.sensor}">
-            Sensor
-        </label>
+            <label for="numericCooldownMinutes"
+                   th:text="#{alertRules.cooldownMinutes}">
+                Cooldown (minutes)
+            </label>
 
-        <select id="motionSensorId"
-                th:field="*{sensorId}"
-                required>
-            <option value=""
-                    th:text="#{alertRules.selectSensor}">
-                Select sensor
-            </option>
+            <input id="numericCooldownMinutes"
+                   type="number"
+                   min="1"
+                   max="10080"
+                   step="1"
+                   th:field="*{cooldownMinutes}"
+                   required>
 
-            <option th:each="sensor : ${motionSensors}"
-                    th:value="${sensor.id}"
-                    th:text="${sensor.name
+            <p th:if="${#fields.hasErrors('cooldownMinutes')}"
+               th:errors="*{cooldownMinutes}">
+                Cooldown error
+            </p>
+
+            <button type="submit"
+                    th:text="#{alertRules.createNumericButton}">
+                Create Numeric Rule
+            </button>
+        </form>
+    </section>
+
+    <section>
+        <h3 th:text="#{alertRules.motionHeading}">
+            Motion Detection Rule
+        </h3>
+
+        <p th:if="${#lists.isEmpty(motionSensors)}"
+           th:text="#{alertRules.noMotionSensors}">
+            Add a motion sensor first.
+        </p>
+
+        <form th:if="${!#lists.isEmpty(motionSensors)}"
+              th:action="@{/user/alert-rules/motion-detected}"
+              th:object="${motionForm}"
+              method="post">
+
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <div th:if="${#fields.hasGlobalErrors()}">
+                <p th:each="error : ${#fields.globalErrors()}"
+                   th:text="${error}">
+                    Alert rule could not be created.
+                </p>
+            </div>
+
+            <label for="motionSensorId"
+                   th:text="#{alertRules.sensor}">
+                Sensor
+            </label>
+
+            <select id="motionSensorId"
+                    th:field="*{sensorId}"
+                    required>
+                <option value=""
+                        th:text="#{alertRules.selectSensor}">
+                    Select sensor
+                </option>
+
+                <option th:each="sensor : ${motionSensors}"
+                        th:value="${sensor.id}"
+                        th:text="${sensor.name
                         + ' — '
                         + #messages.msg(
                             'sensorType.' + sensor.type.name()
                         )
                         + ' — '
                         + sensor.homeLocation}">
-                Hall Motion Sensor
-            </option>
-        </select>
+                    Hall Motion Sensor
+                </option>
+            </select>
 
-        <p th:if="${#fields.hasErrors('sensorId')}"
-           th:errors="*{sensorId}">
-            Sensor error
-        </p>
+            <p th:if="${#fields.hasErrors('sensorId')}"
+               th:errors="*{sensorId}">
+                Sensor error
+            </p>
 
-        <p>
+            <p>
             <span th:text="#{alertRules.event}">
                 Event
             </span>:
-            <strong th:text="#{alertEventType.MOTION_DETECTED}">
-                Motion detected
-            </strong>
-        </p>
+                <strong th:text="#{alertEventType.MOTION_DETECTED}">
+                    Motion detected
+                </strong>
+            </p>
 
-        <label for="motionCooldownMinutes"
-               th:text="#{alertRules.cooldownMinutes}">
-            Cooldown (minutes)
-        </label>
+            <label for="motionCooldownMinutes"
+                   th:text="#{alertRules.cooldownMinutes}">
+                Cooldown (minutes)
+            </label>
 
-        <input id="motionCooldownMinutes"
-               type="number"
-               min="1"
-               max="10080"
-               step="1"
-               th:field="*{cooldownMinutes}"
-               required>
+            <input id="motionCooldownMinutes"
+                   type="number"
+                   min="1"
+                   max="10080"
+                   step="1"
+                   th:field="*{cooldownMinutes}"
+                   required>
 
-        <p th:if="${#fields.hasErrors('cooldownMinutes')}"
-           th:errors="*{cooldownMinutes}">
-            Cooldown error
-        </p>
+            <p th:if="${#fields.hasErrors('cooldownMinutes')}"
+               th:errors="*{cooldownMinutes}">
+                Cooldown error
+            </p>
 
-        <button type="submit"
-                th:text="#{alertRules.createMotionButton}">
-            Create Motion Rule
-        </button>
-    </form>
-</section>
+            <button type="submit"
+                    th:text="#{alertRules.createMotionButton}">
+                Create Motion Rule
+            </button>
+        </form>
+    </section>
 
-<h2 th:text="#{alertRules.registeredHeading}">
-    Registered Alert Rules
-</h2>
+    <h2 th:text="#{alertRules.registeredHeading}">
+        Registered Alert Rules
+    </h2>
 
-<table>
-    <thead>
-    <tr>
-        <th th:text="#{alertRules.sensor}">Sensor</th>
-        <th th:text="#{alertRules.ruleType}">Rule Type</th>
-        <th th:text="#{alertRules.condition}">Condition</th>
-        <th th:text="#{alertRules.threshold}">Threshold</th>
-        <th th:text="#{alertRules.cooldown}">Cooldown</th>
-        <th th:text="#{alertRules.status}">Status</th>
-        <th th:text="#{alertRules.actions}">Actions</th>
-    </tr>
-    </thead>
+    <table>
+        <thead>
+        <tr>
+            <th th:text="#{alertRules.sensor}">Sensor</th>
+            <th th:text="#{alertRules.ruleType}">Rule Type</th>
+            <th th:text="#{alertRules.condition}">Condition</th>
+            <th th:text="#{alertRules.threshold}">Threshold</th>
+            <th th:text="#{alertRules.cooldown}">Cooldown</th>
+            <th th:text="#{alertRules.status}">Status</th>
+            <th th:text="#{alertRules.actions}">Actions</th>
+        </tr>
+        </thead>
 
-    <tbody>
-    <tr th:each="rule : ${alertRules}">
-        <td>
-            <div th:text="${rule.sensorName}">
-                Living Room Sensor
-            </div>
+        <tbody>
+        <tr th:each="rule : ${alertRules}">
+            <td>
+                <div th:text="${rule.sensorName}">
+                    Living Room Sensor
+                </div>
 
-            <small th:text="${#messages.msg(
+                <small th:text="${#messages.msg(
                     'sensorType.' + rule.sensorType.name()
                 )
                 + ' — '
                 + rule.sensorHomeLocation}">
-                Temperature sensor — Living room
-            </small>
-        </td>
+                    Temperature sensor — Living room
+                </small>
+            </td>
 
-        <td th:text="${#messages.msg(
+            <td th:text="${#messages.msg(
                 'alertRuleType.' + rule.ruleType.name()
             )}">
-            Numeric threshold
-        </td>
+                Numeric threshold
+            </td>
 
-        <td>
+            <td>
             <span th:if="${rule.comparisonOperator != null}"
                   th:text="${#messages.msg(
                       'comparisonOperator.'
@@ -331,16 +324,16 @@
                 Above threshold
             </span>
 
-            <span th:if="${rule.eventType != null}"
-                  th:text="${#messages.msg(
+                <span th:if="${rule.eventType != null}"
+                      th:text="${#messages.msg(
                       'alertEventType.'
                       + rule.eventType.name()
                   )}">
                 Motion detected
             </span>
-        </td>
+            </td>
 
-        <td>
+            <td>
             <span th:if="${rule.thresholdValue != null}"
                   th:text="${#numbers.formatDecimal(
                           rule.thresholdValue,
@@ -356,74 +349,79 @@
                 30.00 °C
             </span>
 
-            <span th:if="${rule.thresholdValue == null}">
+                <span th:if="${rule.thresholdValue == null}">
                 &mdash;
             </span>
-        </td>
+            </td>
 
-        <td th:text="${rule.cooldownMinutes
+            <td th:text="${rule.cooldownMinutes
                 + ' '
                 + #messages.msg('alertRules.minutes')}">
-            60 minutes
-        </td>
+                60 minutes
+            </td>
 
-        <td th:text="${rule.enabled
+            <td th:text="${rule.enabled
                 ? #messages.msg('alertRules.status.enabled')
                 : #messages.msg('alertRules.status.disabled')}">
-            Enabled
-        </td>
+                Enabled
+            </td>
 
-        <td>
-            <form th:if="${rule.enabled}"
-                  th:action="@{/user/alert-rules/{id}/disable(id=${rule.id})}"
-                  method="post">
-                <input type="hidden"
-                       th:name="${_csrf.parameterName}"
-                       th:value="${_csrf.token}">
+            <td>
+                <form th:if="${rule.enabled}"
+                      th:action="@{/user/alert-rules/{id}/disable(id=${rule.id})}"
+                      method="post">
+                    <input type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}">
 
-                <button type="submit"
-                        th:text="#{alertRules.disable}">
-                    Disable
-                </button>
-            </form>
+                    <button type="submit"
+                            th:text="#{alertRules.disable}">
+                        Disable
+                    </button>
+                </form>
 
-            <form th:if="${!rule.enabled}"
-                  th:action="@{/user/alert-rules/{id}/enable(id=${rule.id})}"
-                  method="post">
-                <input type="hidden"
-                       th:name="${_csrf.parameterName}"
-                       th:value="${_csrf.token}">
+                <form th:if="${!rule.enabled}"
+                      th:action="@{/user/alert-rules/{id}/enable(id=${rule.id})}"
+                      method="post">
+                    <input type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}">
 
-                <button type="submit"
-                        th:text="#{alertRules.enable}">
-                    Enable
-                </button>
-            </form>
+                    <button type="submit"
+                            th:text="#{alertRules.enable}">
+                        Enable
+                    </button>
+                </form>
 
-            <form th:action="@{/user/alert-rules/{id}/delete(id=${rule.id})}"
-                  method="post">
-                <input type="hidden"
-                       th:name="${_csrf.parameterName}"
-                       th:value="${_csrf.token}">
+                <form th:action="@{/user/alert-rules/{id}/delete(id=${rule.id})}"
+                      method="post">
+                    <input type="hidden"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}">
 
-                <button type="submit"
-                        th:text="#{alertRules.delete}">
-                    Delete
-                </button>
-            </form>
-        </td>
-    </tr>
+                    <button type="submit"
+                            th:text="#{alertRules.delete}">
+                        Delete
+                    </button>
+                </form>
+            </td>
+        </tr>
 
-    <tr th:if="${#lists.isEmpty(alertRules)}">
-        <td colspan="7"
-            th:text="#{alertRules.empty}">
-            You do not have alert rules yet.
-        </td>
-    </tr>
-    </tbody>
-</table>
+        <tr th:if="${#lists.isEmpty(alertRules)}">
+            <td colspan="7"
+                th:text="#{alertRules.empty}">
+                You do not have alert rules yet.
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/pages/alert-rules.js}"></script>
+
 
 </body>
 </html>

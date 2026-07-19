@@ -6,73 +6,78 @@
     <title th:text="#{preferences.title}">Preferences</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
 </head>
+
 <body>
 
-<h1 th:text="#{preferences.heading}">Preferences</h1>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('preferences', ${null})}"></header>
 
-<nav>
-    <a th:href="@{/}" th:text="#{nav.home}">Home</a>
-</nav>
+<main id="main-content" class="app-main app-main--preferences">
 
-<p th:if="${preferencesUpdated}" th:text="#{preferences.updated}">
-    Preferences updated.
-</p>
+    <h1 th:text="#{preferences.heading}">Preferences</h1>
 
-<form th:action="@{/user/preferences}" th:object="${form}" method="post">
 
-    <div>
-        <label for="preferredLanguage" th:text="#{preferences.language}">
-            Preferred Language
-        </label>
+    <p th:if="${preferencesUpdated}" th:text="#{preferences.updated}">
+        Preferences updated.
+    </p>
 
-        <select id="preferredLanguage" th:field="*{preferredLanguage}">
-            <option th:each="language : ${languages}"
-                    th:value="${language}"
-                    th:text="${#messages.msg('language.' + language.name())}">
-                English
-            </option>
-        </select>
-    </div>
+    <form th:action="@{/user/preferences}" th:object="${form}" method="post">
 
-    <div>
-        <label for="temperatureUnit" th:text="#{preferences.temperatureUnit}">
-            Preferred Temperature Unit
-        </label>
+        <div>
+            <label for="preferredLanguage" th:text="#{preferences.language}">
+                Preferred Language
+            </label>
 
-        <select id="temperatureUnit" th:field="*{temperatureUnit}">
-            <option th:each="unit : ${temperatureUnits}"
-                    th:value="${unit}"
-                    th:text="${#messages.msg('temperatureUnit.' + unit.name())}">
-                Celsius
-            </option>
-        </select>
-    </div>
-
-    <div>
-        <label for="preferredTimezone" th:text="#{preferences.timezone}">
-            Preferred Timezone
-        </label>
-
-        <select id="preferredTimezone" th:field="*{preferredTimezone}">
-            <option th:each="timezoneOption : ${timezoneOptions}"
-                    th:value="${timezoneOption.id}"
-                    th:text="${timezoneOption.displayName}">
-                Europe/Istanbul
-            </option>
-        </select>
-
-        <div th:if="${#fields.hasErrors('preferredTimezone')}"
-             th:errors="*{preferredTimezone}">
-            Invalid timezone
+            <select id="preferredLanguage" th:field="*{preferredLanguage}">
+                <option th:each="language : ${languages}"
+                        th:value="${language}"
+                        th:text="${#messages.msg('language.' + language.name())}">
+                    English
+                </option>
+            </select>
         </div>
-    </div>
 
-    <button type="submit" th:text="#{preferences.save}">
-        Save Preferences
-    </button>
+        <div>
+            <label for="temperatureUnit" th:text="#{preferences.temperatureUnit}">
+                Preferred Temperature Unit
+            </label>
 
-</form>
+            <select id="temperatureUnit" th:field="*{temperatureUnit}">
+                <option th:each="unit : ${temperatureUnits}"
+                        th:value="${unit}"
+                        th:text="${#messages.msg('temperatureUnit.' + unit.name())}">
+                    Celsius
+                </option>
+            </select>
+        </div>
 
+        <div>
+            <label for="preferredTimezone" th:text="#{preferences.timezone}">
+                Preferred Timezone
+            </label>
+
+            <select id="preferredTimezone" th:field="*{preferredTimezone}">
+                <option th:each="timezoneOption : ${timezoneOptions}"
+                        th:value="${timezoneOption.id}"
+                        th:text="${timezoneOption.displayName}">
+                    Europe/Istanbul
+                </option>
+            </select>
+
+            <div th:if="${#fields.hasErrors('preferredTimezone')}"
+                 th:errors="*{preferredTimezone}">
+                Invalid timezone
+            </div>
+        </div>
+
+        <button type="submit" th:text="#{preferences.save}">
+            Save Preferences
+        </button>
+
+    </form>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
 </body>
 </html>

@@ -6,107 +6,85 @@
     <title th:text="#{app.title}">IoT Sensor Monitor</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
     <link rel="stylesheet" th:href="@{/css/pages/dashboard.css}">
 
 </head>
 
 <body>
 
-<form th:action="@{/logout}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-    <button type="submit" th:text="#{nav.logout}">Logout</button>
-</form>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('dashboard', ${selectedSensorId})}"></header>
 
-<h1 th:text="#{dashboard.title}">Recent Sensor Readings</h1>
-
-<div class="dashboard-actions">
-    <a class="nav-button"
-       th:if="${selectedSensorId != null}"
-       th:href="@{/statistics(sensorId=${selectedSensorId})}"
-       th:text="#{nav.statistics}">
-        View Statistics
-    </a>
-
-    <a class="nav-button disabled"
-       th:if="${selectedSensorId == null}"
-       href="#"
-       aria-disabled="true"
-       th:text="#{nav.statistics}">
-        View Statistics
-    </a>
-
-    <a class="nav-button" th:text="#{nav.sensors}" th:href="@{/user/sensors}">Manage Sensors</a>
-
-    <a class="nav-button" th:href="@{/user/preferences}" th:text="#{nav.preferences}">Preferences</a>
-
-    <a class="nav-button" th:href="@{/user/alert-rules}" th:text="#{nav.alertRules}"> Alert Rules </a>
-</div>
+<main id="main-content" class="app-main app-main--dashboard">
 
 
-<form class="sensor-selector" th:action="@{/}" method="get">
-    <label for="sensorId" th:text="#{dashboard.sensor}">Sensor</label>
+    <h1 th:text="#{dashboard.title}">Recent Sensor Readings</h1>
 
-    <select id="sensorId" name="sensorId" data-auto-submit-select>
 
-        <option th:text="#{dashboard.selectSensor}" value="" th:selected="${selectedSensorId == null}">
-            Select sensor
-        </option>
+    <form class="sensor-selector" th:action="@{/}" method="get">
+        <label for="sensorId" th:text="#{dashboard.sensor}">Sensor</label>
 
-        <option th:each="sensor : ${sensors}"
-                th:value="${sensor.id}"
-                th:selected="${selectedSensorId != null
+        <select id="sensorId" name="sensorId" data-auto-submit-select>
+
+            <option th:text="#{dashboard.selectSensor}" value="" th:selected="${selectedSensorId == null}">
+                Select sensor
+            </option>
+
+            <option th:each="sensor : ${sensors}"
+                    th:value="${sensor.id}"
+                    th:selected="${selectedSensorId != null
             and sensor.id == selectedSensorId}"
-                th:text="${sensor.name
+                    th:text="${sensor.name
             + ' — '
             + #messages.msg(
                 'sensorType.' + sensor.type.name()
             )
             + ' — '
             + sensor.homeLocation}">
-        </option>
+            </option>
 
-    </select>
+        </select>
 
-    <noscript>
-        <button type="submit">Apply</button>
-    </noscript>
-</form>
+        <noscript>
+            <button type="submit">Apply</button>
+        </noscript>
+    </form>
 
 
-<div class="table-wrapper">
-    <table>
-        <thead>
-        <tr>
-            <th th:text="#{dashboard.location}">
-                Location
-            </th>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            <tr>
+                <th th:text="#{dashboard.location}">
+                    Location
+                </th>
 
-            <th th:text="${selectedSensorType == null
+                <th th:text="${selectedSensorType == null
                     ? #messages.msg('dashboard.reading')
                     : #messages.msg(
                         'dashboard.reading.'
                         + selectedSensorType.name()
                     )}">
-                Reading
-            </th>
+                    Reading
+                </th>
 
-            <th th:text="#{dashboard.timestamp}">
-                Timestamp
-            </th>
+                <th th:text="#{dashboard.timestamp}">
+                    Timestamp
+                </th>
 
-            <th th:text="#{dashboard.timezone}">
-                Timezone
-            </th>
-        </tr>
-        </thead>
+                <th th:text="#{dashboard.timezone}">
+                    Timezone
+                </th>
+            </tr>
+            </thead>
 
-        <tbody>
-        <tr th:each="recentRecord : ${recentRecords}">
-            <td th:text="${recentRecord.location}">
-                Location
-            </td>
+            <tbody>
+            <tr th:each="recentRecord : ${recentRecords}">
+                <td th:text="${recentRecord.location}">
+                    Location
+                </td>
 
-            <td class="reading-value">
+                <td class="reading-value">
                 <span class="reading-temperature"
                       th:if="${recentRecord.sensorType.name()
                           == 'TEMPERATURE'}"
@@ -120,10 +98,10 @@
                     22.50 °C
                 </span>
 
-                <span class="reading-humidity"
-                      th:if="${recentRecord.sensorType.name()
+                    <span class="reading-humidity"
+                          th:if="${recentRecord.sensorType.name()
                           == 'HUMIDITY'}"
-                      th:text="${#numbers.formatDecimal(
+                          th:text="${#numbers.formatDecimal(
                               recentRecord.numericValue,
                               1,
                               2
@@ -133,13 +111,13 @@
                     48.50 % RH
                 </span>
 
-                <span class="motion-state"
-                      th:if="${recentRecord.sensorType.name()
+                    <span class="motion-state"
+                          th:if="${recentRecord.sensorType.name()
                           == 'MOTION'}"
-                      th:classappend="${recentRecord.booleanValue
+                          th:classappend="${recentRecord.booleanValue
                           ? ' motion-detected'
                           : ' motion-clear'}"
-                      th:text="${recentRecord.booleanValue
+                          th:text="${recentRecord.booleanValue
                           ? #messages.msg(
                               'dashboard.motion.detected'
                             )
@@ -148,42 +126,47 @@
                             )}">
                     Detected
                 </span>
-            </td>
+                </td>
 
-            <td th:text="${#temporals.format(
+                <td th:text="${#temporals.format(
                     recentRecord.timestamp,
                     'dd-MM-yyyy HH:mm:ss'
                 )}">
-                14-07-2026 12:30:00
-            </td>
+                    14-07-2026 12:30:00
+                </td>
 
-            <td th:text="${recentRecord.timestamp.offset
+                <td th:text="${recentRecord.timestamp.offset
                     + '['
                     + recentRecord.timestamp.zone
                     + ']'}">
-                +03:00[Europe/Istanbul]
-            </td>
-        </tr>
+                    +03:00[Europe/Istanbul]
+                </td>
+            </tr>
 
-        <tr th:if="${selectedSensorId == null}">
-            <td colspan="4"
-                class="empty-state"
-                th:text="#{dashboard.noSensorSelected}">
-                No sensor selected
-            </td>
-        </tr>
+            <tr th:if="${selectedSensorId == null}">
+                <td colspan="4"
+                    class="empty-state"
+                    th:text="#{dashboard.noSensorSelected}">
+                    No sensor selected
+                </td>
+            </tr>
 
-        <tr th:if="${selectedSensorId != null
+            <tr th:if="${selectedSensorId != null
                 and #lists.isEmpty(recentRecords)}">
-            <td colspan="4"
-                class="empty-state"
-                th:text="#{dashboard.noReadings}">
-                No readings available.
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+                <td colspan="4"
+                    class="empty-state"
+                    th:text="#{dashboard.noReadings}">
+                    No readings available.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
 <script th:src="@{/js/components/auto-submit-select.js}"></script>
 </body>
 </html>
