@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,8 @@
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/auth.css}">
 </head>
 
 <body>
@@ -14,37 +16,105 @@
 <header th:replace="~{fragments/app-shell :: publicHeader('login')}"></header>
 
 <main id="main-content" class="app-main app-main--auth">
+    <section class="auth-card auth-card--login"
+             aria-labelledby="login-title">
+        <header class="auth-header">
+            <h1 id="login-title" th:text="#{auth.login}">
+                Login
+            </h1>
 
-    <h1 th:text="#{auth.login}">Login</h1>
+            <p class="auth-subtitle"
+               th:text="#{auth.loginSubtitle}">
+                Access your sensor dashboard and monitoring tools.
+            </p>
+        </header>
 
-    <p th:if="${param.error}" th:text="#{auth.invalid}">
-        Invalid email or password.
-    </p>
+        <p class="auth-status auth-status--error"
+           id="login-error"
+           role="alert"
+           th:if="${param.error}"
+           th:text="#{auth.invalid}">
+            Invalid email or password.
+        </p>
 
-    <p th:if="${param.logout}" th:text="#{auth.loggedOut}">
-        You have been logged out.
-    </p>
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           th:if="${param.logout}"
+           th:text="#{auth.loggedOut}">
+            You have been logged out.
+        </p>
 
-    <p th:if="${param.registered}" th:text="#{auth.registered}">
-        Registration completed. You can log in.
-    </p>
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           th:if="${param.registered}"
+           th:text="#{auth.registered}">
+            Registration completed. You can log in.
+        </p>
 
-    <form th:action="@{/login}" method="post">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <form class="form-stack"
+              th:action="@{/login}"
+              method="post">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
 
-        <label for="username" th:text="#{auth.email}">Email</label>
-        <input id="username" type="email" name="username" autocomplete="email" required>
+            <div class="form-field">
+                <label class="form-label"
+                       for="username"
+                       th:text="#{auth.email}">
+                    Email
+                </label>
 
-        <label for="password" th:text="#{auth.password}">Password</label>
-        <input id="password" type="password" name="password" autocomplete="current-password" required>
+                <input class="form-control"
+                       id="username"
+                       type="email"
+                       name="username"
+                       autocomplete="email"
+                       autocapitalize="none"
+                       spellcheck="false"
+                       required>
+            </div>
 
-        <button type="submit" th:text="#{auth.login}">Login</button>
-    </form>
+            <div class="form-field">
+                <label class="form-label"
+                       for="password"
+                       th:text="#{auth.password}">
+                    Password
+                </label>
 
-    <a th:href="@{/register}" th:text="#{auth.createAccount}">Create an account</a>
+                <input class="form-control"
+                       id="password"
+                       type="password"
+                       name="password"
+                       autocomplete="current-password"
+                       required>
+            </div>
 
+            <div class="form-actions">
+                <button class="form-button form-button--primary"
+                        type="submit"
+                        th:text="#{auth.login}">
+                    Login
+                </button>
+            </div>
+        </form>
+
+        <p class="auth-switch">
+            <span th:text="#{auth.noAccount}">
+                New to IoT Sensor Monitor?
+            </span>
+
+            <a th:href="@{/register}"
+               th:text="#{auth.createAccount}">
+                Create Account
+            </a>
+        </p>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
 </body>
 </html>

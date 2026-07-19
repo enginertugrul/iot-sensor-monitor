@@ -1,0 +1,112 @@
+.app-main--auth {
+    display: grid;
+    width: 100%;
+    place-items: start center;
+}
+
+.auth-card {
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    padding: clamp(
+            var(--space-6),
+            4vw,
+            var(--space-8)
+    );
+}
+
+.auth-card::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: var(--space-1);
+    background: linear-gradient(
+            90deg,
+            var(--color-primary),
+            var(--color-info)
+    );
+    content: "";
+}
+
+.auth-card--login {
+    max-width: 30rem;
+}
+
+.auth-card--register {
+    max-width: 48rem;
+}
+
+.auth-header {
+    margin-bottom: var(--space-6);
+    text-align: center;
+}
+
+.auth-header h1 {
+    margin-bottom: var(--space-3);
+}
+
+.auth-subtitle {
+    max-width: 36rem;
+    margin: 0 auto;
+    color: var(--color-text-muted);
+}
+
+.auth-status {
+    margin: 0 0 var(--space-5);
+    border: 1px solid;
+    border-left-width: var(--space-1);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-3) var(--space-4);
+}
+
+.auth-status--error {
+    border-color: var(--color-danger);
+    background-color: rgba(248, 113, 113, 0.12);
+    color: var(--color-danger);
+}
+
+.auth-status--success {
+    border-color: var(--color-success);
+    background-color: var(--color-success-surface);
+    color: var(--color-success-text);
+}
+
+.auth-card .form-button {
+    width: 100%;
+}
+
+.auth-switch {
+    display: flex;
+    margin: var(--space-6) 0 0;
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    padding-top: var(--space-5);
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+    text-align: center;
+}
+
+.auth-switch a {
+    font-weight: var(--font-weight-semibold);
+}
+
+@media (max-width: 40rem) {
+    .auth-card {
+        border-radius: var(--radius-md);
+        padding: var(--space-6) var(--space-4);
+    }
+
+    .auth-switch {
+        align-items: center;
+        flex-direction: column;
+    }
+}

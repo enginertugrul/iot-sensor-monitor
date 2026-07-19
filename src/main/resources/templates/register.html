@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,8 @@
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/auth.css}">
 </head>
 
 <body>
@@ -14,112 +16,204 @@
 <header th:replace="~{fragments/app-shell :: publicHeader('register')}"></header>
 
 <main id="main-content" class="app-main app-main--auth">
+    <section class="auth-card auth-card--register"
+             aria-labelledby="register-title">
+        <header class="auth-header">
+            <h1 id="register-title" th:text="#{auth.createAccount}">
+                Create Account
+            </h1>
 
-    <h1 th:text="#{auth.createAccount}">Create Account</h1>
+            <p class="auth-subtitle"
+               th:text="#{auth.registerSubtitle}">
+                Create an account to connect sensors and monitor your home.
+            </p>
+        </header>
 
-    <form th:action="@{/register}" th:object="${form}" method="post">
+        <form class="form-stack"
+              th:action="@{/register}"
+              th:object="${form}"
+              method="post">
+            <div class="form-grid form-grid--two-columns">
+                <div class="form-field">
+                    <label class="form-label"
+                           for="email"
+                           th:text="#{auth.email}">
+                        Email
+                    </label>
 
-        <div>
-            <label for="email" th:text="#{auth.email}">
-                Email
-            </label>
+                    <input class="form-control"
+                           id="email"
+                           type="email"
+                           th:field="*{email}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('email')}"
+                           th:aria-describedby="${#fields.hasErrors('email')
+                            ? 'email-error'
+                            : null}"
+                           autocomplete="email">
 
-            <input id="email"
-                   type="email"
-                   th:field="*{email}"
-                   autocomplete="email">
+                    <div class="form-feedback form-feedback--error"
+                         id="email-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('email')}"
+                         th:errors="*{email}">
+                        Email error
+                    </div>
+                </div>
 
-            <div th:if="${#fields.hasErrors('email')}"
-                 th:errors="*{email}">
-                Email error
+                <div class="form-field">
+                    <label class="form-label"
+                           for="password"
+                           th:text="#{auth.password}">
+                        Password
+                    </label>
+
+                    <input class="form-control"
+                           id="password"
+                           type="password"
+                           th:field="*{password}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('password')}"
+                           th:aria-describedby="${#fields.hasErrors('password')
+                            ? 'password-error'
+                            : null}"
+                           autocomplete="new-password">
+
+                    <div class="form-feedback form-feedback--error"
+                         id="password-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('password')}"
+                         th:errors="*{password}">
+                        Password error
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div>
-            <label for="password" th:text="#{auth.password}">
-                Password
-            </label>
+            <fieldset class="form-section">
+                <legend class="form-section__legend"
+                        th:text="#{preferences.heading}">
+                    Preferences
+                </legend>
 
-            <input id="password"
-                   type="password"
-                   th:field="*{password}"
-                   autocomplete="new-password">
+                <div class="form-grid form-grid--two-columns">
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="preferredLanguage"
+                               th:text="#{preferences.language}">
+                            Preferred Language
+                        </label>
 
-            <div th:if="${#fields.hasErrors('password')}"
-                 th:errors="*{password}">
-                Password error
+                        <select class="form-control"
+                                id="preferredLanguage"
+                                th:field="*{preferredLanguage}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('preferredLanguage')}"
+                                th:aria-describedby="${#fields.hasErrors('preferredLanguage')
+                                 ? 'preferred-language-error'
+                                 : null}">
+                            <option th:each="language : ${languages}"
+                                    th:value="${language}"
+                                    th:text="${#messages.msg(
+                                        'language.' + language.name()
+                                    )}">
+                                English
+                            </option>
+                        </select>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="preferred-language-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('preferredLanguage')}"
+                             th:errors="*{preferredLanguage}">
+                            Language error
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="preferredTemperatureUnit"
+                               th:text="#{preferences.temperatureUnit}">
+                            Preferred Temperature Unit
+                        </label>
+
+                        <select class="form-control"
+                                id="preferredTemperatureUnit"
+                                th:field="*{preferredTemperatureUnit}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('preferredTemperatureUnit')}"
+                                th:aria-describedby="${#fields.hasErrors('preferredTemperatureUnit')
+                                 ? 'temperature-unit-error'
+                                 : null}">
+                            <option th:each="unit : ${temperatureUnits}"
+                                    th:value="${unit}"
+                                    th:text="${#messages.msg(
+                                        'temperatureUnit.' + unit.name()
+                                    )}">
+                                Celsius
+                            </option>
+                        </select>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="temperature-unit-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('preferredTemperatureUnit')}"
+                             th:errors="*{preferredTemperatureUnit}">
+                            Temperature unit error
+                        </div>
+                    </div>
+
+                    <div class="form-field form-field--full">
+                        <label class="form-label"
+                               for="preferredTimezone"
+                               th:text="#{preferences.timezone}">
+                            Preferred Timezone
+                        </label>
+
+                        <select class="form-control"
+                                id="preferredTimezone"
+                                th:field="*{preferredTimezone}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('preferredTimezone')}"
+                                th:aria-describedby="${#fields.hasErrors('preferredTimezone')
+                                 ? 'timezone-error'
+                                 : null}">
+                            <option th:each="timezone : ${timezones}"
+                                    th:value="${timezone}"
+                                    th:text="${timezone}">
+                                Europe/Istanbul
+                            </option>
+                        </select>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="timezone-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('preferredTimezone')}"
+                             th:errors="*{preferredTimezone}">
+                            Timezone error
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-actions">
+                <button class="form-button form-button--primary"
+                        type="submit"
+                        th:text="#{auth.register}">
+                    Register
+                </button>
             </div>
-        </div>
+        </form>
 
-        <div>
-            <label for="preferredLanguage" th:text="#{preferences.language}">
-                Preferred Language
-            </label>
+        <p class="auth-switch">
+            <span th:text="#{auth.haveAccount}">
+                Already have an account?
+            </span>
 
-            <select id="preferredLanguage" th:field="*{preferredLanguage}">
-                <option th:each="language : ${languages}"
-                        th:value="${language}"
-                        th:text="${#messages.msg('language.' + language.name())}">
-                    English
-                </option>
-            </select>
-
-            <div th:if="${#fields.hasErrors('preferredLanguage')}"
-                 th:errors="*{preferredLanguage}">
-                Language error
-            </div>
-        </div>
-
-        <div>
-            <label for="preferredTemperatureUnit" th:text="#{preferences.temperatureUnit}">
-                Preferred Temperature Unit
-            </label>
-
-            <select id="preferredTemperatureUnit" th:field="*{preferredTemperatureUnit}">
-                <option th:each="unit : ${temperatureUnits}"
-                        th:value="${unit}"
-                        th:text="${#messages.msg('temperatureUnit.' + unit.name())}">
-                    Celsius
-                </option>
-            </select>
-
-            <div th:if="${#fields.hasErrors('preferredTemperatureUnit')}"
-                 th:errors="*{preferredTemperatureUnit}">
-                Temperature unit error
-            </div>
-        </div>
-
-        <div>
-            <label for="preferredTimezone" th:text="#{preferences.timezone}">
-                Preferred Timezone
-            </label>
-
-            <select id="preferredTimezone" th:field="*{preferredTimezone}">
-                <option th:each="timezone : ${timezones}"
-                        th:value="${timezone}"
-                        th:text="${timezone}">
-                    Europe/Istanbul
-                </option>
-            </select>
-
-            <div th:if="${#fields.hasErrors('preferredTimezone')}"
-                 th:errors="*{preferredTimezone}">
-                Timezone error
-            </div>
-        </div>
-
-        <button type="submit" th:text="#{auth.register}">
-            Register
-        </button>
-
-    </form>
-
-    <p>
-        <a th:href="@{/login}" th:text="#{auth.login}">
-            Login
-        </a>
-    </p>
-
+            <a th:href="@{/login}" th:text="#{auth.login}">
+                Login
+            </a>
+        </p>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
