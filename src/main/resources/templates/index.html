@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{app.title}">IoT Sensor Monitor</title>
+    <title th:text="#{dashboard.pageTitle}">Dashboard | IoT Sensor Monitor</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
     <link rel="stylesheet" th:href="@{/css/pages/dashboard.css}">
-
 </head>
 
 <body>
@@ -16,157 +18,337 @@
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('dashboard', ${selectedSensorId})}"></header>
 
 <main id="main-content" class="app-main app-main--dashboard">
+    <section class="dashboard-hero" aria-labelledby="dashboard-title">
+        <div class="dashboard-hero__content">
+            <p class="dashboard-eyebrow" th:text="#{dashboard.eyebrow}">
+                Sensor monitoring overview
+            </p>
 
+            <h1 id="dashboard-title" th:text="#{dashboard.title}">
+                Recent Sensor Readings
+            </h1>
 
-    <h1 th:text="#{dashboard.title}">Recent Sensor Readings</h1>
+            <p class="dashboard-hero__description"
+               th:text="#{dashboard.description}">
+                Choose a sensor to review its latest temperature, humidity, or motion readings.
+            </p>
+        </div>
 
+        <section class="dashboard-summary"
+                 aria-labelledby="dashboard-summary-heading">
+            <h2 id="dashboard-summary-heading"
+                class="visually-hidden"
+                th:text="#{dashboard.summaryHeading}">
+                Dashboard summary
+            </h2>
 
-    <form class="sensor-selector" th:action="@{/}" method="get">
-        <label for="sensorId" th:text="#{dashboard.sensor}">Sensor</label>
+            <dl class="dashboard-summary__list">
+                <div class="dashboard-summary__item">
+                    <dt th:text="#{dashboard.availableSensors}">
+                        Available sensors
+                    </dt>
 
-        <select id="sensorId" name="sensorId" data-auto-submit-select>
+                    <dd th:text="${#lists.size(sensors)}">0</dd>
+                </div>
 
-            <option th:text="#{dashboard.selectSensor}" value="" th:selected="${selectedSensorId == null}">
-                Select sensor
-            </option>
+                <div class="dashboard-summary__item">
+                    <dt th:text="#{dashboard.readingsShown}">
+                        Readings shown
+                    </dt>
 
-            <option th:each="sensor : ${sensors}"
-                    th:value="${sensor.id}"
-                    th:selected="${selectedSensorId != null
-            and sensor.id == selectedSensorId}"
-                    th:text="${sensor.name
-            + ' — '
-            + #messages.msg(
-                'sensorType.' + sensor.type.name()
-            )
-            + ' — '
-            + sensor.homeLocation}">
-            </option>
+                    <dd th:text="${#lists.size(recentRecords)}">0</dd>
+                </div>
 
-        </select>
+                <div class="dashboard-summary__item">
+                    <dt th:text="#{dashboard.selectedSensorType}">
+                        Selected sensor type
+                    </dt>
 
-        <noscript>
-            <button type="submit">Apply</button>
-        </noscript>
-    </form>
+                    <dd>
+                        <span th:if="${selectedSensorType == null}"
+                              th:text="#{dashboard.notSelected}">
+                            Not selected
+                        </span>
 
+                        <span th:if="${selectedSensorType != null}"
+                              th:text="${#messages.msg(
+                                  'sensorType.'
+                                  + selectedSensorType.name()
+                              )}">
+                            Temperature sensor
+                        </span>
+                    </dd>
+                </div>
+            </dl>
+        </section>
+    </section>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-            <tr>
-                <th th:text="#{dashboard.location}">
-                    Location
-                </th>
+    <section class="dashboard-panel dashboard-selector-panel"
+             aria-labelledby="sensor-selector-heading">
+        <header class="dashboard-panel__header">
+            <p class="dashboard-eyebrow" th:text="#{dashboard.selectorEyebrow}">
+                Sensor controls
+            </p>
 
-                <th th:text="${selectedSensorType == null
-                    ? #messages.msg('dashboard.reading')
-                    : #messages.msg(
-                        'dashboard.reading.'
-                        + selectedSensorType.name()
-                    )}">
-                    Reading
-                </th>
+            <h2 id="sensor-selector-heading"
+                th:text="#{dashboard.selectorHeading}">
+                Sensor selection
+            </h2>
 
-                <th th:text="#{dashboard.timestamp}">
-                    Timestamp
-                </th>
+            <p class="dashboard-panel__description"
+               th:text="#{dashboard.selectorDescription}">
+                Choose the sensor whose recent activity you want to review.
+            </p>
+        </header>
 
-                <th th:text="#{dashboard.timezone}">
-                    Timezone
-                </th>
-            </tr>
-            </thead>
+        <form class="sensor-selector form-stack"
+              th:action="@{/}"
+              method="get">
+            <div class="form-field">
+                <label class="form-label"
+                       for="sensorId"
+                       th:text="#{dashboard.sensor}">
+                    Sensor
+                </label>
 
-            <tbody>
-            <tr th:each="recentRecord : ${recentRecords}">
-                <td th:text="${recentRecord.location}">
-                    Location
-                </td>
+                <select class="form-control"
+                        id="sensorId"
+                        name="sensorId"
+                        aria-describedby="sensor-selector-help"
+                        th:disabled="${#lists.isEmpty(sensors)}"
+                        data-auto-submit-select>
+                    <option value=""
+                            th:selected="${selectedSensorId == null}"
+                            th:text="#{dashboard.selectSensor}">
+                        Select sensor
+                    </option>
 
-                <td class="reading-value">
-                <span class="reading-temperature"
-                      th:if="${recentRecord.sensorType.name()
-                          == 'TEMPERATURE'}"
-                      th:text="${#numbers.formatDecimal(
-                              recentRecord.numericValue,
-                              1,
-                              2
-                          )
-                          + ' '
-                          + recentRecord.unitSymbol}">
-                    22.50 °C
-                </span>
+                    <option th:each="sensor : ${sensors}"
+                            th:value="${sensor.id}"
+                            th:selected="${selectedSensorId != null
+                                and sensor.id == selectedSensorId}"
+                            th:text="${sensor.name
+                                + ' — '
+                                + #messages.msg(
+                                    'sensorType.'
+                                    + sensor.type.name()
+                                )
+                                + ' — '
+                                + sensor.homeLocation}">
+                        Living Room Sensor — Temperature sensor — Living Room
+                    </option>
+                </select>
 
-                    <span class="reading-humidity"
-                          th:if="${recentRecord.sensorType.name()
-                          == 'HUMIDITY'}"
-                          th:text="${#numbers.formatDecimal(
-                              recentRecord.numericValue,
-                              1,
-                              2
-                          )
-                          + ' '
-                          + recentRecord.unitSymbol}">
-                    48.50 % RH
-                </span>
+                <p id="sensor-selector-help"
+                   class="form-help"
+                   th:text="#{dashboard.selectorHelp}">
+                    The dashboard updates automatically when you choose a sensor.
+                </p>
+            </div>
 
-                    <span class="motion-state"
-                          th:if="${recentRecord.sensorType.name()
-                          == 'MOTION'}"
-                          th:classappend="${recentRecord.booleanValue
-                          ? ' motion-detected'
-                          : ' motion-clear'}"
-                          th:text="${recentRecord.booleanValue
-                          ? #messages.msg(
-                              'dashboard.motion.detected'
-                            )
-                          : #messages.msg(
-                              'dashboard.motion.clear'
+            <noscript>
+                <div class="form-actions">
+                    <button class="form-button form-button--primary"
+                            type="submit"
+                            th:text="#{dashboard.apply}">
+                        Apply
+                    </button>
+                </div>
+            </noscript>
+        </form>
+    </section>
+
+    <section class="dashboard-panel dashboard-readings-panel"
+             aria-labelledby="readings-heading">
+        <header class="dashboard-panel__header">
+            <p class="dashboard-eyebrow" th:text="#{dashboard.readingsEyebrow}">
+                Latest activity
+            </p>
+
+            <h2 id="readings-heading"
+                th:text="#{dashboard.readingsHeading}">
+                Latest readings
+            </h2>
+
+            <p id="readings-description"
+               class="dashboard-panel__description"
+               th:text="#{dashboard.readingsDescription}">
+                The newest data reported by the selected sensor.
+            </p>
+        </header>
+
+        <p class="table-scroll-hint"
+           th:if="${selectedSensorId != null
+               and not #lists.isEmpty(recentRecords)}"
+           th:text="#{dashboard.tableScrollHint}">
+            Scroll horizontally to view all columns.
+        </p>
+
+        <div class="table-wrapper"
+             role="region"
+             tabindex="0"
+             aria-labelledby="readings-heading"
+             th:if="${selectedSensorId != null
+                 and not #lists.isEmpty(recentRecords)}">
+            <table class="readings-table"
+                   aria-describedby="readings-description">
+                <caption class="visually-hidden"
+                         th:text="#{dashboard.readingsCaption}">
+                    Latest readings for the selected sensor
+                </caption>
+
+                <thead>
+                <tr>
+                    <th scope="col" th:text="#{dashboard.location}">
+                        Location
+                    </th>
+
+                    <th scope="col"
+                        th:text="${selectedSensorType == null
+                                ? #messages.msg('dashboard.reading')
+                                : #messages.msg(
+                                    'dashboard.reading.'
+                                    + selectedSensorType.name()
+                                )}">
+                        Reading
+                    </th>
+
+                    <th scope="col" th:text="#{dashboard.timestamp}">
+                        Timestamp
+                    </th>
+
+                    <th scope="col" th:text="#{dashboard.timezone}">
+                        Timezone
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="recentRecord : ${recentRecords}">
+                    <td class="reading-location"
+                        th:text="${recentRecord.location}">
+                        Location
+                    </td>
+
+                    <td class="reading-value">
+                            <span class="reading-temperature"
+                                  th:if="${recentRecord.sensorType.name()
+                                      == 'TEMPERATURE'}"
+                                  th:text="${#numbers.formatDecimal(
+                                      recentRecord.numericValue,
+                                      1,
+                                      2
+                                  )
+                                  + ' '
+                                  + recentRecord.unitSymbol}">
+                                22.50 °C
+                            </span>
+
+                        <span class="reading-humidity"
+                              th:if="${recentRecord.sensorType.name()
+                                      == 'HUMIDITY'}"
+                              th:text="${#numbers.formatDecimal(
+                                      recentRecord.numericValue,
+                                      1,
+                                      2
+                                  )
+                                  + ' '
+                                  + recentRecord.unitSymbol}">
+                                48.50 % RH
+                            </span>
+
+                        <span class="motion-state"
+                              th:if="${recentRecord.sensorType.name()
+                                      == 'MOTION'}"
+                              th:classappend="${recentRecord.booleanValue
+                                      ? ' motion-detected'
+                                      : ' motion-clear'}"
+                              th:text="${recentRecord.booleanValue
+                                      ? #messages.msg(
+                                          'dashboard.motion.detected'
+                                      )
+                                      : #messages.msg(
+                                          'dashboard.motion.clear'
+                                      )}">
+                                Detected
+                            </span>
+                    </td>
+
+                    <td class="reading-timestamp"
+                        th:text="${#temporals.format(
+                                recentRecord.timestamp,
+                                'dd-MM-yyyy HH:mm:ss'
                             )}">
-                    Detected
-                </span>
-                </td>
+                        14-07-2026 12:30:00
+                    </td>
 
-                <td th:text="${#temporals.format(
-                    recentRecord.timestamp,
-                    'dd-MM-yyyy HH:mm:ss'
-                )}">
-                    14-07-2026 12:30:00
-                </td>
+                    <td class="reading-timezone"
+                        th:text="${recentRecord.timestamp.offset
+                                + '['
+                                + recentRecord.timestamp.zone
+                                + ']'}">
+                        +03:00[Europe/Istanbul]
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
-                <td th:text="${recentRecord.timestamp.offset
-                    + '['
-                    + recentRecord.timestamp.zone
-                    + ']'}">
-                    +03:00[Europe/Istanbul]
-                </td>
-            </tr>
+        <div class="dashboard-empty-state"
+             th:if="${#lists.isEmpty(sensors)}">
+            <span class="dashboard-empty-state__icon"
+                  aria-hidden="true"></span>
 
-            <tr th:if="${selectedSensorId == null}">
-                <td colspan="4"
-                    class="empty-state"
-                    th:text="#{dashboard.noSensorSelected}">
-                    No sensor selected
-                </td>
-            </tr>
+            <h3 th:text="#{dashboard.noSensors}">
+                No sensors registered
+            </h3>
 
-            <tr th:if="${selectedSensorId != null
-                and #lists.isEmpty(recentRecords)}">
-                <td colspan="4"
-                    class="empty-state"
-                    th:text="#{dashboard.noReadings}">
-                    No readings available.
-                </td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+            <p th:text="#{dashboard.noSensorsHelp}">
+                Add your first sensor to start receiving readings.
+            </p>
 
+            <a class="form-button form-button--primary"
+               th:href="@{/user/sensors}"
+               th:text="#{dashboard.manageSensors}">
+                Manage sensors
+            </a>
+        </div>
+
+        <div class="dashboard-empty-state"
+             th:if="${not #lists.isEmpty(sensors)
+                 and selectedSensorId == null}">
+            <span class="dashboard-empty-state__icon"
+                  aria-hidden="true"></span>
+
+            <h3 th:text="#{dashboard.noSensorSelected}">
+                No sensor selected
+            </h3>
+
+            <p th:text="#{dashboard.noSensorSelectedHelp}">
+                Choose a sensor above to display its latest readings.
+            </p>
+        </div>
+
+        <div class="dashboard-empty-state"
+             th:if="${selectedSensorId != null
+                 and #lists.isEmpty(recentRecords)}">
+            <span class="dashboard-empty-state__icon"
+                  aria-hidden="true"></span>
+
+            <h3 th:text="#{dashboard.noReadings}">
+                No readings available for selected sensor.
+            </h3>
+
+            <p th:text="#{dashboard.noReadingsHelp}">
+                This sensor has not reported any readings yet.
+            </p>
+        </div>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/components/auto-submit-select.js}"></script>
+
 </body>
 </html>
