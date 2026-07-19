@@ -1,124 +1,416 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{statistics.title}"> Sensor Statistics </title>
-    <script th:src="@{/js/vendor/chart.umd.min.js}"></script>
+    <title th:text="#{statistics.title}">
+        Sensor Statistics | IoT Sensor Monitor
+    </title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
     <link rel="stylesheet" th:href="@{/css/pages/statistics.css}">
 
+    <script th:if="${selectedSensorId != null}"
+            defer
+            th:src="@{/js/vendor/chart.umd.min.js}"></script>
+    <script defer
+            th:src="@{/js/components/auto-submit-select.js}"></script>
+    <script defer
+            th:src="@{/js/pages/statistics.js}"></script>
 </head>
 
 <body>
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('statistics', ${selectedSensorId})}"></header>
 
-<main id="main-content" class="app-main app-main--statistics">
-    <h1 class="visually-hidden" th:text="#{statistics.heading}">
-        Sensor Statistics
-    </h1>
+<main id="main-content"
+      class="app-main app-main--statistics">
+    <header class="statistics-page-header">
+        <p class="statistics-eyebrow"
+           th:text="#{statistics.eyebrow}">
+            Monitoring insights
+        </p>
 
-    <div class="stats-toolbar">
+        <h1 id="statistics-page-title"
+            th:text="#{statistics.heading}">
+            Sensor Statistics
+        </h1>
 
+        <p class="statistics-page-header__description"
+           th:text="#{statistics.description}">
+            Review hourly activity and seven-day trends for your registered
+            sensors.
+        </p>
+    </header>
 
-        <form class="sensor-selector" th:action="@{/statistics}" method="get">
-            <label for="sensorId" th:text="#{statistics.sensor}">Sensor</label>
+    <div id="statisticsConnectionStatus"
+         class="statistics-connection-status"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true"
+         data-state="offline"
+         th:data-offline-message="#{statistics.connectionOffline}"
+         th:data-restored-message="#{statistics.connectionRestored}"
+         hidden>
+        <span class="statistics-connection-status__indicator"
+              aria-hidden="true"></span>
 
-            <select id="sensorId"
-                    name="sensorId"
-                    data-auto-submit-select>
-                <option value="" th:selected="${selectedSensorId == null}"
-                        th:text="#{statistics.selectSensor}">
-                    Select sensor
-                </option>
-
-                <option th:each="sensor : ${sensors}"
-                        th:value="${sensor.id}"
-                        th:selected="${selectedSensorId != null
-            and sensor.id == selectedSensorId}"
-                        th:text="${sensor.name
-            + ' — '
-            + #messages.msg(
-                'sensorType.' + sensor.type.name()
-            )
-            + ' — '
-            + sensor.homeLocation}">
-                </option>
-            </select>
-
-            <noscript>
-                <button type="submit" th:text="#{statistics.apply}">Apply</button>
-            </noscript>
-        </form>
+        <p id="statisticsConnectionMessage"
+           th:text="#{statistics.connectionOffline}">
+            You are offline. Previously loaded statistics remain available,
+            but new data cannot be requested.
+        </p>
     </div>
 
-    <p th:if="${statisticsNoSensorSelected}"
-       class="empty-state"
-       th:text="#{statistics.noSensorSelected}">
-        No sensor selected.
-    </p>
+    <section class="statistics-toolbar"
+             aria-labelledby="statistics-controls-heading">
+        <header class="statistics-toolbar__header">
+            <p class="statistics-eyebrow"
+               th:text="#{statistics.controlsEyebrow}">
+                Data source
+            </p>
 
-    <p th:if="${statisticsSensorNotFound}"
-       class="empty-state"
-       th:text="#{statistics.sensorNotFound}">
-        Selected sensor could not be found.
-    </p>
-
-    <div class="chart-container"
-         th:if="${selectedSensorId != null}">
-        <div class="date-nav-row">
-            <button id="prevDayBtn"
-                    type="button"
-                    class="nav-arrow-button"
-                    th:aria-label="#{statistics.previousDay}">
-                &#8249;
-            </button>
-
-            <h2 class="chart-title"
-                id="hourlyChartTitle"
-                th:text="${selectedSensorName
-                + ' — '
-                + #messages.msg(
-                    'statistics.todayHourly'
-                )}">
-                Sensor — Today's Hourly Statistics
+            <h2 id="statistics-controls-heading"
+                th:text="#{statistics.controlsHeading}">
+                Choose a sensor
             </h2>
 
-            <button id="nextDayBtn"
-                    type="button"
-                    class="nav-arrow-button"
-                    th:aria-label="#{statistics.nextDay}">
-                &#8250;
-            </button>
-        </div>
+            <p class="statistics-toolbar__description"
+               id="statistics-sensor-help"
+               th:text="#{statistics.selectorHelp}">
+                Selecting a sensor loads its current hourly and seven-day
+                statistics.
+            </p>
+        </header>
 
-        <div class="chart-slide-wrapper">
-            <canvas id="sensorHourlyChart"></canvas>
-        </div>
-    </div>
+        <form class="sensor-selector form-stack"
+              th:action="@{/statistics}"
+              method="get">
+            <div class="form-field">
+                <label class="form-label"
+                       for="sensorId"
+                       th:text="#{statistics.sensor}">
+                    Sensor
+                </label>
 
-    <div class="chart-container"
-         th:if="${selectedSensorId != null}">
-        <h2 class="chart-title"
-            th:text="${selectedSensorName
-            + ' — '
-            + #messages.msg(
-                'statistics.lastSevenDays'
-            )}">
-            Sensor — Last 7 Days
+                <select class="form-control"
+                        id="sensorId"
+                        name="sensorId"
+                        aria-describedby="statistics-sensor-help"
+                        data-auto-submit-select
+                        th:disabled="${#lists.isEmpty(sensors)}">
+                    <option value=""
+                            th:selected="${selectedSensorId == null}"
+                            th:text="#{statistics.selectSensor}">
+                        Select sensor
+                    </option>
+
+                    <option th:each="sensor : ${sensors}"
+                            th:value="${sensor.id}"
+                            th:selected="${selectedSensorId != null
+                                and sensor.id == selectedSensorId}"
+                            th:text="${sensor.name
+                                + ' — '
+                                + #messages.msg(
+                                    'sensorType.'
+                                    + sensor.type.name()
+                                )
+                                + ' — '
+                                + sensor.homeLocation}">
+                        Main Sensor — Temperature sensor — Building A
+                    </option>
+                </select>
+            </div>
+
+            <noscript>
+                <div class="form-actions">
+                    <button class="form-button form-button--primary"
+                            type="submit"
+                            th:disabled="${#lists.isEmpty(sensors)}"
+                            th:text="#{statistics.apply}">
+                        Apply
+                    </button>
+                </div>
+            </noscript>
+        </form>
+    </section>
+
+    <section class="statistics-page-state"
+             aria-labelledby="statistics-no-sensors-heading"
+             th:if="${statisticsNoSensorSelected == true
+                 and #lists.isEmpty(sensors)}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-no-sensors-heading"
+            th:text="#{statistics.noSensorsHeading}">
+            No sensors registered
         </h2>
 
-        <canvas id="sensorWeeklyChart"></canvas>
-    </div>
+        <p th:text="#{statistics.noSensorsHelp}">
+            Register a sensor before opening its statistics.
+        </p>
 
+        <a class="form-button form-button--primary"
+           th:href="@{/user/sensors}"
+           th:text="#{statistics.manageSensors}">
+            Manage sensors
+        </a>
+    </section>
+
+    <section class="statistics-page-state"
+             aria-labelledby="statistics-no-selection-heading"
+             th:if="${statisticsNoSensorSelected == true
+                 and not #lists.isEmpty(sensors)}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-no-selection-heading"
+            th:text="#{statistics.noSensorSelectedHeading}">
+            Choose a sensor to view statistics
+        </h2>
+
+        <p th:text="#{statistics.noSensorSelected}">
+            Select a registered sensor above to display its statistics.
+        </p>
+    </section>
+
+    <section class="statistics-page-state statistics-page-state--error"
+             role="alert"
+             aria-labelledby="statistics-sensor-error-heading"
+             th:if="${statisticsSensorNotFound == true}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-sensor-error-heading"
+            th:text="#{statistics.sensorNotFoundHeading}">
+            Sensor unavailable
+        </h2>
+
+        <p th:text="#{statistics.sensorNotFound}">
+            The selected sensor could not be found or is no longer available.
+        </p>
+
+        <a class="form-button form-button--secondary"
+           th:href="@{/statistics}"
+           th:text="#{statistics.resetSelection}">
+            Choose another sensor
+        </a>
+    </section>
+
+    <section id="statisticsChartError"
+             class="statistics-page-state statistics-page-state--error"
+             role="alert"
+             aria-labelledby="statistics-chart-error-heading"
+             th:if="${selectedSensorId != null}"
+             hidden>
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-chart-error-heading"
+            th:text="#{statistics.chartUnavailableHeading}">
+            Charts unavailable
+        </h2>
+
+        <p th:text="#{statistics.chartUnavailable}">
+            The chart resources could not be initialized. Refresh the page
+            and try again.
+        </p>
+    </section>
+
+    <noscript th:if="${selectedSensorId != null}">
+        <section class="statistics-page-state"
+                 aria-labelledby="statistics-javascript-heading">
+            <span class="statistics-page-state__indicator"
+                  aria-hidden="true"></span>
+
+            <h2 id="statistics-javascript-heading"
+                th:text="#{statistics.javascriptRequiredHeading}">
+                JavaScript is required for charts
+            </h2>
+
+            <p th:text="#{statistics.javascriptRequiredHelp}">
+                Enable JavaScript to view and navigate the statistics charts.
+            </p>
+        </section>
+    </noscript>
+
+    <div id="statisticsCharts"
+         class="statistics-chart-grid"
+         th:if="${selectedSensorId != null}"
+         hidden>
+        <section class="statistics-panel"
+                 id="hourlyChartPanel"
+                 aria-labelledby="hourlyChartTitle">
+            <header class="statistics-panel__header">
+                <p class="statistics-eyebrow"
+                   th:text="#{statistics.hourlyEyebrow}">
+                    Hourly view
+                </p>
+
+                <div class="date-nav-row">
+                    <button id="prevDayBtn"
+                            class="nav-arrow-button"
+                            type="button"
+                            aria-controls="hourlyChartRegion"
+                            th:aria-label="#{statistics.previousDay}"
+                            disabled>
+                        <span aria-hidden="true">&#8249;</span>
+                    </button>
+
+                    <h2 class="chart-title"
+                        id="hourlyChartTitle"
+                        th:text="${selectedSensorName
+                            + ' — '
+                            + #messages.msg(
+                                'statistics.todayHourly'
+                            )}">
+                        Sensor — Today's Hourly Statistics
+                    </h2>
+
+                    <button id="nextDayBtn"
+                            class="nav-arrow-button"
+                            type="button"
+                            aria-controls="hourlyChartRegion"
+                            th:aria-label="#{statistics.nextDay}"
+                            disabled>
+                        <span aria-hidden="true">&#8250;</span>
+                    </button>
+                </div>
+
+                <p class="statistics-panel__description"
+                   th:text="#{statistics.hourlyDescription}">
+                    Move between days to inspect when readings or detections
+                    were recorded.
+                </p>
+            </header>
+
+            <div id="hourlyRequestStatus"
+                 class="statistics-request-status"
+                 role="status"
+                 aria-live="polite"
+                 aria-atomic="true"
+                 data-state="loading"
+                 hidden>
+                <span class="statistics-request-status__indicator"
+                      aria-hidden="true"></span>
+
+                <p id="hourlyRequestMessage">
+                    Loading hourly statistics...
+                </p>
+
+                <button id="hourlyRetryButton"
+                        class="form-button form-button--primary"
+                        type="button"
+                        aria-controls="hourlyChartRegion"
+                        th:text="#{statistics.retry}"
+                        hidden>
+                    Retry
+                </button>
+            </div>
+
+            <div id="hourlyChartRegion"
+                 class="statistics-chart-region"
+                 aria-busy="false">
+                <div id="hourlyEmptyState"
+                     class="statistics-chart-empty"
+                     role="status"
+                     aria-live="polite"
+                     aria-atomic="true"
+                     hidden>
+                    <span class="statistics-chart-empty__indicator"
+                          aria-hidden="true"></span>
+
+                    <h3 th:text="#{statistics.noHourlyDataHeading}">
+                        No readings for this day
+                    </h3>
+
+                    <p th:text="#{statistics.noHourlyData}">
+                        No readings were recorded for this sensor on the
+                        selected day.
+                    </p>
+                </div>
+
+                <div id="hourlyChartCanvasWrapper"
+                     class="statistics-chart-wrapper">
+                    <canvas id="sensorHourlyChart"
+                            role="img"
+                            th:aria-label="#{statistics.hourlyChartLabel}">
+                        <span th:text="#{statistics.chartFallback}">
+                            Your browser cannot display this statistics chart.
+                        </span>
+                    </canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="statistics-panel"
+                 id="weeklyChartPanel"
+                 aria-labelledby="weeklyChartTitle">
+            <header class="statistics-panel__header">
+                <p class="statistics-eyebrow"
+                   th:text="#{statistics.weeklyEyebrow}">
+                    Seven-day view
+                </p>
+
+                <h2 class="chart-title"
+                    id="weeklyChartTitle"
+                    th:text="${selectedSensorName
+                        + ' — '
+                        + #messages.msg(
+                            'statistics.lastSevenDays'
+                        )}">
+                    Sensor — Last 7 Days
+                </h2>
+
+                <p class="statistics-panel__description"
+                   th:text="#{statistics.weeklyDescription}">
+                    Compare the selected sensor's daily results across the
+                    latest seven-day period.
+                </p>
+            </header>
+
+            <div id="weeklyChartRegion"
+                 class="statistics-chart-region">
+                <div id="weeklyEmptyState"
+                     class="statistics-chart-empty"
+                     role="status"
+                     aria-live="polite"
+                     aria-atomic="true"
+                     hidden>
+                    <span class="statistics-chart-empty__indicator"
+                          aria-hidden="true"></span>
+
+                    <h3 th:text="#{statistics.noWeeklyDataHeading}">
+                        No readings in this period
+                    </h3>
+
+                    <p th:text="#{statistics.noWeeklyData}">
+                        No readings were recorded for this sensor during the
+                        latest seven-day period.
+                    </p>
+                </div>
+
+                <div id="weeklyChartCanvasWrapper"
+                     class="statistics-chart-wrapper">
+                    <canvas id="sensorWeeklyChart"
+                            role="img"
+                            th:aria-label="#{statistics.weeklyChartLabel}">
+                        <span th:text="#{statistics.chartFallback}">
+                            Your browser cannot display this statistics chart.
+                        </span>
+                    </canvas>
+                </div>
+            </div>
+        </section>
+    </div>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
-
-<script th:src="@{/js/components/auto-submit-select.js}"></script>
 
 <script id="statistics-page-data"
         type="text/plain"
@@ -154,6 +446,11 @@
             "todayHourly": /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
             "hourlyStatistics": /*[[#{statistics.hourlyStatistics}]]*/ "Hourly Statistics",
             "hourAxis": /*[[#{statistics.hourAxis}]]*/ "Hour of the Day",
+            "loadingHourly": /*[[#{statistics.loadingHourly}]]*/ "Loading hourly statistics...",
+            "hourlyLoaded": /*[[#{statistics.hourlyLoaded}]]*/ "Hourly statistics loaded.",
+            "hourlyLoadError": /*[[#{statistics.hourlyLoadError}]]*/ "Hourly statistics could not be loaded. The current view has not changed.",
+            "hourlyOffline": /*[[#{statistics.hourlyOffline}]]*/ "You are offline. Reconnect, then retry.",
+            "connectionRestoredRetry": /*[[#{statistics.connectionRestoredRetry}]]*/ "Connection restored. Retry to load the requested day.",
             "days": [
                 /*[[#{statistics.day.sunday}]]*/ "Sunday",
                 /*[[#{statistics.day.monday}]]*/ "Monday",
@@ -166,10 +463,6 @@
         }
     }
 </script>
-
-<script th:if="${selectedSensorId != null}"
-        th:src="@{/js/pages/statistics.js}"></script>
-
 
 </body>
 </html>
