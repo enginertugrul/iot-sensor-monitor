@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{sensors.title}">Your Sensors</title>
+    <title th:text="#{sensors.title}">Sensors | IoT Sensor Monitor</title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/sensors.css}">
 </head>
 
 <body>
@@ -14,101 +18,465 @@
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('sensors', ${null})}"></header>
 
 <main id="main-content" class="app-main app-main--sensors">
+    <header class="sensors-page-header">
+        <div class="sensors-page-header__content">
+            <p class="sensors-eyebrow"
+               th:text="#{sensors.eyebrow}">
+                Sensor management
+            </p>
 
-    <h1 th:text="#{sensors.heading}">Your Sensors</h1>
+            <h1 id="sensors-title"
+                th:text="#{sensors.heading}">
+                Manage Sensors
+            </h1>
 
+            <p class="sensors-page-header__description"
+               th:text="#{sensors.description}">
+                Register sensor devices, document where they are installed,
+                and review their current status.
+            </p>
+        </div>
 
-    <p th:if="${sensorCreated}" th:text="#{sensors.created}"></p>
+        <dl class="sensors-summary"
+            th:aria-label="#{sensors.summaryHeading}">
+            <div class="sensors-summary__item">
+                <dt th:text="#{sensors.registeredCount}">
+                    Registered sensors
+                </dt>
 
-    <div th:if="${createdSensorToken}">
-        <p>
-            <span th:text="#{sensors.tokenFor}">Sensor token for</span>
-            <strong th:text="${createdSensorName}">Sensor</strong>
+                <dd th:text="${#lists.size(sensors)}">0</dd>
+            </div>
+        </dl>
+    </header>
+
+    <section class="sensor-token-panel"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true"
+             aria-labelledby="sensor-token-heading"
+             th:if="${successMessage}">
+        <p class="sensor-token-panel__eyebrow"
+           th:text="#{sensors.created}">
+            Sensor created successfully.
         </p>
-        <p th:text="#{sensors.tokenCopyWarning}">
-            Copy this token now. It will not be shown again.
+
+        <h2 id="sensor-token-heading"
+            th:text="#{sensors.tokenHeading}">
+            Save the ingestion token
+        </h2>
+
+        <p class="sensor-token-panel__name">
+            <span th:text="#{sensors.tokenFor}">
+                Ingestion token for
+            </span>
+
+            <strong th:text="${createdSensorName}">
+                Sensor
+            </strong>
         </p>
-        <code th:text="${createdSensorToken}">token</code>
-    </div>
 
-    <h2 th:text="#{sensors.addHeading}">Add Sensor</h2>
+        <p class="sensor-token-panel__warning"
+           th:text="#{sensors.tokenCopyWarning}">
+            Copy and store this token securely now. It will not be shown again.
+        </p>
 
-    <form th:action="@{/user/sensors}" th:object="${form}" method="post">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <div class="sensor-token-panel__value">
+            <code th:text="${createdSensorToken}">
+                sensor-ingestion-token
+            </code>
+        </div>
+    </section>
 
-        <label for="type" th:text="#{sensors.type}">Sensor Type</label>
-        <select id="type" th:field="*{type}">
-            <option th:each="type : ${sensorTypes}"
-                    th:value="${type}"
-                    th:text="${#messages.msg('sensorType.' + type.name())}">
-            </option>
-        </select>
-        <p th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+    <section class="sensors-panel"
+             aria-labelledby="add-sensor-heading">
+        <header class="sensors-panel__header">
+            <p class="sensors-eyebrow"
+               th:text="#{sensors.addEyebrow}">
+                Registration
+            </p>
 
-        <label for="name" th:text="#{sensors.name}">Name</label>
-        <input id="name" type="text" th:field="*{name}" th:placeholder="#{sensors.placeholder.name}">
-        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+            <h2 id="add-sensor-heading"
+                th:text="#{sensors.addHeading}">
+                Add Sensor
+            </h2>
 
-        <label for="city" th:text="#{sensors.city}">City</label>
-        <input id="city" type="text" th:field="*{city}" th:placeholder="#{sensors.placeholder.city}">
-        <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></p>
+            <p class="sensors-panel__description"
+               th:text="#{sensors.addDescription}">
+                Provide the details used to identify the sensor and interpret
+                its readings.
+            </p>
+        </header>
 
-        <label for="district" th:text="#{sensors.district}">District</label>
-        <input id="district" type="text" th:field="*{district}" th:placeholder="#{sensors.placeholder.district}">
-        <p th:if="${#fields.hasErrors('district')}" th:errors="*{district}"></p>
+        <form class="sensor-form form-stack"
+              th:action="@{/user/sensors}"
+              th:object="${form}"
+              method="post">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
 
-        <label for="homeLocation" th:text="#{sensors.homeLocation}">Location in Home</label>
-        <input id="homeLocation" type="text" th:field="*{homeLocation}"
-               th:placeholder="#{sensors.placeholder.homeLocation}">
-        <p th:if="${#fields.hasErrors('homeLocation')}" th:errors="*{homeLocation}"></p>
+            <div class="form-grid form-grid--two-columns">
+                <div class="form-field">
+                    <label class="form-label"
+                           for="type"
+                           th:text="#{sensors.type}">
+                        Sensor Type
+                    </label>
 
-        <label for="timezone" th:text="#{sensors.timezone}">Timezone</label>
-        <select id="timezone" th:field="*{timezone}">
-            <option th:each="timezoneOption : ${timezoneOptions}"
-                    th:value="${timezoneOption.id}"
-                    th:text="${timezoneOption.displayName}">
-            </option>
-        </select>
-        <p th:if="${#fields.hasErrors('timezone')}" th:errors="*{timezone}"></p>
+                    <select class="form-control"
+                            id="type"
+                            th:field="*{type}"
+                            th:errorclass="form-control--invalid"
+                            th:aria-invalid="${#fields.hasErrors('type')}"
+                            th:aria-describedby="${#fields.hasErrors('type')
+                                ? 'type-error'
+                                : null}"
+                            required>
+                        <option th:each="type : ${sensorTypes}"
+                                th:value="${type}"
+                                th:text="${#messages.msg(
+                                    'sensorType.' + type.name()
+                                )}">
+                            Temperature sensor
+                        </option>
+                    </select>
 
-        <button type="submit" th:text="#{sensors.addButton}">Add Sensor</button>
-    </form>
+                    <div class="form-feedback form-feedback--error"
+                         id="type-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('type')}"
+                         th:errors="*{type}">
+                        Sensor type error
+                    </div>
+                </div>
 
-    <h2 th:text="#{sensors.registeredHeading}">Registered Sensors</h2>
+                <div class="form-field">
+                    <label class="form-label"
+                           for="name"
+                           th:text="#{sensors.name}">
+                        Name
+                    </label>
 
-    <table>
-        <thead>
-        <tr>
-            <th th:text="#{sensors.name}">Name</th>
-            <th th:text="#{sensors.typeShort}">Type</th>
-            <th th:text="#{sensors.city}">City</th>
-            <th th:text="#{sensors.district}">District</th>
-            <th th:text="#{sensors.homeLocationShort}">Home Location</th>
-            <th th:text="#{sensors.timezone}">Timezone</th>
-            <th th:text="#{sensors.status}">Status</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="sensor : ${sensors}">
-            <td th:text="${sensor.name}">Living Room Sensor</td>
-            <td th:text="${#messages.msg('sensorType.' + sensor.type.name())}">Temperature sensor</td>
-            <td th:text="${sensor.city}">Istanbul</td>
-            <td th:text="${sensor.district}">Kadikoy</td>
-            <td th:text="${sensor.homeLocation}">Hall</td>
-            <td th:text="${sensor.timezone}">Europe/Istanbul</td>
-            <td th:text="${sensor.active ? #messages.msg('sensors.status.active') : #messages.msg('sensors.status.inactive')}">
-                Active
-            </td>
-        </tr>
+                    <input class="form-control"
+                           id="name"
+                           type="text"
+                           maxlength="100"
+                           th:field="*{name}"
+                           th:placeholder="#{sensors.placeholder.name}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('name')}"
+                           th:aria-describedby="${#fields.hasErrors('name')
+                               ? 'name-error'
+                               : null}"
+                           required>
 
-        <tr th:if="${#lists.isEmpty(sensors)}">
-            <td colspan="7" th:text="#{sensors.empty}">You do not have any sensors yet.</td>
-        </tr>
-        </tbody>
-    </table>
+                    <div class="form-feedback form-feedback--error"
+                         id="name-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('name')}"
+                         th:errors="*{name}">
+                        Sensor name error
+                    </div>
+                </div>
 
+                <div class="form-field">
+                    <label class="form-label"
+                           for="city"
+                           th:text="#{sensors.city}">
+                        City
+                    </label>
+
+                    <input class="form-control"
+                           id="city"
+                           type="text"
+                           maxlength="100"
+                           th:field="*{city}"
+                           th:placeholder="#{sensors.placeholder.city}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('city')}"
+                           th:aria-describedby="${#fields.hasErrors('city')
+                               ? 'city-error'
+                               : null}"
+                           required>
+
+                    <div class="form-feedback form-feedback--error"
+                         id="city-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('city')}"
+                         th:errors="*{city}">
+                        City error
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label"
+                           for="district"
+                           th:text="#{sensors.district}">
+                        District
+                    </label>
+
+                    <input class="form-control"
+                           id="district"
+                           type="text"
+                           maxlength="100"
+                           th:field="*{district}"
+                           th:placeholder="#{sensors.placeholder.district}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('district')}"
+                           th:aria-describedby="${#fields.hasErrors('district')
+                               ? 'district-error'
+                               : null}"
+                           required>
+
+                    <div class="form-feedback form-feedback--error"
+                         id="district-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('district')}"
+                         th:errors="*{district}">
+                        District error
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label"
+                           for="homeLocation"
+                           th:text="#{sensors.homeLocation}">
+                        Installation Location
+                    </label>
+
+                    <input class="form-control"
+                           id="homeLocation"
+                           type="text"
+                           maxlength="100"
+                           th:field="*{homeLocation}"
+                           th:placeholder="#{sensors.placeholder.homeLocation}"
+                           th:errorclass="form-control--invalid"
+                           th:aria-invalid="${#fields.hasErrors('homeLocation')}"
+                           th:aria-describedby="${#fields.hasErrors('homeLocation')
+                               ? 'home-location-help home-location-error'
+                               : 'home-location-help'}"
+                           required>
+
+                    <p class="form-help"
+                       id="home-location-help"
+                       th:text="#{sensors.locationHelp}">
+                        Use a precise label such as building, floor, aisle, or room.
+                    </p>
+
+                    <div class="form-feedback form-feedback--error"
+                         id="home-location-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('homeLocation')}"
+                         th:errors="*{homeLocation}">
+                        Installation location error
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label"
+                           for="timezone"
+                           th:text="#{sensors.timezone}">
+                        Timezone
+                    </label>
+
+                    <select class="form-control"
+                            id="timezone"
+                            th:field="*{timezone}"
+                            th:errorclass="form-control--invalid"
+                            th:aria-invalid="${#fields.hasErrors('timezone')}"
+                            th:aria-describedby="${#fields.hasErrors('timezone')
+                                ? 'timezone-help timezone-error'
+                                : 'timezone-help'}"
+                            required>
+                        <option th:each="timezoneOption : ${timezoneOptions}"
+                                th:value="${timezoneOption.id}"
+                                th:text="${timezoneOption.displayName}">
+                            Europe/Istanbul
+                        </option>
+                    </select>
+
+                    <p class="form-help"
+                       id="timezone-help"
+                       th:text="#{sensors.timezoneHelp}">
+                        Readings from this sensor will be presented in this timezone.
+                    </p>
+
+                    <div class="form-feedback form-feedback--error"
+                         id="timezone-error"
+                         role="alert"
+                         th:if="${#fields.hasErrors('timezone')}"
+                         th:errors="*{timezone}">
+                        Timezone error
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="form-button form-button--primary"
+                        type="submit"
+                        th:text="#{sensors.addButton}">
+                    Add Sensor
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <section class="sensors-panel"
+             aria-labelledby="registered-sensors-heading">
+        <header class="sensors-panel__header">
+            <p class="sensors-eyebrow"
+               th:text="#{sensors.registeredEyebrow}">
+                Inventory
+            </p>
+
+            <h2 id="registered-sensors-heading"
+                th:text="#{sensors.registeredHeading}">
+                Registered Sensors
+            </h2>
+
+            <p class="sensors-panel__description"
+               th:text="#{sensors.registeredDescription}">
+                Review the sensors connected to your account and open their
+                data views.
+            </p>
+        </header>
+
+        <p class="sensors-table-scroll-hint"
+           id="sensors-table-scroll-hint"
+           th:if="${not #lists.isEmpty(sensors)}"
+           th:text="#{sensors.tableScrollHint}">
+            Scroll horizontally to view all sensor details.
+        </p>
+
+        <div class="sensors-table-wrapper"
+             role="region"
+             tabindex="0"
+             aria-labelledby="registered-sensors-heading"
+             aria-describedby="sensors-table-scroll-hint"
+             th:if="${not #lists.isEmpty(sensors)}">
+            <table class="sensors-table">
+                <caption class="visually-hidden"
+                         th:text="#{sensors.tableCaption}">
+                    Registered sensors and their deployment details
+                </caption>
+
+                <thead>
+                <tr>
+                    <th scope="col" th:text="#{sensors.sensor}">
+                        Sensor
+                    </th>
+
+                    <th scope="col" th:text="#{sensors.site}">
+                        Region
+                    </th>
+
+                    <th scope="col"
+                        th:text="#{sensors.homeLocationShort}">
+                        Installation Location
+                    </th>
+
+                    <th scope="col" th:text="#{sensors.timezone}">
+                        Timezone
+                    </th>
+
+                    <th scope="col" th:text="#{sensors.status}">
+                        Status
+                    </th>
+
+                    <th scope="col" th:text="#{sensors.actions}">
+                        Actions
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="sensor : ${sensors}">
+                    <td>
+                        <strong class="sensor-name"
+                                th:text="${sensor.name}">
+                            North Entrance Sensor
+                        </strong>
+
+                        <span class="sensor-type"
+                              th:text="${#messages.msg(
+                                      'sensorType.' + sensor.type.name()
+                                  )}">
+                                Temperature sensor
+                            </span>
+                    </td>
+
+                    <td class="sensor-site">
+                            <span class="sensor-site__city"
+                                  th:text="${sensor.city}">
+                                Istanbul
+                            </span>
+
+                        <small class="sensor-site__district"
+                               th:text="${sensor.district}">
+                            Kadikoy
+                        </small>
+                    </td>
+
+                    <td th:text="${sensor.homeLocation}">
+                        Building A - Floor 2
+                    </td>
+
+                    <td>
+                            <span class="sensor-timezone"
+                                  th:text="${sensor.timezone}">
+                                Europe/Istanbul
+                            </span>
+                    </td>
+
+                    <td>
+                            <span class="sensor-status"
+                                  th:classappend="${sensor.active
+                                      ? ' sensor-status--active'
+                                      : ' sensor-status--inactive'}"
+                                  th:text="${sensor.active
+                                      ? #messages.msg('sensors.status.active')
+                                      : #messages.msg('sensors.status.inactive')}">
+                                Active
+                            </span>
+                    </td>
+
+                    <td>
+                        <div class="sensor-actions">
+                            <a class="sensor-action-link"
+                               th:href="@{/(sensorId=${sensor.id})}"
+                               th:text="#{sensors.viewReadings}">
+                                View readings
+                            </a>
+
+                            <a class="sensor-action-link"
+                               th:href="@{/statistics(sensorId=${sensor.id})}"
+                               th:text="#{sensors.viewStatistics}">
+                                View statistics
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="sensors-empty-state"
+             th:if="${#lists.isEmpty(sensors)}">
+            <span class="sensors-empty-state__icon"
+                  aria-hidden="true"></span>
+
+            <h3 th:text="#{sensors.emptyHeading}">
+                No sensors registered
+            </h3>
+
+            <p th:text="#{sensors.empty}">
+                Use the registration form above to add your first sensor.
+            </p>
+        </div>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
 </body>
 </html>
