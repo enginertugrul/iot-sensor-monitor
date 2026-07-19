@@ -1,6 +1,5 @@
 package com.enginertugrul.iottemperaturemonitor.dto.user;
 
-
 import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.validation.ValidZoneId;
@@ -14,15 +13,15 @@ import lombok.Setter;
 @Setter
 public class UserPreferencesForm {
 
-    @NotNull
+    @NotNull(message = "{preferences.languageRequired}")
     private PreferredLanguage preferredLanguage;
 
-    @NotNull
+    @NotNull(message = "{preferences.temperatureUnitRequired}")
     private TemperatureUnit temperatureUnit;
 
-    @NotBlank
-    @Size(max= 64)
-    @ValidZoneId
+    @NotBlank(message = "{preferences.timezoneRequired}")
+    @Size(max = 64, message = "{preferences.timezoneLength}")
+    @ValidZoneId(message = "{preferences.timezoneInvalid}")
     private String preferredTimezone;
 
 }

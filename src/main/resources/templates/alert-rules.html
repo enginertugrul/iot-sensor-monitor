@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{alertRules.title}"> Alert Rules </title>
+    <title th:text="#{alertRules.title}">
+        Alert Rules | IoT Sensor Monitor
+    </title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/alert-rules.css}">
 </head>
 
 <body>
@@ -14,413 +20,714 @@
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('alert-rules', ${null})}"></header>
 
 <main id="main-content" class="app-main app-main--alert-rules">
+    <header class="alert-rules-page-header">
+        <div class="alert-rules-page-header__content">
+            <p class="alert-rules-eyebrow"
+               th:text="#{alertRules.eyebrow}">
+                Notification automation
+            </p>
 
-    <h1 th:text="#{alertRules.heading}">
-        Alert Rules
-    </h1>
+            <h1 id="alert-rules-title"
+                th:text="#{alertRules.heading}">
+                Alert Rules
+            </h1>
 
+            <p class="alert-rules-page-header__description"
+               th:text="#{alertRules.description}">
+                Create notification rules for numeric thresholds and motion
+                events.
+            </p>
+        </div>
 
-    <p th:if="${alertRuleCreated}"
-       th:text="#{alertRules.created}">
-        Alert rule created.
-    </p>
+        <dl class="alert-rules-summary"
+            th:aria-label="#{alertRules.summaryHeading}">
+            <div class="alert-rules-summary__item">
+                <dt th:text="#{alertRules.registeredCount}">
+                    Registered rules
+                </dt>
 
-    <p th:if="${alertRuleEnabled}"
-       th:text="#{alertRules.enabled}">
-        Alert rule enabled.
-    </p>
+                <dd th:text="${#lists.size(alertRules)}">0</dd>
+            </div>
+        </dl>
+    </header>
 
-    <p th:if="${alertRuleDisabled}"
-       th:text="#{alertRules.disabled}">
-        Alert rule disabled.
-    </p>
-
-    <p th:if="${alertRuleDeleted}"
-       th:text="#{alertRules.deleted}">
-        Alert rule deleted.
-    </p>
-
-    <h2 th:text="#{alertRules.addHeading}">
-        Add Alert Rule
-    </h2>
-
-    <section>
-        <h3 th:text="#{alertRules.numericHeading}">
-            Numeric Threshold Rule
-        </h3>
-
-        <p th:if="${#lists.isEmpty(numericSensors)}"
-           th:text="#{alertRules.noNumericSensors}">
-            Add a temperature or humidity sensor first.
+    <div class="alert-rules-notices"
+         aria-live="polite"
+         th:if="${alertRuleCreated == true
+         or alertRuleEnabled == true
+         or alertRuleDisabled == true
+         or alertRuleDeleted == true}">
+        <p class="form-status form-status--success"
+           role="status"
+           th:if="${alertRuleCreated}"
+           th:text="#{alertRules.created}">
+            Alert rule created.
         </p>
 
-        <form id="numericRuleForm"
-              th:if="${!#lists.isEmpty(numericSensors)}"
-              th:action="@{/user/alert-rules/numeric-threshold}"
-              th:object="${numericForm}"
-              method="post">
-
-            <input type="hidden"
-                   th:name="${_csrf.parameterName}"
-                   th:value="${_csrf.token}">
-
-            <div th:if="${#fields.hasGlobalErrors()}">
-                <p th:each="error : ${#fields.globalErrors()}"
-                   th:text="${error}">
-                    Alert rule could not be created.
-                </p>
-            </div>
-
-            <label for="numericSensorId"
-                   th:text="#{alertRules.sensor}">
-                Sensor
-            </label>
-
-            <select id="numericSensorId"
-                    th:field="*{sensorId}"
-                    required>
-                <option value=""
-                        th:text="#{alertRules.selectSensor}">
-                    Select sensor
-                </option>
-
-                <option th:each="sensor : ${numericSensors}"
-                        th:value="${sensor.id}"
-                        th:attr="
-                        data-sensor-type=${sensor.type.name()},
-                        data-unit=${sensor.type.name() == 'TEMPERATURE'
-                            ? temperatureUnitSymbol
-                            : #messages.msg(
-                                'measurement.relativeHumidity.symbol'
-                            )}
-                    "
-                        th:text="${sensor.name
-                        + ' — '
-                        + #messages.msg(
-                            'sensorType.' + sensor.type.name()
-                        )
-                        + ' — '
-                        + sensor.homeLocation}">
-                    Living Room Sensor
-                </option>
-            </select>
-
-            <p th:if="${#fields.hasErrors('sensorId')}"
-               th:errors="*{sensorId}">
-                Sensor error
-            </p>
-
-            <label for="numericComparisonOperator"
-                   th:text="#{alertRules.condition}">
-                Condition
-            </label>
-
-            <select id="numericComparisonOperator"
-                    th:field="*{comparisonOperator}"
-                    required>
-                <option value=""
-                        th:text="#{alertRules.selectCondition}">
-                    Select condition
-                </option>
-
-                <option th:each="operator : ${comparisonOperators}"
-                        th:value="${operator}"
-                        th:text="${#messages.msg(
-                        'comparisonOperator.' + operator.name()
-                    )}">
-                    Above threshold
-                </option>
-            </select>
-
-            <p th:if="${#fields.hasErrors('comparisonOperator')}"
-               th:errors="*{comparisonOperator}">
-                Condition error
-            </p>
-
-            <label for="numericThresholdValue">
-            <span th:text="#{alertRules.threshold}">
-                Threshold
-            </span>
-
-                <span id="numericThresholdUnitWrapper"
-                      hidden>
-                (<span id="numericThresholdUnit"></span>)
-            </span>
-            </label>
-
-            <input id="numericThresholdValue"
-                   type="number"
-                   step="0.01"
-                   th:field="*{thresholdValue}"
-                   required>
-
-            <p th:if="${#fields.hasErrors('thresholdValue')}"
-               th:errors="*{thresholdValue}">
-                Threshold error
-            </p>
-
-            <label for="numericCooldownMinutes"
-                   th:text="#{alertRules.cooldownMinutes}">
-                Cooldown (minutes)
-            </label>
-
-            <input id="numericCooldownMinutes"
-                   type="number"
-                   min="1"
-                   max="10080"
-                   step="1"
-                   th:field="*{cooldownMinutes}"
-                   required>
-
-            <p th:if="${#fields.hasErrors('cooldownMinutes')}"
-               th:errors="*{cooldownMinutes}">
-                Cooldown error
-            </p>
-
-            <button type="submit"
-                    th:text="#{alertRules.createNumericButton}">
-                Create Numeric Rule
-            </button>
-        </form>
-    </section>
-
-    <section>
-        <h3 th:text="#{alertRules.motionHeading}">
-            Motion Detection Rule
-        </h3>
-
-        <p th:if="${#lists.isEmpty(motionSensors)}"
-           th:text="#{alertRules.noMotionSensors}">
-            Add a motion sensor first.
+        <p class="form-status form-status--success"
+           role="status"
+           th:if="${alertRuleEnabled}"
+           th:text="#{alertRules.enabled}">
+            Alert rule enabled.
         </p>
 
-        <form th:if="${!#lists.isEmpty(motionSensors)}"
-              th:action="@{/user/alert-rules/motion-detected}"
-              th:object="${motionForm}"
-              method="post">
+        <p class="form-status form-status--success"
+           role="status"
+           th:if="${alertRuleDisabled}"
+           th:text="#{alertRules.disabled}">
+            Alert rule disabled.
+        </p>
 
-            <input type="hidden"
-                   th:name="${_csrf.parameterName}"
-                   th:value="${_csrf.token}">
+        <p class="form-status form-status--success"
+           role="status"
+           th:if="${alertRuleDeleted}"
+           th:text="#{alertRules.deleted}">
+            Alert rule deleted.
+        </p>
+    </div>
 
-            <div th:if="${#fields.hasGlobalErrors()}">
-                <p th:each="error : ${#fields.globalErrors()}"
-                   th:text="${error}">
-                    Alert rule could not be created.
-                </p>
-            </div>
-
-            <label for="motionSensorId"
-                   th:text="#{alertRules.sensor}">
-                Sensor
-            </label>
-
-            <select id="motionSensorId"
-                    th:field="*{sensorId}"
-                    required>
-                <option value=""
-                        th:text="#{alertRules.selectSensor}">
-                    Select sensor
-                </option>
-
-                <option th:each="sensor : ${motionSensors}"
-                        th:value="${sensor.id}"
-                        th:text="${sensor.name
-                        + ' — '
-                        + #messages.msg(
-                            'sensorType.' + sensor.type.name()
-                        )
-                        + ' — '
-                        + sensor.homeLocation}">
-                    Hall Motion Sensor
-                </option>
-            </select>
-
-            <p th:if="${#fields.hasErrors('sensorId')}"
-               th:errors="*{sensorId}">
-                Sensor error
+    <section class="alert-rules-panel"
+             aria-labelledby="create-alert-rule-heading">
+        <header class="alert-rules-panel__header">
+            <p class="alert-rules-eyebrow"
+               th:text="#{alertRules.createEyebrow}">
+                Rule creation
             </p>
 
-            <p>
-            <span th:text="#{alertRules.event}">
-                Event
-            </span>:
-                <strong th:text="#{alertEventType.MOTION_DETECTED}">
-                    Motion detected
-                </strong>
+            <h2 id="create-alert-rule-heading"
+                th:text="#{alertRules.addHeading}">
+                Add Alert Rule
+            </h2>
+
+            <p th:text="#{alertRules.addDescription}">
+                Choose the event you want to monitor and how frequently
+                notifications may be sent.
             </p>
+        </header>
 
-            <label for="motionCooldownMinutes"
-                   th:text="#{alertRules.cooldownMinutes}">
-                Cooldown (minutes)
-            </label>
+        <div class="alert-rule-form-grid">
+            <section class="alert-rule-card alert-rule-card--numeric"
+                     aria-labelledby="numeric-rule-heading">
+                <header class="alert-rule-card__header">
+                    <h3 id="numeric-rule-heading"
+                        th:text="#{alertRules.numericHeading}">
+                        Numeric Threshold Rule
+                    </h3>
 
-            <input id="motionCooldownMinutes"
-                   type="number"
-                   min="1"
-                   max="10080"
-                   step="1"
-                   th:field="*{cooldownMinutes}"
-                   required>
+                    <p th:text="#{alertRules.numericDescription}">
+                        Send a notification when temperature or humidity meets
+                        a selected threshold condition.
+                    </p>
+                </header>
 
-            <p th:if="${#fields.hasErrors('cooldownMinutes')}"
-               th:errors="*{cooldownMinutes}">
-                Cooldown error
-            </p>
+                <div class="form-status form-status--info alert-rule-availability"
+                     th:if="${#lists.isEmpty(numericSensors)}">
+                    <p th:text="#{alertRules.noNumericSensors}">
+                        Add a temperature or humidity sensor before creating
+                        this rule.
+                    </p>
 
-            <button type="submit"
-                    th:text="#{alertRules.createMotionButton}">
-                Create Motion Rule
-            </button>
-        </form>
-    </section>
-
-    <h2 th:text="#{alertRules.registeredHeading}">
-        Registered Alert Rules
-    </h2>
-
-    <table>
-        <thead>
-        <tr>
-            <th th:text="#{alertRules.sensor}">Sensor</th>
-            <th th:text="#{alertRules.ruleType}">Rule Type</th>
-            <th th:text="#{alertRules.condition}">Condition</th>
-            <th th:text="#{alertRules.threshold}">Threshold</th>
-            <th th:text="#{alertRules.cooldown}">Cooldown</th>
-            <th th:text="#{alertRules.status}">Status</th>
-            <th th:text="#{alertRules.actions}">Actions</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="rule : ${alertRules}">
-            <td>
-                <div th:text="${rule.sensorName}">
-                    Living Room Sensor
+                    <a class="form-button form-button--secondary"
+                       th:href="@{/user/sensors}"
+                       th:text="#{alertRules.manageSensors}">
+                        Manage sensors
+                    </a>
                 </div>
 
-                <small th:text="${#messages.msg(
-                    'sensorType.' + rule.sensorType.name()
-                )
-                + ' — '
-                + rule.sensorHomeLocation}">
-                    Temperature sensor — Living room
-                </small>
-            </td>
-
-            <td th:text="${#messages.msg(
-                'alertRuleType.' + rule.ruleType.name()
-            )}">
-                Numeric threshold
-            </td>
-
-            <td>
-            <span th:if="${rule.comparisonOperator != null}"
-                  th:text="${#messages.msg(
-                      'comparisonOperator.'
-                      + rule.comparisonOperator.name()
-                  )}">
-                Above threshold
-            </span>
-
-                <span th:if="${rule.eventType != null}"
-                      th:text="${#messages.msg(
-                      'alertEventType.'
-                      + rule.eventType.name()
-                  )}">
-                Motion detected
-            </span>
-            </td>
-
-            <td>
-            <span th:if="${rule.thresholdValue != null}"
-                  th:text="${#numbers.formatDecimal(
-                          rule.thresholdValue,
-                          1,
-                          2
-                      )
-                      + ' '
-                      + (rule.sensorType.name() == 'TEMPERATURE'
-                          ? temperatureUnitSymbol
-                          : #messages.msg(
-                              'measurement.relativeHumidity.symbol'
-                          ))}">
-                30.00 °C
-            </span>
-
-                <span th:if="${rule.thresholdValue == null}">
-                &mdash;
-            </span>
-            </td>
-
-            <td th:text="${rule.cooldownMinutes
-                + ' '
-                + #messages.msg('alertRules.minutes')}">
-                60 minutes
-            </td>
-
-            <td th:text="${rule.enabled
-                ? #messages.msg('alertRules.status.enabled')
-                : #messages.msg('alertRules.status.disabled')}">
-                Enabled
-            </td>
-
-            <td>
-                <form th:if="${rule.enabled}"
-                      th:action="@{/user/alert-rules/{id}/disable(id=${rule.id})}"
+                <form class="alert-rule-form form-stack"
+                      id="numericRuleForm"
+                      th:if="${not #lists.isEmpty(numericSensors)}"
+                      th:action="@{/user/alert-rules/numeric-threshold}"
+                      th:object="${numericForm}"
                       method="post">
                     <input type="hidden"
                            th:name="${_csrf.parameterName}"
                            th:value="${_csrf.token}">
 
-                    <button type="submit"
-                            th:text="#{alertRules.disable}">
-                        Disable
-                    </button>
-                </form>
+                    <div class="form-status form-status--error"
+                         role="alert"
+                         th:if="${#fields.hasGlobalErrors()}">
+                        <p th:each="error : ${#fields.globalErrors()}"
+                           th:text="${error}">
+                            Alert rule could not be created.
+                        </p>
+                    </div>
 
-                <form th:if="${!rule.enabled}"
-                      th:action="@{/user/alert-rules/{id}/enable(id=${rule.id})}"
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="numericSensorId"
+                               th:text="#{alertRules.sensor}">
+                            Sensor
+                        </label>
+
+                        <select class="form-control"
+                                id="numericSensorId"
+                                th:field="*{sensorId}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('sensorId')}"
+                                th:aria-describedby="${#fields.hasErrors('sensorId')
+                                    ? 'numeric-sensor-help numeric-sensor-error'
+                                    : 'numeric-sensor-help'}"
+                                required>
+                            <option value=""
+                                    th:text="#{alertRules.selectSensor}">
+                                Select sensor
+                            </option>
+
+                            <option th:each="sensor : ${numericSensors}"
+                                    th:value="${sensor.id}"
+                                    th:attr="data-sensor-type=${sensor.type.name()},
+                                        data-unit=${sensor.type.name() == 'TEMPERATURE'
+                                            ? temperatureUnitSymbol
+                                            : #messages.msg(
+                                                'measurement.relativeHumidity.symbol'
+                                            )}"
+                                    th:text="${sensor.name
+                                        + ' - '
+                                        + #messages.msg(
+                                            'sensorType.' + sensor.type.name()
+                                        )
+                                        + ' - '
+                                        + sensor.homeLocation}">
+                                Temperature Sensor - Building A
+                            </option>
+                        </select>
+
+                        <p class="form-help"
+                           id="numeric-sensor-help"
+                           th:text="#{alertRules.numericSensorHelp}">
+                            Temperature and humidity sensors are available for
+                            numeric rules.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="numeric-sensor-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('sensorId')}"
+                             th:errors="*{sensorId}">
+                            Sensor error
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="numericComparisonOperator"
+                               th:text="#{alertRules.condition}">
+                            Condition
+                        </label>
+
+                        <select class="form-control"
+                                id="numericComparisonOperator"
+                                th:field="*{comparisonOperator}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('comparisonOperator')}"
+                                th:aria-describedby="${#fields.hasErrors('comparisonOperator')
+                                    ? 'numeric-condition-error'
+                                    : null}"
+                                required>
+                            <option value=""
+                                    th:text="#{alertRules.selectCondition}">
+                                Select condition
+                            </option>
+
+                            <option th:each="operator : ${comparisonOperators}"
+                                    th:value="${operator}"
+                                    th:text="${#messages.msg(
+                                        'comparisonOperator.' + operator.name()
+                                    )}">
+                                Above threshold
+                            </option>
+                        </select>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="numeric-condition-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('comparisonOperator')}"
+                             th:errors="*{comparisonOperator}">
+                            Condition error
+                        </div>
+                    </div>
+
+                    <div class="form-grid form-grid--two-columns">
+                        <div class="form-field">
+                            <label class="form-label"
+                                   for="numericThresholdValue">
+                                <span th:text="#{alertRules.threshold}">
+                                    Threshold
+                                </span>
+
+                                <span id="numericThresholdUnitWrapper"
+                                      aria-live="polite"
+                                      hidden>
+                                    (<span id="numericThresholdUnit"></span>)
+                                </span>
+                            </label>
+
+                            <input class="form-control"
+                                   id="numericThresholdValue"
+                                   type="number"
+                                   inputmode="decimal"
+                                   step="0.01"
+                                   th:field="*{thresholdValue}"
+                                   th:errorclass="form-control--invalid"
+                                   th:aria-invalid="${#fields.hasErrors('thresholdValue')}"
+                                   th:aria-describedby="${#fields.hasErrors('thresholdValue')
+                                       ? 'numeric-threshold-help numeric-threshold-error'
+                                       : 'numeric-threshold-help'}"
+                                   required>
+
+                            <p class="form-help"
+                               id="numeric-threshold-help"
+                               th:text="#{alertRules.thresholdHelp}">
+                                The unit follows the selected sensor and your
+                                temperature preference.
+                            </p>
+
+                            <div class="form-feedback form-feedback--error"
+                                 id="numeric-threshold-error"
+                                 role="alert"
+                                 th:if="${#fields.hasErrors('thresholdValue')}"
+                                 th:errors="*{thresholdValue}">
+                                Threshold error
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label"
+                                   for="numericCooldownMinutes"
+                                   th:text="#{alertRules.cooldownMinutes}">
+                                Cooldown (minutes)
+                            </label>
+
+                            <input class="form-control"
+                                   id="numericCooldownMinutes"
+                                   type="number"
+                                   inputmode="numeric"
+                                   min="1"
+                                   max="10080"
+                                   step="1"
+                                   th:field="*{cooldownMinutes}"
+                                   th:errorclass="form-control--invalid"
+                                   th:aria-invalid="${#fields.hasErrors('cooldownMinutes')}"
+                                   th:aria-describedby="${#fields.hasErrors('cooldownMinutes')
+                                       ? 'numeric-cooldown-help numeric-cooldown-error'
+                                       : 'numeric-cooldown-help'}"
+                                   required>
+
+                            <p class="form-help"
+                               id="numeric-cooldown-help"
+                               th:text="#{alertRules.cooldownHelp}">
+                                Minimum time between notifications from this
+                                rule.
+                            </p>
+
+                            <div class="form-feedback form-feedback--error"
+                                 id="numeric-cooldown-error"
+                                 role="alert"
+                                 th:if="${#fields.hasErrors('cooldownMinutes')}"
+                                 th:errors="*{cooldownMinutes}">
+                                Cooldown error
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="form-button form-button--primary"
+                                type="submit"
+                                th:text="#{alertRules.createNumericButton}">
+                            Create Numeric Rule
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="alert-rule-card alert-rule-card--motion"
+                     aria-labelledby="motion-rule-heading">
+                <header class="alert-rule-card__header">
+                    <h3 id="motion-rule-heading"
+                        th:text="#{alertRules.motionHeading}">
+                        Motion Detection Rule
+                    </h3>
+
+                    <p th:text="#{alertRules.motionDescription}">
+                        Send a notification whenever a motion sensor reports
+                        a detection.
+                    </p>
+                </header>
+
+                <div class="form-status form-status--info alert-rule-availability"
+                     th:if="${#lists.isEmpty(motionSensors)}">
+                    <p th:text="#{alertRules.noMotionSensors}">
+                        Add a motion sensor before creating this rule.
+                    </p>
+
+                    <a class="form-button form-button--secondary"
+                       th:href="@{/user/sensors}"
+                       th:text="#{alertRules.manageSensors}">
+                        Manage sensors
+                    </a>
+                </div>
+
+                <form class="alert-rule-form form-stack"
+                      th:if="${not #lists.isEmpty(motionSensors)}"
+                      th:action="@{/user/alert-rules/motion-detected}"
+                      th:object="${motionForm}"
                       method="post">
                     <input type="hidden"
                            th:name="${_csrf.parameterName}"
                            th:value="${_csrf.token}">
 
-                    <button type="submit"
-                            th:text="#{alertRules.enable}">
-                        Enable
-                    </button>
+                    <div class="form-status form-status--error"
+                         role="alert"
+                         th:if="${#fields.hasGlobalErrors()}">
+                        <p th:each="error : ${#fields.globalErrors()}"
+                           th:text="${error}">
+                            Alert rule could not be created.
+                        </p>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="motionSensorId"
+                               th:text="#{alertRules.sensor}">
+                            Sensor
+                        </label>
+
+                        <select class="form-control"
+                                id="motionSensorId"
+                                th:field="*{sensorId}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('sensorId')}"
+                                th:aria-describedby="${#fields.hasErrors('sensorId')
+                                    ? 'motion-sensor-help motion-sensor-error'
+                                    : 'motion-sensor-help'}"
+                                required>
+                            <option value=""
+                                    th:text="#{alertRules.selectSensor}">
+                                Select sensor
+                            </option>
+
+                            <option th:each="sensor : ${motionSensors}"
+                                    th:value="${sensor.id}"
+                                    th:text="${sensor.name
+                                        + ' - '
+                                        + #messages.msg(
+                                            'sensorType.' + sensor.type.name()
+                                        )
+                                        + ' - '
+                                        + sensor.homeLocation}">
+                                Motion Sensor - North Entrance
+                            </option>
+                        </select>
+
+                        <p class="form-help"
+                           id="motion-sensor-help"
+                           th:text="#{alertRules.motionSensorHelp}">
+                            Motion sensors are available for event rules.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="motion-sensor-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('sensorId')}"
+                             th:errors="*{sensorId}">
+                            Sensor error
+                        </div>
+                    </div>
+
+                    <dl class="alert-rule-event">
+                        <div>
+                            <dt th:text="#{alertRules.event}">
+                                Event
+                            </dt>
+
+                            <dd th:text="#{alertEventType.MOTION_DETECTED}">
+                                Motion detected
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="form-field">
+                        <label class="form-label"
+                               for="motionCooldownMinutes"
+                               th:text="#{alertRules.cooldownMinutes}">
+                            Cooldown (minutes)
+                        </label>
+
+                        <input class="form-control"
+                               id="motionCooldownMinutes"
+                               type="number"
+                               inputmode="numeric"
+                               min="1"
+                               max="10080"
+                               step="1"
+                               th:field="*{cooldownMinutes}"
+                               th:errorclass="form-control--invalid"
+                               th:aria-invalid="${#fields.hasErrors('cooldownMinutes')}"
+                               th:aria-describedby="${#fields.hasErrors('cooldownMinutes')
+                                   ? 'motion-cooldown-help motion-cooldown-error'
+                                   : 'motion-cooldown-help'}"
+                               required>
+
+                        <p class="form-help"
+                           id="motion-cooldown-help"
+                           th:text="#{alertRules.cooldownHelp}">
+                            Minimum time between notifications from this rule.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="motion-cooldown-error"
+                             role="alert"
+                             th:if="${#fields.hasErrors('cooldownMinutes')}"
+                             th:errors="*{cooldownMinutes}">
+                            Cooldown error
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="form-button form-button--primary"
+                                type="submit"
+                                th:text="#{alertRules.createMotionButton}">
+                            Create Motion Rule
+                        </button>
+                    </div>
                 </form>
+            </section>
+        </div>
+    </section>
 
-                <form th:action="@{/user/alert-rules/{id}/delete(id=${rule.id})}"
-                      method="post">
-                    <input type="hidden"
-                           th:name="${_csrf.parameterName}"
-                           th:value="${_csrf.token}">
+    <section class="alert-rules-panel"
+             aria-labelledby="registered-alert-rules-heading">
+        <header class="alert-rules-panel__header">
+            <p class="alert-rules-eyebrow"
+               th:text="#{alertRules.registeredEyebrow}">
+                Rule management
+            </p>
 
-                    <button type="submit"
-                            th:text="#{alertRules.delete}">
-                        Delete
-                    </button>
-                </form>
-            </td>
-        </tr>
+            <h2 id="registered-alert-rules-heading"
+                th:text="#{alertRules.registeredHeading}">
+                Registered Alert Rules
+            </h2>
 
-        <tr th:if="${#lists.isEmpty(alertRules)}">
-            <td colspan="7"
-                th:text="#{alertRules.empty}">
-                You do not have alert rules yet.
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <p th:text="#{alertRules.registeredDescription}">
+                Review, pause, resume, or remove notification rules.
+            </p>
+        </header>
 
+        <p class="alert-rules-table-scroll-hint"
+           id="alert-rules-table-scroll-hint"
+           th:if="${not #lists.isEmpty(alertRules)}"
+           th:text="#{alertRules.tableScrollHint}">
+            Scroll horizontally to view all alert rule details.
+        </p>
+
+        <div class="alert-rules-table-wrapper"
+             role="region"
+             tabindex="0"
+             aria-labelledby="registered-alert-rules-heading"
+             aria-describedby="alert-rules-table-scroll-hint"
+             th:if="${not #lists.isEmpty(alertRules)}">
+            <table class="alert-rules-table">
+                <caption class="visually-hidden"
+                         th:text="#{alertRules.tableCaption}">
+                    Registered alert rules and their current status
+                </caption>
+
+                <thead>
+                <tr>
+                    <th scope="col" th:text="#{alertRules.sensor}">
+                        Sensor
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.ruleType}">
+                        Rule Type
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.condition}">
+                        Condition
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.threshold}">
+                        Threshold
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.cooldown}">
+                        Cooldown
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.status}">
+                        Status
+                    </th>
+
+                    <th scope="col" th:text="#{alertRules.actions}">
+                        Actions
+                    </th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="rule : ${alertRules}">
+                    <td>
+                        <strong class="alert-rule-sensor-name"
+                                th:text="${rule.sensorName}">
+                            Temperature Sensor
+                        </strong>
+
+                        <small class="alert-rule-sensor-context"
+                               th:text="${#messages.msg(
+                                       'sensorType.' + rule.sensorType.name()
+                                   )
+                                   + ' - '
+                                   + rule.sensorHomeLocation}">
+                            Temperature sensor - Building A
+                        </small>
+                    </td>
+
+                    <td th:text="${#messages.msg(
+                            'alertRuleType.' + rule.ruleType.name()
+                        )}">
+                        Numeric threshold
+                    </td>
+
+                    <td>
+                            <span th:if="${rule.comparisonOperator != null}"
+                                  th:text="${#messages.msg(
+                                      'comparisonOperator.'
+                                      + rule.comparisonOperator.name()
+                                  )}">
+                                Above threshold
+                            </span>
+
+                        <span th:if="${rule.eventType != null}"
+                              th:text="${#messages.msg(
+                                      'alertEventType.'
+                                      + rule.eventType.name()
+                                  )}">
+                                Motion detected
+                            </span>
+                    </td>
+
+                    <td class="alert-rule-threshold">
+                            <span th:if="${rule.thresholdValue != null}"
+                                  th:text="${#numbers.formatDecimal(
+                                      rule.thresholdValue,
+                                      1,
+                                      2
+                                  )
+                                  + ' '
+                                  + (rule.sensorType.name() == 'TEMPERATURE'
+                                      ? temperatureUnitSymbol
+                                      : #messages.msg(
+                                          'measurement.relativeHumidity.symbol'
+                                      ))}">
+                                30.00 °C
+                            </span>
+
+                        <span th:if="${rule.thresholdValue == null}">
+                                &mdash;
+                            </span>
+                    </td>
+
+                    <td class="alert-rule-cooldown"
+                        th:text="${rule.cooldownMinutes
+                                + ' '
+                                + #messages.msg('alertRules.minutes')}">
+                        60 minutes
+                    </td>
+
+                    <td>
+                            <span class="alert-rule-status"
+                                  th:classappend="${rule.enabled
+                                      ? ' alert-rule-status--enabled'
+                                      : ' alert-rule-status--disabled'}"
+                                  th:text="${rule.enabled
+                                      ? #messages.msg('alertRules.status.enabled')
+                                      : #messages.msg('alertRules.status.disabled')}">
+                                Enabled
+                            </span>
+                    </td>
+
+                    <td>
+                        <div class="alert-rule-actions">
+                            <form class="alert-rule-action-form"
+                                  th:if="${rule.enabled}"
+                                  th:action="@{/user/alert-rules/{id}/disable(id=${rule.id})}"
+                                  method="post">
+                                <input type="hidden"
+                                       th:name="${_csrf.parameterName}"
+                                       th:value="${_csrf.token}">
+
+                                <button class="form-button form-button--secondary"
+                                        type="submit"
+                                        th:aria-label="${#messages.msg('alertRules.disable')
+                                                + ': '
+                                                + rule.sensorName}"
+                                        th:text="#{alertRules.disable}">
+                                    Disable
+                                </button>
+                            </form>
+
+                            <form class="alert-rule-action-form"
+                                  th:if="${!rule.enabled}"
+                                  th:action="@{/user/alert-rules/{id}/enable(id=${rule.id})}"
+                                  method="post">
+                                <input type="hidden"
+                                       th:name="${_csrf.parameterName}"
+                                       th:value="${_csrf.token}">
+
+                                <button class="form-button form-button--secondary"
+                                        type="submit"
+                                        th:aria-label="${#messages.msg('alertRules.enable')
+                                                + ': '
+                                                + rule.sensorName}"
+                                        th:text="#{alertRules.enable}">
+                                    Enable
+                                </button>
+                            </form>
+
+                            <form class="alert-rule-action-form"
+                                  th:action="@{/user/alert-rules/{id}/delete(id=${rule.id})}"
+                                  method="post">
+                                <input type="hidden"
+                                       th:name="${_csrf.parameterName}"
+                                       th:value="${_csrf.token}">
+
+                                <button class="form-button form-button--danger"
+                                        type="submit"
+                                        th:aria-label="${#messages.msg('alertRules.delete')
+                                                + ': '
+                                                + rule.sensorName}"
+                                        th:text="#{alertRules.delete}">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert-rules-empty"
+             th:if="${#lists.isEmpty(alertRules)}">
+            <span class="alert-rules-empty__icon"
+                  aria-hidden="true"></span>
+
+            <h3 th:text="#{alertRules.emptyHeading}">
+                No alert rules registered
+            </h3>
+
+            <p th:text="#{alertRules.empty}">
+                Create a numeric or motion rule above to begin receiving
+                notifications.
+            </p>
+        </div>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/pages/alert-rules.js}"></script>
-
 
 </body>
 </html>
