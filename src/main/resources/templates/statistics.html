@@ -27,8 +27,7 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('statistics', ${selectedSensorId})}"></header>
 
-<main id="main-content"
-      class="app-main app-main--statistics">
+<main id="main-content" class="app-main app-main--statistics" tabindex="-1">
     <header class="statistics-page-header">
         <p class="statistics-eyebrow"
            th:text="#{statistics.eyebrow}">
@@ -339,12 +338,73 @@
                      class="statistics-chart-wrapper">
                     <canvas id="sensorHourlyChart"
                             role="img"
-                            th:aria-label="#{statistics.hourlyChartLabel}">
+                            aria-details="hourlyDataDetails"
+                            th:aria-label="${#messages.msg(
+                                    'statistics.hourlyChartLabel'
+                                )
+                                + ': '
+                                + selectedSensorName}">
                         <span th:text="#{statistics.chartFallback}">
                             Your browser cannot display this statistics chart.
                         </span>
                     </canvas>
                 </div>
+
+                <details id="hourlyDataDetails"
+                         class="statistics-data"
+                         hidden>
+                    <summary id="hourlyDataSummary"
+                             class="statistics-data__summary"
+                             th:text="#{statistics.hourlyDataTableSummary}">
+                        View hourly data table
+                    </summary>
+
+                    <div class="statistics-data__scroll"
+                         role="region"
+                         tabindex="0"
+                         aria-labelledby="hourlyDataSummary">
+                        <table class="statistics-data__table">
+                            <caption id="hourlyDataCaption"
+                                     th:text="${selectedSensorName
+                                         + ' — '
+                                         + #messages.msg(
+                                             'statistics.todayHourly'
+                                         )
+                                         + ' — '
+                                         + #messages.msg(
+                                             'statistics.dataTableCaption'
+                                         )}">
+                                Sensor — Today's Hourly Statistics — Data table
+                            </caption>
+
+                            <thead>
+                            <tr>
+                                <th scope="col"
+                                    th:text="#{statistics.chart.hour}">
+                                    Hour
+                                </th>
+
+                                <th class="statistics-data__value"
+                                    scope="col"
+                                    th:text="${#messages.msg(
+                                            'statistics.axis.'
+                                            + selectedSensorType.name()
+                                        )
+                                        + (measurementUnitSymbol == ''
+                                            ? ''
+                                            : ' ('
+                                                + measurementUnitSymbol
+                                                + ')')}">
+                                    Value
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="hourlyDataTableBody"></tbody>
+                        </table>
+                    </div>
+                </details>
+
             </div>
         </section>
 
@@ -399,12 +459,72 @@
                      class="statistics-chart-wrapper">
                     <canvas id="sensorWeeklyChart"
                             role="img"
-                            th:aria-label="#{statistics.weeklyChartLabel}">
+                            aria-details="weeklyDataDetails"
+                            th:aria-label="${#messages.msg(
+                                    'statistics.weeklyChartLabel'
+                                )
+                                + ': '
+                                + selectedSensorName}">
                         <span th:text="#{statistics.chartFallback}">
                             Your browser cannot display this statistics chart.
                         </span>
                     </canvas>
                 </div>
+
+                <details id="weeklyDataDetails"
+                         class="statistics-data"
+                         hidden>
+                    <summary id="weeklyDataSummary"
+                             class="statistics-data__summary"
+                             th:text="#{statistics.weeklyDataTableSummary}">
+                        View seven-day data table
+                    </summary>
+
+                    <div class="statistics-data__scroll"
+                         role="region"
+                         tabindex="0"
+                         aria-labelledby="weeklyDataSummary">
+                        <table class="statistics-data__table">
+                            <caption th:text="${selectedSensorName
+                                    + ' — '
+                                    + #messages.msg(
+                                        'statistics.lastSevenDays'
+                                    )
+                                    + ' — '
+                                    + #messages.msg(
+                                        'statistics.dataTableCaption'
+                                    )}">
+                                Sensor — Last 7 Days — Data table
+                            </caption>
+
+                            <thead>
+                            <tr>
+                                <th scope="col"
+                                    th:text="#{statistics.chart.date}">
+                                    Date
+                                </th>
+
+                                <th class="statistics-data__value"
+                                    scope="col"
+                                    th:text="${#messages.msg(
+                                            'statistics.axis.'
+                                            + selectedSensorType.name()
+                                        )
+                                        + (measurementUnitSymbol == ''
+                                            ? ''
+                                            : ' ('
+                                                + measurementUnitSymbol
+                                                + ')')}">
+                                    Value
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="weeklyDataTableBody"></tbody>
+                        </table>
+                    </div>
+                </details>
+
             </div>
         </section>
     </div>
@@ -446,6 +566,7 @@
             "todayHourly": /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
             "hourlyStatistics": /*[[#{statistics.hourlyStatistics}]]*/ "Hourly Statistics",
             "hourAxis": /*[[#{statistics.hourAxis}]]*/ "Hour of the Day",
+            "dataTableCaption": /*[[#{statistics.dataTableCaption}]]*/ "Data table",
             "loadingHourly": /*[[#{statistics.loadingHourly}]]*/ "Loading hourly statistics...",
             "hourlyLoaded": /*[[#{statistics.hourlyLoaded}]]*/ "Hourly statistics loaded.",
             "hourlyLoadError": /*[[#{statistics.hourlyLoadError}]]*/ "Hourly statistics could not be loaded. The current view has not changed.",

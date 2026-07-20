@@ -18,8 +18,8 @@ if (numericRuleForm) {
 
         const unit = selectedOption?.dataset.unit ?? '';
 
-        unitLabel.textContent = unit;
         unitWrapper.hidden = unit === '';
+        unitLabel.textContent = unit;
 
         if (sensorType === 'HUMIDITY') {
             thresholdInput.min = '0';

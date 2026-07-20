@@ -108,24 +108,36 @@
 }
 
 .app-main--sensors .sensor-token-panel__value {
+    display: grid;
     width: 100%;
     min-width: 0;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
     background-color: var(--color-surface-muted);
     padding: var(--space-4);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-3);
 }
 
-.app-main--sensors .sensor-token-panel__value code {
-    display: block;
-    border: 0;
-    background-color: transparent;
-    color: var(--color-info);
-    font-size: var(--font-size-sm);
-    overflow-wrap: anywhere;
-    padding: 0;
+
+
+.app-main--sensors .sensor-token-panel__value .form-button {
+    white-space: nowrap;
+}
+
+.app-main--sensors .sensor-token-panel__copy-status {
+    margin-top: var(--space-3);
+}
+
+.app-main--sensors .sensor-token-panel__copy-status:empty {
+    display: none;
+}
+
+.app-main--sensors .sensor-token-panel__input {
+    min-width: 0;
+    background-color: var(--color-surface);
+    font-family: var(--font-family-mono);
     user-select: all;
-    white-space: normal;
     -webkit-user-select: all;
 }
 
@@ -169,6 +181,7 @@
 }
 
 .app-main--sensors .sensors-table-scroll-hint {
+    display: none;
     margin: var(--space-6) 0 var(--space-3);
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
@@ -311,7 +324,7 @@
 
 .app-main--sensors .sensor-action-link {
     display: inline-flex;
-    min-height: 2.25rem;
+    min-height: var(--size-touch-target);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
     background-color: var(--color-surface-muted);
@@ -382,6 +395,16 @@
     color: var(--color-text-muted);
 }
 
+
+
+@media (max-width: 72rem) {
+    .app-main--sensors .sensors-table-scroll-hint {
+        display: block;
+    }
+}
+
+
+
 @media (max-width: 48rem) {
     .app-main--sensors {
         gap: var(--space-6);
@@ -428,5 +451,13 @@
     .app-main--sensors .sensors-empty-state {
         min-height: 12rem;
         padding: var(--space-8) var(--space-4);
+    }
+
+    .app-main--sensors .sensor-token-panel__value {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-main--sensors .sensor-token-panel__value .form-button {
+        width: 100%;
     }
 }

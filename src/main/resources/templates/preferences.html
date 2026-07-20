@@ -19,7 +19,7 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('preferences', ${null})}"></header>
 
-<main id="main-content" class="app-main app-main--preferences">
+<main id="main-content" class="app-main app-main--preferences" tabindex="-1">
     <header class="preferences-page-header">
         <p class="preferences-eyebrow"
            th:text="#{preferences.eyebrow}">
@@ -103,7 +103,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="preferred-language-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('preferredLanguage')}"
                          th:errors="*{preferredLanguage}">
                         Preferred language error
@@ -144,7 +143,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="temperature-unit-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('temperatureUnit')}"
                          th:errors="*{temperatureUnit}">
                         Preferred temperature unit error
@@ -183,7 +181,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="preferred-timezone-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('preferredTimezone')}"
                          th:errors="*{preferredTimezone}">
                         Preferred timezone error
@@ -208,6 +205,8 @@
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
 
 </body>
 </html>

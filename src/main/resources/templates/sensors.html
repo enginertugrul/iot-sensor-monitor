@@ -17,7 +17,7 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('sensors', ${null})}"></header>
 
-<main id="main-content" class="app-main app-main--sensors">
+<main id="main-content" class="app-main app-main--sensors" tabindex="-1">
     <header class="sensors-page-header">
         <div class="sensors-page-header__content">
             <p class="sensors-eyebrow"
@@ -50,12 +50,12 @@
     </header>
 
     <section class="sensor-token-panel"
-             role="status"
-             aria-live="polite"
-             aria-atomic="true"
              aria-labelledby="sensor-token-heading"
              th:if="${successMessage}">
         <p class="sensor-token-panel__eyebrow"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
            th:text="#{sensors.created}">
             Sensor created successfully.
         </p>
@@ -76,17 +76,45 @@
         </p>
 
         <p class="sensor-token-panel__warning"
+           id="sensor-token-warning"
            th:text="#{sensors.tokenCopyWarning}">
             Copy and store this token securely now. It will not be shown again.
         </p>
 
         <div class="sensor-token-panel__value">
-            <code th:text="${createdSensorToken}">
-                sensor-ingestion-token
-            </code>
-        </div>
-    </section>
+            <label class="visually-hidden"
+                   for="createdSensorToken"
+                   th:text="#{sensors.tokenLabel}">
+                Ingestion token
+            </label>
 
+            <input class="form-control sensor-token-panel__input"
+                   id="createdSensorToken"
+                   type="text"
+                   th:value="${createdSensorToken}"
+                   aria-describedby="sensor-token-warning"
+                   autocomplete="off"
+                   autocapitalize="none"
+                   spellcheck="false"
+                   readonly>
+
+            <button class="form-button form-button--secondary"
+                    type="button"
+                    aria-controls="sensorTokenCopyStatus"
+                    data-copy-sensor-token="createdSensorToken"
+                    th:data-copy-success="#{sensors.tokenCopied}"
+                    th:data-copy-failure="#{sensors.tokenCopyFailed}"
+                    th:text="#{sensors.copyToken}">
+                Copy token
+            </button>
+        </div>
+
+        <p class="form-feedback sensor-token-panel__copy-status"
+           id="sensorTokenCopyStatus"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"></p>
+    </section>
     <section class="sensors-panel"
              aria-labelledby="add-sensor-heading">
         <header class="sensors-panel__header">
@@ -143,7 +171,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="type-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('type')}"
                          th:errors="*{type}">
                         Sensor type error
@@ -172,7 +199,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="name-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('name')}"
                          th:errors="*{name}">
                         Sensor name error
@@ -201,7 +227,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="city-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('city')}"
                          th:errors="*{city}">
                         City error
@@ -230,7 +255,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="district-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('district')}"
                          th:errors="*{district}">
                         District error
@@ -265,7 +289,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="home-location-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('homeLocation')}"
                          th:errors="*{homeLocation}">
                         Installation location error
@@ -303,7 +326,6 @@
 
                     <div class="form-feedback form-feedback--error"
                          id="timezone-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('timezone')}"
                          th:errors="*{timezone}">
                         Timezone error
@@ -334,7 +356,8 @@
                 Registered Sensors
             </h2>
 
-            <p class="sensors-panel__description"
+            <p id="registered-sensors-description"
+               class="sensors-panel__description"
                th:text="#{sensors.registeredDescription}">
                 Review the sensors connected to your account and open their
                 data views.
@@ -352,7 +375,7 @@
              role="region"
              tabindex="0"
              aria-labelledby="registered-sensors-heading"
-             aria-describedby="sensors-table-scroll-hint"
+             aria-describedby="registered-sensors-description sensors-table-scroll-hint"
              th:if="${not #lists.isEmpty(sensors)}">
             <table class="sensors-table">
                 <caption class="visually-hidden"
@@ -442,17 +465,25 @@
 
                     <td>
                         <div class="sensor-actions">
+
                             <a class="sensor-action-link"
                                th:href="@{/(sensorId=${sensor.id})}"
+                               th:aria-label="${#messages.msg('sensors.viewReadings')
+                                    + ': '
+                                    + sensor.name}"
                                th:text="#{sensors.viewReadings}">
                                 View readings
                             </a>
 
                             <a class="sensor-action-link"
                                th:href="@{/statistics(sensorId=${sensor.id})}"
+                               th:aria-label="${#messages.msg('sensors.viewStatistics')
+                                    + ': '
+                                    + sensor.name}"
                                th:text="#{sensors.viewStatistics}">
                                 View statistics
                             </a>
+
                         </div>
                     </td>
                 </tr>
@@ -477,6 +508,9 @@
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
+<script th:src="@{/js/pages/sensors.js}"></script>
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +15,7 @@
 
 <header th:replace="~{fragments/app-shell :: publicHeader('register')}"></header>
 
-<main id="main-content" class="app-main app-main--auth">
+<main id="main-content" class="app-main app-main--auth" tabindex="-1">
     <section class="auth-card auth-card--register"
              aria-labelledby="register-title">
         <header class="auth-header">
@@ -25,7 +25,7 @@
 
             <p class="auth-subtitle"
                th:text="#{auth.registerSubtitle}">
-                Create an account to connect sensors and monitor your home.
+                Create an account to connect sensors and monitor your chosen environments.
             </p>
         </header>
 
@@ -44,17 +44,20 @@
                     <input class="form-control"
                            id="email"
                            type="email"
+                           maxlength="320"
                            th:field="*{email}"
                            th:errorclass="form-control--invalid"
                            th:aria-invalid="${#fields.hasErrors('email')}"
                            th:aria-describedby="${#fields.hasErrors('email')
-                            ? 'email-error'
-                            : null}"
-                           autocomplete="email">
+                               ? 'email-error'
+                               : null}"
+                           autocomplete="email"
+                           autocapitalize="none"
+                           spellcheck="false"
+                           required>
 
                     <div class="form-feedback form-feedback--error"
                          id="email-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('email')}"
                          th:errors="*{email}">
                         Email error
@@ -71,17 +74,25 @@
                     <input class="form-control"
                            id="password"
                            type="password"
+                           minlength="8"
+                           maxlength="72"
                            th:field="*{password}"
                            th:errorclass="form-control--invalid"
                            th:aria-invalid="${#fields.hasErrors('password')}"
                            th:aria-describedby="${#fields.hasErrors('password')
-                            ? 'password-error'
-                            : null}"
-                           autocomplete="new-password">
+                               ? 'password-help password-error'
+                               : 'password-help'}"
+                           autocomplete="new-password"
+                           required>
+
+                    <p class="form-help"
+                       id="password-help"
+                       th:text="#{auth.passwordHelp}">
+                        Use 8 to 72 characters.
+                    </p>
 
                     <div class="form-feedback form-feedback--error"
                          id="password-error"
-                         role="alert"
                          th:if="${#fields.hasErrors('password')}"
                          th:errors="*{password}">
                         Password error
@@ -110,7 +121,9 @@
                                 th:aria-invalid="${#fields.hasErrors('preferredLanguage')}"
                                 th:aria-describedby="${#fields.hasErrors('preferredLanguage')
                                  ? 'preferred-language-error'
-                                 : null}">
+                                 : null}"
+                                required>
+
                             <option th:each="language : ${languages}"
                                     th:value="${language}"
                                     th:text="${#messages.msg(
@@ -122,7 +135,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="preferred-language-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('preferredLanguage')}"
                              th:errors="*{preferredLanguage}">
                             Language error
@@ -143,7 +155,9 @@
                                 th:aria-invalid="${#fields.hasErrors('preferredTemperatureUnit')}"
                                 th:aria-describedby="${#fields.hasErrors('preferredTemperatureUnit')
                                  ? 'temperature-unit-error'
-                                 : null}">
+                                 : null}"
+                                 required>
+
                             <option th:each="unit : ${temperatureUnits}"
                                     th:value="${unit}"
                                     th:text="${#messages.msg(
@@ -155,7 +169,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="temperature-unit-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('preferredTemperatureUnit')}"
                              th:errors="*{preferredTemperatureUnit}">
                             Temperature unit error
@@ -176,7 +189,9 @@
                                 th:aria-invalid="${#fields.hasErrors('preferredTimezone')}"
                                 th:aria-describedby="${#fields.hasErrors('preferredTimezone')
                                  ? 'timezone-error'
-                                 : null}">
+                                 : null}"
+                                 required>
+
                             <option th:each="timezone : ${timezones}"
                                     th:value="${timezone}"
                                     th:text="${timezone}">
@@ -186,7 +201,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="timezone-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('preferredTimezone')}"
                              th:errors="*{preferredTimezone}">
                             Timezone error
@@ -217,6 +231,8 @@
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
 
 </body>
 </html>

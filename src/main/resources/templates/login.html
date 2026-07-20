@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" lang="">
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +15,7 @@
 
 <header th:replace="~{fragments/app-shell :: publicHeader('login')}"></header>
 
-<main id="main-content" class="app-main app-main--auth">
+<main id="main-content" class="app-main app-main--auth" tabindex="-1" th:with="loginError=${param.error != null}">
     <section class="auth-card auth-card--login"
              aria-labelledby="login-title">
         <header class="auth-header">
@@ -32,7 +32,7 @@
         <p class="auth-status auth-status--error"
            id="login-error"
            role="alert"
-           th:if="${param.error}"
+           th:if="${loginError}"
            th:text="#{auth.invalid}">
             Invalid email or password.
         </p>
@@ -74,6 +74,10 @@
                        autocomplete="email"
                        autocapitalize="none"
                        spellcheck="false"
+                       th:aria-invalid="${loginError}"
+                       th:aria-describedby="${loginError
+                            ? 'login-error'
+                            : null}"
                        required>
             </div>
 
@@ -89,6 +93,10 @@
                        type="password"
                        name="password"
                        autocomplete="current-password"
+                       th:aria-invalid="${loginError}"
+                       th:aria-describedby="${loginError
+                            ? 'login-error'
+                            : null}"
                        required>
             </div>
 
@@ -115,6 +123,8 @@
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
 
 </body>
 </html>

@@ -1,11 +1,7 @@
 (() => {
-    const connectionStatus = document.getElementById(
-        'statisticsConnectionStatus'
-    );
+    const connectionStatus = document.getElementById('statisticsConnectionStatus');
 
-    const connectionMessage = document.getElementById(
-        'statisticsConnectionMessage'
-    );
+    const connectionMessage = document.getElementById('statisticsConnectionMessage');
 
     const sensorSelect = document.getElementById('sensorId');
 
@@ -15,6 +11,9 @@
     let connectionStatusTimer = null;
     let connectionWasOffline =
         navigator.onLine === false;
+
+    let shouldAnnounceConnectionRestoration =
+        () => true;
 
     function updatePageConnectionStatus(
         announceRestoration = false
@@ -34,6 +33,7 @@
             } else if (
                 announceRestoration
                 && connectionWasOffline
+                && shouldAnnounceConnectionRestoration()
             ) {
                 connectionStatus.dataset.state = 'restored';
 
@@ -75,9 +75,7 @@
 
     updatePageConnectionStatus();
 
-    const pageDataElement = document.getElementById(
-        'statistics-page-data'
-    );
+    const pageDataElement = document.getElementById('statistics-page-data');
 
     /*
      * This script is intentionally loaded without a selected
@@ -87,67 +85,45 @@
         return;
     }
 
-    const chartError = document.getElementById(
-        'statisticsChartError'
-    );
+    const chartError = document.getElementById('statisticsChartError');
 
-    const charts = document.getElementById(
-        'statisticsCharts'
-    );
+    const charts = document.getElementById('statisticsCharts');
 
-    const hourlyChartRegion = document.getElementById(
-        'hourlyChartRegion'
-    );
+    const hourlyChartRegion = document.getElementById('hourlyChartRegion');
 
-    const hourlyRequestStatus = document.getElementById(
-        'hourlyRequestStatus'
-    );
+    const hourlyRequestStatus = document.getElementById('hourlyRequestStatus');
 
-    const hourlyRequestMessage = document.getElementById(
-        'hourlyRequestMessage'
-    );
+    const hourlyRequestMessage = document.getElementById('hourlyRequestMessage');
 
-    const hourlyRetryButton = document.getElementById(
-        'hourlyRetryButton'
-    );
+    const hourlyRetryButton = document.getElementById('hourlyRetryButton');
 
-    const hourlyEmptyState = document.getElementById(
-        'hourlyEmptyState'
-    );
+    const hourlyEmptyState = document.getElementById('hourlyEmptyState');
 
-    const hourlyChartCanvasWrapper =
-        document.getElementById(
-            'hourlyChartCanvasWrapper'
-        );
+    const hourlyChartCanvasWrapper =document.getElementById('hourlyChartCanvasWrapper');
 
-    const hourlyCanvas = document.getElementById(
-        'sensorHourlyChart'
-    );
+    const hourlyCanvas = document.getElementById('sensorHourlyChart');
 
-    const weeklyEmptyState = document.getElementById(
-        'weeklyEmptyState'
-    );
+    const hourlyDataDetails = document.getElementById('hourlyDataDetails');
 
-    const weeklyChartCanvasWrapper =
-        document.getElementById(
-            'weeklyChartCanvasWrapper'
-        );
+    const hourlyDataCaption = document.getElementById('hourlyDataCaption');
 
-    const weeklyCanvas = document.getElementById(
-        'sensorWeeklyChart'
-    );
+    const hourlyDataTableBody = document.getElementById('hourlyDataTableBody');
 
-    const hourlyChartTitle = document.getElementById(
-        'hourlyChartTitle'
-    );
+    const weeklyEmptyState = document.getElementById('weeklyEmptyState');
 
-    const previousDayButton = document.getElementById(
-        'prevDayBtn'
-    );
+    const weeklyChartCanvasWrapper = document.getElementById('weeklyChartCanvasWrapper');
 
-    const nextDayButton = document.getElementById(
-        'nextDayBtn'
-    );
+    const weeklyCanvas = document.getElementById('sensorWeeklyChart');
+
+    const weeklyDataDetails = document.getElementById('weeklyDataDetails');
+
+    const weeklyDataTableBody = document.getElementById('weeklyDataTableBody');
+
+    const hourlyChartTitle = document.getElementById('hourlyChartTitle');
+
+    const previousDayButton = document.getElementById('prevDayBtn');
+
+    const nextDayButton = document.getElementById('nextDayBtn');
 
     let weeklyChart = null;
     let hourlyChart = null;
@@ -183,10 +159,7 @@
             hourlyRetryButton.hidden = true;
         }
 
-        console.error(
-            'Statistics charts could not be initialized.',
-            error
-        );
+        console.error('Statistics charts could not be initialized.',error);
     }
 
     const requiredElements = [
@@ -199,30 +172,33 @@
         hourlyEmptyState,
         hourlyChartCanvasWrapper,
         hourlyCanvas,
+        hourlyDataDetails,
+        hourlyDataCaption,
+        hourlyDataTableBody,
         weeklyEmptyState,
         weeklyChartCanvasWrapper,
         weeklyCanvas,
+        weeklyDataDetails,
+        weeklyDataTableBody,
         hourlyChartTitle,
         previousDayButton,
         nextDayButton
     ];
 
     if (requiredElements.some(element => !element)) {
-        showFatalChartError(
-            new Error(
-                'A required statistics page element is missing.'
-            )
-        );
+
+        showFatalChartError(new Error('A required statistics page element is missing.'));
 
         return;
     }
 
+    shouldAnnounceConnectionRestoration = () =>
+        hourlyRequestStatus.dataset.state !== 'offline';
+
     let pageData;
 
     try {
-        pageData = JSON.parse(
-            pageDataElement.textContent
-        );
+        pageData = JSON.parse(pageDataElement.textContent);
     } catch (error) {
         showFatalChartError(error);
         return;
@@ -285,7 +261,8 @@
             'hourlyLoaded',
             'hourlyLoadError',
             'hourlyOffline',
-            'connectionRestoredRetry'
+            'connectionRestoredRetry',
+            'dataTableCaption',
         ];
 
         return requiredMessages.every(key =>
@@ -323,22 +300,14 @@
         && hasRequiredMessages(i18n);
 
     if (!pageDataIsValid) {
-        showFatalChartError(
-            new Error(
-                'The statistics page data has an unexpected shape.'
-            )
-        );
-
+        showFatalChartError(new Error('The statistics page data has an unexpected shape.'));
         return;
     }
 
     const ChartLibrary = window.Chart;
 
     if (!ChartLibrary) {
-        showFatalChartError(
-            new Error('Chart.js is unavailable.')
-        );
-
+        showFatalChartError(new Error('Chart.js is unavailable.'));
         return;
     }
 
@@ -347,6 +316,21 @@
     ChartLibrary.defaults.font.family =
         '-apple-system, BlinkMacSystemFont, '
         + '"Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+
+    const reducedMotionMediaQuery =
+        typeof window.matchMedia === 'function'
+            ? window.matchMedia(
+                '(prefers-reduced-motion: reduce)'
+            )
+            : null;
+
+    function chartAnimationPreference() {
+        return reducedMotionMediaQuery?.matches
+            ? false
+            : undefined;
+    }
+
 
     const motionSensor = sensorType === 'MOTION';
 
@@ -443,6 +427,76 @@
         return `${year}-${month}-${day}`;
     }
 
+    function formatDisplayDate(date) {
+        const dayName = i18n.days[date.getDay()];
+
+        const day = String(
+            date.getDate()
+        ).padStart(2, '0');
+
+        const month = String(
+            date.getMonth() + 1
+        ).padStart(2, '0');
+
+        return `${dayName}, `
+            + `${day}-${month}-${date.getFullYear()}`;
+    }
+
+    function formatTableMetricValue(value) {
+        if (value === null || value === undefined) {
+            return i18n.noDataRecorded;
+        }
+
+        if (motionSensor) {
+            return String(Math.round(value));
+        }
+
+        return Number(value).toFixed(2);
+    }
+
+    function formatHourRange(hour) {
+        const startHour = String(hour).padStart(2, '0');
+
+        const endHour = String(
+            (hour + 1) % 24
+        ).padStart(2, '0');
+
+        return `${startHour}:00–${endHour}:00`;
+    }
+
+    function replaceDataTableRows(
+        tableBody,
+        data,
+        labelFactory
+    ) {
+        const fragment =
+            document.createDocumentFragment();
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+
+            const labelCell =
+                document.createElement('th');
+
+            labelCell.scope = 'row';
+            labelCell.textContent = labelFactory(item);
+
+            const valueCell =
+                document.createElement('td');
+
+            valueCell.className =
+                'statistics-data__value';
+
+            valueCell.textContent =
+                formatTableMetricValue(item.value);
+
+            row.append(labelCell, valueCell);
+            fragment.append(row);
+        });
+
+        tableBody.replaceChildren(fragment);
+    }
+
     function hasDisplayableData(data) {
         if (data.length === 0) {
             return false;
@@ -527,6 +581,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: chartAnimationPreference(),
 
                     plugins: {
                         legend: {
@@ -611,6 +666,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: chartAnimationPreference(),
 
                     plugins: {
                         legend: {
@@ -681,18 +737,27 @@
 
         weeklyEmptyState.hidden = hasData;
         weeklyChartCanvasWrapper.hidden = !hasData;
+        weeklyDataDetails.hidden = !hasData;
 
         if (!hasData) {
+            weeklyDataTableBody.replaceChildren();
             return;
         }
 
         if (!weeklyChart) {
             weeklyChart = createWeeklyChart(data);
-            return;
+        } else {
+            window.requestAnimationFrame(
+                () => weeklyChart?.resize()
+            );
         }
 
-        window.requestAnimationFrame(
-            () => weeklyChart?.resize()
+        replaceDataTableRows(
+            weeklyDataTableBody,
+            data,
+            item => formatDisplayDate(
+                parseDateString(item.date)
+            )
         );
     }
 
@@ -701,8 +766,10 @@
 
         hourlyEmptyState.hidden = hasData;
         hourlyChartCanvasWrapper.hidden = !hasData;
+        hourlyDataDetails.hidden = !hasData;
 
         if (!hasData) {
+            hourlyDataTableBody.replaceChildren();
             return false;
         }
 
@@ -710,30 +777,35 @@
 
         if (!hourlyChart) {
             hourlyChart = createHourlyChart(data);
-            return true;
+        } else {
+            hourlyChart.data.labels = chartData.labels;
+
+            hourlyChart.data.datasets[0].data =
+                chartData.values;
+
+            hourlyChart.update(
+                reducedMotionMediaQuery?.matches
+                    ? 'none'
+                    : undefined
+            );
+
+            window.requestAnimationFrame(
+                () => hourlyChart?.resize()
+            );
         }
 
-        hourlyChart.data.labels = chartData.labels;
-
-        hourlyChart.data.datasets[0].data =
-            chartData.values;
-
-        hourlyChart.update();
-
-        window.requestAnimationFrame(
-            () => hourlyChart?.resize()
+        replaceDataTableRows(
+            hourlyDataTableBody,
+            data,
+            item => formatHourRange(item.hour)
         );
 
         return true;
     }
-
     const todayDate = parseDateString(today);
 
     if (Number.isNaN(todayDate.getTime())) {
-        showFatalChartError(
-            new Error('The statistics date is invalid.')
-        );
-
+        showFatalChartError(new Error('The statistics date is invalid.'));
         return;
     }
 
@@ -743,34 +815,25 @@
     let hourlyStatusTimer = null;
 
     function updateChartTitle(date) {
-        const sensorTitle =
-            `${selectedSensorName} — `;
+        const sensorTitle = `${selectedSensorName} — `;
 
-        if (
-            formatDateForApi(date)
-            === formatDateForApi(todayDate)
-        ) {
-            hourlyChartTitle.textContent =
-                sensorTitle + i18n.todayHourly;
+        let title;
 
-            return;
+        if (formatDateForApi(date) === formatDateForApi(todayDate)) {
+            title = sensorTitle + i18n.todayHourly;
+        } else {
+            title = sensorTitle
+                + formatDisplayDate(date)
+                + ' — '
+                + i18n.hourlyStatistics;
         }
 
-        const dayName = i18n.days[date.getDay()];
+        hourlyChartTitle.textContent = title;
 
-        const day = String(
-            date.getDate()
-        ).padStart(2, '0');
-
-        const month = String(
-            date.getMonth() + 1
-        ).padStart(2, '0');
-
-        hourlyChartTitle.textContent =
-            sensorTitle
-            + `${dayName}, `
-            + `${day}-${month}-${date.getFullYear()} — `
-            + i18n.hourlyStatistics;
+        hourlyDataCaption.textContent =
+            title
+            + ' — '
+            + i18n.dataTableCaption;
     }
 
     function updateNavigationState() {
@@ -800,13 +863,19 @@
     ) {
         window.clearTimeout(hourlyStatusTimer);
 
+        const urgent =
+            state === 'error' || state === 'offline';
+
         hourlyRequestStatus.dataset.state = state;
 
         hourlyRequestStatus.setAttribute(
+            'role',
+            urgent ? 'alert' : 'status'
+        );
+
+        hourlyRequestStatus.setAttribute(
             'aria-live',
-            state === 'error' || state === 'offline'
-                ? 'assertive'
-                : 'polite'
+            urgent ? 'assertive' : 'polite'
         );
 
         hourlyRequestMessage.textContent = message;
@@ -823,10 +892,13 @@
         hourlyRetryButton.hidden = true;
     }
 
-    function showHourlySuccess() {
+    function showHourlySuccess(date) {
         showHourlyRequestState(
             'success',
             i18n.hourlyLoaded
+            + ' '
+            + formatDisplayDate(date)
+            + '.'
         );
 
         hourlyStatusTimer = window.setTimeout(
@@ -838,7 +910,7 @@
                     hideHourlyRequestState();
                 }
             },
-            2500
+            4000
         );
     }
 
@@ -878,32 +950,20 @@
         );
 
         if (response.redirected || !response.ok) {
-            throw new Error(
-                'Hourly statistics request failed with HTTP '
-                + response.status
-                + '.'
-            );
+            throw new Error('Hourly statistics request failed with HTTP ' + response.status + '.');
         }
 
         const contentType =
             response.headers.get('content-type') ?? '';
 
-        if (
-            !contentType
-                .toLowerCase()
-                .includes('application/json')
-        ) {
-            throw new Error(
-                'Hourly statistics returned a non-JSON response.'
-            );
+        if ( !contentType.toLowerCase().includes('application/json')) {
+            throw new Error('Hourly statistics returned a non-JSON response.');
         }
 
         const data = await response.json();
 
         if (!isHourlyResponse(data)) {
-            throw new Error(
-                'Hourly statistics returned an unexpected shape.'
-            );
+            throw new Error('Hourly statistics returned an unexpected shape.');
         }
 
         return data;
@@ -914,18 +974,12 @@
             return;
         }
 
-        const requestedDate = new Date(
-            targetDate.getTime()
-        );
+        const requestedDate = new Date(targetDate.getTime());
 
         if (navigator.onLine === false) {
             failedTargetDate = requestedDate;
 
-            showHourlyRequestState(
-                'offline',
-                i18n.hourlyOffline,
-                true
-            );
+            showHourlyRequestState('offline',i18n.hourlyOffline,true);
 
             return;
         }
@@ -933,15 +987,10 @@
         failedTargetDate = null;
         setRequestInProgress(true);
 
-        showHourlyRequestState(
-            'loading',
-            i18n.loadingHourly
-        );
+        showHourlyRequestState('loading',i18n.loadingHourly);
 
         try {
-            const data = await fetchHourlyData(
-                requestedDate
-            );
+            const data = await fetchHourlyData(requestedDate);
 
             const hasData = renderHourlyData(data);
 
@@ -951,7 +1000,7 @@
             updateChartTitle(currentDate);
 
             if (hasData) {
-                showHourlySuccess();
+                showHourlySuccess(currentDate);
             } else {
                 hideHourlyRequestState();
             }
@@ -959,47 +1008,31 @@
             failedTargetDate = requestedDate;
 
             if (navigator.onLine === false) {
-                showHourlyRequestState(
-                    'offline',
-                    i18n.hourlyOffline,
-                    true
-                );
+                showHourlyRequestState('offline',i18n.hourlyOffline,true);
             } else {
-                showHourlyRequestState(
-                    'error',
-                    i18n.hourlyLoadError,
-                    true
-                );
+                showHourlyRequestState('error',i18n.hourlyLoadError,true);
             }
 
-            console.error(
-                'Hourly statistics could not be loaded.',
-                error
-            );
+            console.error('Hourly statistics could not be loaded.',error);
+
         } finally {
             setRequestInProgress(false);
         }
     }
 
     function navigateDate(direction) {
-        if (
-            requestInProgress
-            || navigator.onLine === false
-        ) {
+        if (requestInProgress|| navigator.onLine === false) {
             return;
         }
 
-        if (
-            direction === 'next'
+        if (direction === 'next'
             && formatDateForApi(currentDate)
-            >= formatDateForApi(todayDate)
-        ) {
+            >= formatDateForApi(todayDate) )
+        {
             return;
         }
 
-        const targetDate = new Date(
-            currentDate.getTime()
-        );
+        const targetDate = new Date(currentDate.getTime());
 
         targetDate.setDate(
             targetDate.getDate()
@@ -1018,11 +1051,7 @@
             && hourlyRequestStatus.dataset.state
             === 'offline'
         ) {
-            showHourlyRequestState(
-                'restored',
-                i18n.connectionRestoredRetry,
-                true
-            );
+            showHourlyRequestState('restored',i18n.connectionRestoredRetry,true);
         }
     }
 

@@ -19,7 +19,7 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('alert-rules', ${null})}"></header>
 
-<main id="main-content" class="app-main app-main--alert-rules">
+<main id="main-content" class="app-main app-main--alert-rules" tabindex="-1">
     <header class="alert-rules-page-header">
         <div class="alert-rules-page-header__content">
             <p class="alert-rules-eyebrow"
@@ -52,7 +52,6 @@
     </header>
 
     <div class="alert-rules-notices"
-         aria-live="polite"
          th:if="${alertRuleCreated == true
          or alertRuleEnabled == true
          or alertRuleDisabled == true
@@ -202,7 +201,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="numeric-sensor-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('sensorId')}"
                              th:errors="*{sensorId}">
                             Sensor error
@@ -241,7 +239,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="numeric-condition-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('comparisonOperator')}"
                              th:errors="*{comparisonOperator}">
                             Condition error
@@ -285,7 +282,6 @@
 
                             <div class="form-feedback form-feedback--error"
                                  id="numeric-threshold-error"
-                                 role="alert"
                                  th:if="${#fields.hasErrors('thresholdValue')}"
                                  th:errors="*{thresholdValue}">
                                 Threshold error
@@ -323,7 +319,6 @@
 
                             <div class="form-feedback form-feedback--error"
                                  id="numeric-cooldown-error"
-                                 role="alert"
                                  th:if="${#fields.hasErrors('cooldownMinutes')}"
                                  th:errors="*{cooldownMinutes}">
                                 Cooldown error
@@ -428,7 +423,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="motion-sensor-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('sensorId')}"
                              th:errors="*{sensorId}">
                             Sensor error
@@ -477,7 +471,6 @@
 
                         <div class="form-feedback form-feedback--error"
                              id="motion-cooldown-error"
-                             role="alert"
                              th:if="${#fields.hasErrors('cooldownMinutes')}"
                              th:errors="*{cooldownMinutes}">
                             Cooldown error
@@ -509,7 +502,8 @@
                 Registered Alert Rules
             </h2>
 
-            <p th:text="#{alertRules.registeredDescription}">
+            <p id="registered-alert-rules-description"
+               th:text="#{alertRules.registeredDescription}">
                 Review, pause, resume, or remove notification rules.
             </p>
         </header>
@@ -525,7 +519,7 @@
              role="region"
              tabindex="0"
              aria-labelledby="registered-alert-rules-heading"
-             aria-describedby="alert-rules-table-scroll-hint"
+             aria-describedby="registered-alert-rules-description alert-rules-table-scroll-hint"
              th:if="${not #lists.isEmpty(alertRules)}">
             <table class="alert-rules-table">
                 <caption class="visually-hidden"
@@ -608,6 +602,7 @@
                     </td>
 
                     <td class="alert-rule-threshold">
+
                             <span th:if="${rule.thresholdValue != null}"
                                   th:text="${#numbers.formatDecimal(
                                       rule.thresholdValue,
@@ -623,9 +618,15 @@
                                 30.00 °C
                             </span>
 
-                        <span th:if="${rule.thresholdValue == null}">
-                                &mdash;
-                            </span>
+                             <span th:if="${rule.thresholdValue == null}">
+                                 <span aria-hidden="true">&mdash;</span>
+
+                                 <span class="visually-hidden"
+                                      th:text="#{alertRules.notApplicable}">
+                                    Not applicable
+                                </span>
+                             </span>
+
                     </td>
 
                     <td class="alert-rule-cooldown"
@@ -728,6 +729,7 @@
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/pages/alert-rules.js}"></script>
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
 
 </body>
 </html>

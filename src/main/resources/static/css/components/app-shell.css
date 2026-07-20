@@ -38,7 +38,7 @@ body {
 
 .app-header__inner {
     display: flex;
-    min-height: 4.5rem;
+    min-height: var(--size-app-header);
     padding: var(--space-3) var(--space-4);
     align-items: center;
     gap: var(--space-6);
@@ -91,7 +91,7 @@ body {
 .app-nav__link,
 .app-nav__logout-button {
     display: inline-flex;
-    min-height: 2.75rem;
+    min-height: var(--size-touch-target);
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
     background-color: transparent;
@@ -145,6 +145,15 @@ body {
     min-width: 0;
     margin: 0 auto;
     flex: 1 0 auto;
+    scroll-margin-top: calc(
+            var(--size-app-header)
+            + var(--space-8)
+            + var(--space-4)
+    );
+}
+
+.app-main[tabindex="-1"]:focus {
+    outline: none;
 }
 
 .app-footer {
@@ -188,6 +197,10 @@ body {
     .app-nav__link,
     .app-nav__logout-button {
         width: 100%;
+    }
+
+    .app-main {
+        scroll-margin-top: 0;
     }
 }
 

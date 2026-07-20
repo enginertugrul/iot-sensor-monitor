@@ -166,23 +166,30 @@
 .app-main--alert-rules .alert-rule-event div {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-4);
     justify-content: space-between;
 }
 
 .app-main--alert-rules .alert-rule-event dt {
+    flex: 0 0 auto;
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
 }
 
 .app-main--alert-rules .alert-rule-event dd {
-    margin: 0;
+    min-width: 0;
+    margin: 0 0 0 auto;
+    flex: 1 1 12rem;
     color: var(--color-info);
     font-weight: var(--font-weight-bold);
+    overflow-wrap: anywhere;
+    text-align: right;
 }
 
 .app-main--alert-rules .alert-rules-table-scroll-hint {
+    display: none;
     margin: var(--space-6) 0 var(--space-3);
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
@@ -212,7 +219,7 @@
 
 .app-main--alert-rules .alert-rules-table {
     width: 100%;
-    min-width: 72rem;
+    min-width: 64rem;
     border-collapse: collapse;
     text-align: left;
 }
@@ -352,6 +359,14 @@
     margin: 0;
     color: var(--color-text-muted);
 }
+
+
+@media (max-width: 72rem) {
+    .app-main--alert-rules .alert-rules-table-scroll-hint {
+        display: block;
+    }
+}
+
 
 @media (max-width: 60rem) {
     .app-main--alert-rules .alert-rule-form-grid {

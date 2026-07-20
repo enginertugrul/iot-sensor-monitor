@@ -17,7 +17,7 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('dashboard', ${selectedSensorId})}"></header>
 
-<main id="main-content" class="app-main app-main--dashboard">
+<main id="main-content" class="app-main app-main--dashboard" tabindex="-1">
     <section class="dashboard-hero" aria-labelledby="dashboard-title">
         <div class="dashboard-hero__content">
             <p class="dashboard-eyebrow" th:text="#{dashboard.eyebrow}">
@@ -178,8 +178,9 @@
         </header>
 
         <p class="table-scroll-hint"
+           id="readings-table-scroll-hint"
            th:if="${selectedSensorId != null
-               and not #lists.isEmpty(recentRecords)}"
+           and not #lists.isEmpty(recentRecords)}"
            th:text="#{dashboard.tableScrollHint}">
             Scroll horizontally to view all columns.
         </p>
@@ -188,8 +189,10 @@
              role="region"
              tabindex="0"
              aria-labelledby="readings-heading"
+             aria-describedby="readings-description readings-table-scroll-hint"
              th:if="${selectedSensorId != null
-                 and not #lists.isEmpty(recentRecords)}">
+             and not #lists.isEmpty(recentRecords)}">
+
             <table class="readings-table"
                    aria-describedby="readings-description">
                 <caption class="visually-hidden"
@@ -331,7 +334,7 @@
 
         <div class="dashboard-empty-state"
              th:if="${selectedSensorId != null
-                 and #lists.isEmpty(recentRecords)}">
+             and #lists.isEmpty(recentRecords)}">
             <span class="dashboard-empty-state__icon"
                   aria-hidden="true"></span>
 

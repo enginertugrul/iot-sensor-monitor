@@ -241,9 +241,9 @@
     min-width: 0;
     align-items: center;
     grid-template-columns:
-            2.75rem
+            var(--size-touch-target)
             minmax(0, 1fr)
-            2.75rem;
+            var(--size-touch-target);
     gap: var(--space-4);
 }
 
@@ -257,8 +257,8 @@
 
 .app-main--statistics .nav-arrow-button {
     display: inline-flex;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: var(--size-touch-target);
+    height: var(--size-touch-target);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-pill);
     background-color: var(--color-surface-muted);
@@ -349,7 +349,7 @@
 }
 
 .app-main--statistics .statistics-request-status .form-button {
-    min-height: 2.5rem;
+    min-height: var(--size-touch-target);
     padding: var(--space-2) var(--space-4);
 }
 
@@ -380,6 +380,89 @@
 .app-main--statistics .statistics-chart-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
+}
+
+.app-main--statistics .statistics-data {
+    margin-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-4);
+}
+
+.app-main--statistics .statistics-data__summary {
+    min-height: var(--size-touch-target);
+    color: var(--color-link);
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+    padding: var(--space-3) 0;
+}
+
+.app-main--statistics .statistics-data__summary:hover {
+    color: var(--color-link-hover);
+}
+
+.app-main--statistics .statistics-data__summary::marker {
+    color: var(--color-info);
+}
+
+.app-main--statistics .statistics-data__scroll {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-color:
+            var(--color-border-strong)
+            var(--color-surface-muted);
+    scrollbar-width: thin;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-main--statistics .statistics-data__scroll:focus-visible {
+    border-color: var(--color-focus);
+}
+
+.app-main--statistics .statistics-data__table {
+    width: 100%;
+    min-width: 28rem;
+    text-align: left;
+}
+
+.app-main--statistics .statistics-data__table caption {
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-soft);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-4);
+    text-align: left;
+}
+
+.app-main--statistics .statistics-data__table th,
+.app-main--statistics .statistics-data__table td {
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-3) var(--space-4);
+}
+
+.app-main--statistics .statistics-data__table thead {
+    background-color: var(--color-surface);
+    color: var(--color-text-soft);
+}
+
+.app-main--statistics .statistics-data__table tbody tr:last-child th,
+.app-main--statistics .statistics-data__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.app-main--statistics .statistics-data__table tbody th {
+    color: var(--color-text-soft);
+    font-weight: var(--font-weight-medium);
+}
+
+.app-main--statistics .statistics-data__value {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 @keyframes statistics-spinner {
@@ -417,15 +500,15 @@
 
     .app-main--statistics .date-nav-row {
         grid-template-columns:
-                2.5rem
-                minmax(0, 1fr)
-                2.5rem;
+            var(--size-touch-target)
+            minmax(0, 1fr)
+            var(--size-touch-target);
         gap: var(--space-2);
     }
 
     .app-main--statistics .nav-arrow-button {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: var(--size-touch-target);
+        height: var(--size-touch-target);
     }
 
     .app-main--statistics .chart-title {
@@ -439,11 +522,18 @@
 
     .app-main--statistics .statistics-request-status .form-button {
         width: 100%;
+        min-height: var(--size-touch-target);
+        padding: var(--space-2) var(--space-4);
         grid-column: 1 / -1;
     }
 
     .app-main--statistics .statistics-chart-wrapper {
         height: 20rem;
+    }
+
+    .app-main--statistics .statistics-data__table th,
+    .app-main--statistics .statistics-data__table td {
+        padding: var(--space-3);
     }
 }
 

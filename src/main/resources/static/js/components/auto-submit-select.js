@@ -4,7 +4,7 @@
         .forEach(select => {
             select.addEventListener('change', () => {
                 if (select.value) {
-                    select.form.submit();
+                    select.form.requestSubmit();
                     return;
                 }
 
