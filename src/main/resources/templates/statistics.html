@@ -1,802 +1,585 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{statistics.title}">
-        Sensor Statistics
+        Sensor Statistics | IoT Sensor Monitor
     </title>
-    <script th:src="@{/js/vendor/chart.umd.min.js}"></script>
-    <link rel="icon" type="image/png" th:href="@{/favicon.png}" />
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/statistics.css}">
 
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 2rem;
-            color: #f3f4f6;
-        }
-
-        .nav-button {
-            display: inline-block;
-            background-color: #3b82f6;
-            color: #ffffff;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            margin-bottom: 2rem;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        }
-
-        .nav-button:hover {
-            background-color: #2563eb;
-            transform: translateY(-1px);
-            color: #ffffff;
-            text-decoration: none;
-        }
-
-        .chart-container {
-            width: 80%;
-            max-width: 850px;
-            margin: 40px auto;
-            background-color: #1f2937;
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-            border: 1px solid #374151;
-        }
-
-        .chart-container + .chart-container {
-            margin-top: 100px;
-        }
-
-        .chart-title {
-            text-align: center;
-            font-size: 1.6rem;
-            font-weight: 600;
-            color: #e5e7eb;
-            margin-bottom: 1.5rem;
-            letter-spacing: 0.02em;
-        }
-
-        .date-nav-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .date-nav-row .chart-title {
-            margin: 0;
-            min-width: 300px;
-            text-align: center;
-        }
-
-        .nav-arrow-button {
-            background-color: #374151;
-            color: #f3f4f6;
-            border: 1px solid #4b5563;
-            border-radius: 50%;
-            width: 2.25rem;
-            height: 2.25rem;
-            flex-shrink: 0;
-            font-size: 1.25rem;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-
-        .nav-arrow-button:hover:not(:disabled) {
-            background-color: #4b5563;
-            transform: scale(1.08);
-        }
-
-        .nav-arrow-button:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-
-        .chart-slide-wrapper {
-            will-change: transform, opacity;
-        }
-
-        .stats-toolbar {
-            width: 80%;
-            max-width: 850px;
-            margin: 0 auto 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .sensor-selector {
-            flex: 1;
-            min-width: 260px;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .sensor-selector label {
-            color: #9ca3af;
-            font-weight: 600;
-        }
-
-        .sensor-selector select {
-            flex: 1;
-            background-color: #1f2937;
-            color: #f3f4f6;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-        }
-
-        .empty-state {
-            width: 80%;
-            max-width: 850px;
-            margin: 2rem auto;
-            color: #9ca3af;
-            text-align: center;
-            font-style: italic;
-        }
-
-    </style>
+    <script th:if="${selectedSensorId != null}"
+            defer
+            th:src="@{/js/vendor/chart.umd.min.js}"></script>
+    <script defer
+            th:src="@{/js/components/auto-submit-select.js}"></script>
+    <script defer
+            th:src="@{/js/pages/statistics.js}"></script>
 </head>
+
 <body>
 
-<div class="stats-toolbar">
-    <a class="nav-button"
-       th:if="${selectedSensorId != null}"
-       th:href="@{/(sensorId=${selectedSensorId})}"
-       th:text="#{nav.backToHome}">
-        Back to Home
-    </a>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('statistics', ${selectedSensorId})}"></header>
 
-    <a class="nav-button"
-       th:if="${selectedSensorId == null}"
-       th:href="@{/}"
-       th:text="#{nav.backToHome}">
-        Back to Home
-    </a>
+<main id="main-content" class="app-main app-main--statistics" tabindex="-1">
+    <header class="statistics-page-header">
+        <p class="statistics-eyebrow"
+           th:text="#{statistics.eyebrow}">
+            Monitoring insights
+        </p>
 
-    <form class="sensor-selector" th:action="@{/statistics}" method="get">
-        <label for="sensorId" th:text="#{statistics.sensor}">Sensor</label>
+        <h1 id="statistics-page-title"
+            th:text="#{statistics.heading}">
+            Sensor Statistics
+        </h1>
 
-        <select id="sensorId" name="sensorId"
-                onchange="this.value ? this.form.submit() : window.location.href = this.form.action">
-            <option value="" th:selected="${selectedSensorId == null}"
-            th:text="#{statistics.selectSensor}">
-                Select sensor
-            </option>
+        <p class="statistics-page-header__description"
+           th:text="#{statistics.description}">
+            Review hourly activity and seven-day trends for your registered
+            sensors.
+        </p>
+    </header>
 
-            <option th:each="sensor : ${sensors}"
-                    th:value="${sensor.id}"
-                    th:selected="${selectedSensorId != null
-            and sensor.id == selectedSensorId}"
-                    th:text="${sensor.name
-            + ' — '
-            + #messages.msg(
-                'sensorType.' + sensor.type.name()
-            )
-            + ' — '
-            + sensor.homeLocation}">
-            </option>
-        </select>
+    <div id="statisticsConnectionStatus"
+         class="statistics-connection-status"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true"
+         data-state="offline"
+         th:data-offline-message="#{statistics.connectionOffline}"
+         th:data-restored-message="#{statistics.connectionRestored}"
+         hidden>
+        <span class="statistics-connection-status__indicator"
+              aria-hidden="true"></span>
 
-        <noscript>
-            <button type="submit" th:text="#{statistics.apply}">Apply</button>
-        </noscript>
-    </form>
-</div>
+        <p id="statisticsConnectionMessage"
+           th:text="#{statistics.connectionOffline}">
+            You are offline. Previously loaded statistics remain available,
+            but new data cannot be requested.
+        </p>
+    </div>
 
-<p th:if="${statisticsNoSensorSelected}"
-   class="empty-state"
-   th:text="#{statistics.noSensorSelected}">
-    No sensor selected.
-</p>
+    <section class="statistics-toolbar"
+             aria-labelledby="statistics-controls-heading">
+        <header class="statistics-toolbar__header">
+            <p class="statistics-eyebrow"
+               th:text="#{statistics.controlsEyebrow}">
+                Data source
+            </p>
 
-<p th:if="${statisticsSensorNotFound}"
-   class="empty-state"
-   th:text="#{statistics.sensorNotFound}">
-    Selected sensor could not be found.
-</p>
+            <h2 id="statistics-controls-heading"
+                th:text="#{statistics.controlsHeading}">
+                Choose a sensor
+            </h2>
 
-<div class="chart-container"
-     th:if="${selectedSensorId != null}">
-    <div class="date-nav-row">
-        <button id="prevDayBtn"
-                type="button"
-                class="nav-arrow-button"
-                th:aria-label="#{statistics.previousDay}">
-            &#8249;
-        </button>
+            <p class="statistics-toolbar__description"
+               id="statistics-sensor-help"
+               th:text="#{statistics.selectorHelp}">
+                Selecting a sensor loads its current hourly and seven-day
+                statistics.
+            </p>
+        </header>
 
-        <h2 class="chart-title"
-            id="hourlyChartTitle"
-            th:text="${selectedSensorName
-                + ' — '
-                + #messages.msg(
-                    'statistics.todayHourly'
-                )}">
-            Sensor — Today's Hourly Statistics
+        <form class="sensor-selector form-stack"
+              th:action="@{/statistics}"
+              method="get">
+            <div class="form-field">
+                <label class="form-label"
+                       for="sensorId"
+                       th:text="#{statistics.sensor}">
+                    Sensor
+                </label>
+
+                <select class="form-control"
+                        id="sensorId"
+                        name="sensorId"
+                        aria-describedby="statistics-sensor-help"
+                        data-auto-submit-select
+                        th:disabled="${#lists.isEmpty(sensors)}">
+                    <option value=""
+                            th:selected="${selectedSensorId == null}"
+                            th:text="#{statistics.selectSensor}">
+                        Select sensor
+                    </option>
+
+                    <option th:each="sensor : ${sensors}"
+                            th:value="${sensor.id}"
+                            th:selected="${selectedSensorId != null
+                                and sensor.id == selectedSensorId}"
+                            th:text="${sensor.name
+                                + ' — '
+                                + #messages.msg(
+                                    'sensorType.'
+                                    + sensor.type.name()
+                                )
+                                + ' — '
+                                + sensor.homeLocation}">
+                        Main Sensor — Temperature sensor — Building A
+                    </option>
+                </select>
+            </div>
+
+            <noscript>
+                <div class="form-actions">
+                    <button class="form-button form-button--primary"
+                            type="submit"
+                            th:disabled="${#lists.isEmpty(sensors)}"
+                            th:text="#{statistics.apply}">
+                        Apply
+                    </button>
+                </div>
+            </noscript>
+        </form>
+    </section>
+
+    <section class="statistics-page-state"
+             aria-labelledby="statistics-no-sensors-heading"
+             th:if="${statisticsNoSensorSelected == true
+                 and #lists.isEmpty(sensors)}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-no-sensors-heading"
+            th:text="#{statistics.noSensorsHeading}">
+            No sensors registered
         </h2>
 
-        <button id="nextDayBtn"
-                type="button"
-                class="nav-arrow-button"
-                th:aria-label="#{statistics.nextDay}">
-            &#8250;
-        </button>
-    </div>
-
-    <div class="chart-slide-wrapper">
-        <canvas id="sensorHourlyChart"></canvas>
-    </div>
-</div>
-
-<div class="chart-container"
-     th:if="${selectedSensorId != null}">
-    <h2 class="chart-title"
-        th:text="${selectedSensorName
-            + ' — '
-            + #messages.msg(
-                'statistics.lastSevenDays'
-            )}">
-        Sensor — Last 7 Days
-    </h2>
-
-    <canvas id="sensorWeeklyChart"></canvas>
-</div>
-
-<script th:inline="javascript"
-        th:if="${selectedSensorId != null}">
-    /*<![CDATA[*/
-
-    Chart.defaults.color = '#9ca3af';
-    Chart.defaults.font.family =
-        '-apple-system, BlinkMacSystemFont, '
-        + '"Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-
-    const selectedSensorId =
-        /*[[${selectedSensorId}]]*/ 1;
-
-    const selectedSensorName =
-        /*[[${selectedSensorName}]]*/ 'Sensor';
-
-    const sensorType =
-        /*[[${selectedSensorType.name()}]]*/ 'TEMPERATURE';
-
-    const measurementUnitSymbol =
-        /*[[${measurementUnitSymbol}]]*/ '°C';
-
-    const motionSensor = sensorType === 'MOTION';
-
-    const i18n = {
-        dailyDataset: {
-            TEMPERATURE:
-            /*[[#{statistics.dataset.daily.TEMPERATURE}]]*/ 'Daily Average Temperature',
-
-            HUMIDITY:
-            /*[[#{statistics.dataset.daily.HUMIDITY}]]*/ 'Daily Average Humidity',
-
-            MOTION:
-            /*[[#{statistics.dataset.daily.MOTION}]]*/ 'Daily Motion Detections'
-        },
-
-        hourlyDataset: {
-            TEMPERATURE:
-            /*[[#{statistics.dataset.hourly.TEMPERATURE}]]*/ 'Hourly Average Temperature',
-
-            HUMIDITY:
-            /*[[#{statistics.dataset.hourly.HUMIDITY}]]*/ 'Hourly Average Humidity',
-
-            MOTION:
-            /*[[#{statistics.dataset.hourly.MOTION}]]*/ 'Hourly Motion Detections'
-        },
-
-        axis: {
-            TEMPERATURE:
-            /*[[#{statistics.axis.TEMPERATURE}]]*/ 'Temperature',
-
-            HUMIDITY:
-            /*[[#{statistics.axis.HUMIDITY}]]*/ 'Relative Humidity',
-
-            MOTION:
-            /*[[#{statistics.axis.MOTION}]]*/ 'Motion Detections'
-        },
-
-        tooltipAverage:
-        /*[[#{statistics.tooltipAverage}]]*/ 'Average',
-
-        tooltipDetections:
-        /*[[#{statistics.tooltipDetections}]]*/ 'Detections',
-
-        noDataRecorded:
-        /*[[#{statistics.noDataRecorded}]]*/ 'No data recorded',
-
-        todayHourly:
-        /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
-
-        hourlyStatistics:
-        /*[[#{statistics.hourlyStatistics}]]*/ 'Hourly Statistics',
-
-        hourAxis:
-        /*[[#{statistics.hourAxis}]]*/ 'Hour of the Day',
-
-        days: [
-            /*[[#{statistics.day.sunday}]]*/ 'Sunday',
-            /*[[#{statistics.day.monday}]]*/ 'Monday',
-            /*[[#{statistics.day.tuesday}]]*/ 'Tuesday',
-            /*[[#{statistics.day.wednesday}]]*/ 'Wednesday',
-            /*[[#{statistics.day.thursday}]]*/ 'Thursday',
-            /*[[#{statistics.day.friday}]]*/ 'Friday',
-            /*[[#{statistics.day.saturday}]]*/ 'Saturday'
-        ]
-    };
-
-    const darkTooltip = {
-        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-        titleColor: '#f3f4f6',
-        bodyColor: '#d1d5db',
-        borderColor: '#374151',
-        borderWidth: 1,
-        padding: 10,
-        boxPadding: 4
-    };
-
-    function labelWithUnit(label) {
-        return measurementUnitSymbol
-            ? `${label} (${measurementUnitSymbol})`
-            : label;
-    }
-
-    function formatMetricValue(value) {
-        if (value === null || value === undefined) {
-            return i18n.noDataRecorded;
-        }
-
-        if (motionSensor) {
-            return `${i18n.tooltipDetections}: `
-                + Math.round(value);
-        }
-
-        return `${i18n.tooltipAverage}: `
-            + `${Number(value).toFixed(2)} `
-            + measurementUnitSymbol;
-    }
-
-    function createYAxis() {
-        const scale = {
-            beginAtZero: sensorType !== 'TEMPERATURE',
-
-            grid: {
-                color: 'rgba(55, 65, 81, 0.5)'
-            },
-
-            title: {
-                display: true,
-                text: labelWithUnit(
-                    i18n.axis[sensorType]
-                ),
-                color: '#9ca3af'
-            },
-
-            ticks: {
-                color: '#d1d5db'
-            }
-        };
-
-        if (sensorType === 'HUMIDITY') {
-            scale.min = 0;
-            scale.max = 100;
-        }
-
-        if (motionSensor) {
-            scale.ticks.precision = 0;
-        }
-
-        return scale;
-    }
-
-    /*
-     * Do not use new Date("YYYY-MM-DD"). Browsers parse that
-     * form as UTC, which can display the previous day in some
-     * local timezones.
-     */
-    function parseDateString(value) {
-        const [year, month, day] =
-            value.split('-').map(Number);
-
-        return new Date(year, month - 1, day);
-    }
-
-    function formatDateForApi(date) {
-        const year = date.getFullYear();
-
-        const month = String(
-            date.getMonth() + 1
-        ).padStart(2, '0');
-
-        const day = String(
-            date.getDate()
-        ).padStart(2, '0');
-
-        return `${year}-${month}-${day}`;
-    }
-
-    const weeklyData =
-        /*[[${weeklyData}]]*/ [];
-
-    const weeklyLabels = [];
-    const weeklyValues = [];
-
-    weeklyData.forEach(item => {
-        const date = parseDateString(item.date);
-        const dayName = i18n.days[date.getDay()];
-
-        const day = String(
-            date.getDate()
-        ).padStart(2, '0');
-
-        const month = String(
-            date.getMonth() + 1
-        ).padStart(2, '0');
-
-        const year = date.getFullYear();
-
-        weeklyLabels.push([
-            dayName,
-            `${day}-${month}-${year}`
-        ]);
-
-        weeklyValues.push(item.value);
-    });
-
-    const weeklyContext = document
-        .getElementById('sensorWeeklyChart')
-        .getContext('2d');
-
-    new Chart(weeklyContext, {
-        type: 'bar',
-
-        data: {
-            labels: weeklyLabels,
-
-            datasets: [{
-                label: labelWithUnit(
-                    i18n.dailyDataset[sensorType]
-                ),
-
-                data: weeklyValues,
-
-                backgroundColor: context =>
-                    context.dataIndex
-                    === weeklyValues.length - 1
-                        ? 'rgba(245, 158, 11, 0.85)'
-                        : 'rgba(59, 130, 246, 0.7)',
-
-                borderColor: context =>
-                    context.dataIndex
-                    === weeklyValues.length - 1
-                        ? 'rgba(245, 158, 11, 1)'
-                        : 'rgba(59, 130, 246, 1)',
-
-                borderWidth: 1,
-                borderRadius: 4
-            }]
-        },
-
-        options: {
-            responsive: true,
-
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-
-                    labels: {
-                        color: '#e5e7eb'
-                    }
-                },
-
-                tooltip: {
-                    ...darkTooltip,
-
-                    callbacks: {
-                        label: context =>
-                            formatMetricValue(
-                                context.parsed.y
-                            )
-                    }
-                }
-            },
-
-            scales: {
-                y: createYAxis(),
-
-                x: {
-                    grid: {
-                        display: false
-                    },
-
-                    ticks: {
-                        color: context =>
-                            context.index
-                            === weeklyValues.length - 1
-                                ? 'rgba(245, 158, 11, 1)'
-                                : '#9ca3af'
-                    }
-                }
-            }
-        }
-    });
-
-    function toHourlyChartData(data) {
-        return {
-            labels: data.map(item =>
-                `${String(item.hour)
-                    .padStart(2, '0')}:00`
-            ),
-
-            values: data.map(item => item.value)
-        };
-    }
-
-    const initialHourlyData =
-        toHourlyChartData(
-            /*[[${hourlyData}]]*/ []
-        );
-
-    const hourlyContext = document
-        .getElementById('sensorHourlyChart')
-        .getContext('2d');
-
-    const hourlyChart = new Chart(
-        hourlyContext,
-        {
-            type: motionSensor ? 'bar' : 'line',
-
-            data: {
-                labels: initialHourlyData.labels,
-
-                datasets: [{
-                    label: labelWithUnit(
-                        i18n.hourlyDataset[sensorType]
-                    ),
-
-                    data: initialHourlyData.values,
-
-                    backgroundColor:
-                        'rgba(6, 182, 212, 0.20)',
-
-                    borderColor:
-                        'rgba(6, 182, 212, 1)',
-
-                    borderWidth: 2,
-                    pointRadius: motionSensor ? 0 : 4,
-                    pointHoverRadius:
-                        motionSensor ? 0 : 6,
-
-                    fill: !motionSensor,
-                    tension: 0.3,
-                    spanGaps: false
-                }]
-            },
-
-            options: {
-                responsive: true,
-
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-
-                        labels: {
-                            color: '#e5e7eb'
-                        }
-                    },
-
-                    tooltip: {
-                        ...darkTooltip,
-
-                        callbacks: {
-                            title: tooltipItems => {
-                                const currentHour =
-                                    Number.parseInt(
-                                        tooltipItems[0]
-                                            .label
-                                            .split(':')[0],
-                                        10
-                                    );
-
-                                const nextHour =
-                                    String(
-                                        (currentHour + 1) % 24
-                                    ).padStart(2, '0');
-
-                                return `${tooltipItems[0].label}`
-                                    + ` - ${nextHour}:00`;
-                            },
-
-                            label: context =>
-                                formatMetricValue(
-                                    context.parsed.y
+        <p th:text="#{statistics.noSensorsHelp}">
+            Register a sensor before opening its statistics.
+        </p>
+
+        <a class="form-button form-button--primary"
+           th:href="@{/user/sensors}"
+           th:text="#{statistics.manageSensors}">
+            Manage sensors
+        </a>
+    </section>
+
+    <section class="statistics-page-state"
+             aria-labelledby="statistics-no-selection-heading"
+             th:if="${statisticsNoSensorSelected == true
+                 and not #lists.isEmpty(sensors)}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-no-selection-heading"
+            th:text="#{statistics.noSensorSelectedHeading}">
+            Choose a sensor to view statistics
+        </h2>
+
+        <p th:text="#{statistics.noSensorSelected}">
+            Select a registered sensor above to display its statistics.
+        </p>
+    </section>
+
+    <section class="statistics-page-state statistics-page-state--error"
+             role="alert"
+             aria-labelledby="statistics-sensor-error-heading"
+             th:if="${statisticsSensorNotFound == true}">
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-sensor-error-heading"
+            th:text="#{statistics.sensorNotFoundHeading}">
+            Sensor unavailable
+        </h2>
+
+        <p th:text="#{statistics.sensorNotFound}">
+            The selected sensor could not be found or is no longer available.
+        </p>
+
+        <a class="form-button form-button--secondary"
+           th:href="@{/statistics}"
+           th:text="#{statistics.resetSelection}">
+            Choose another sensor
+        </a>
+    </section>
+
+    <section id="statisticsChartError"
+             class="statistics-page-state statistics-page-state--error"
+             role="alert"
+             aria-labelledby="statistics-chart-error-heading"
+             th:if="${selectedSensorId != null}"
+             hidden>
+        <span class="statistics-page-state__indicator"
+              aria-hidden="true"></span>
+
+        <h2 id="statistics-chart-error-heading"
+            th:text="#{statistics.chartUnavailableHeading}">
+            Charts unavailable
+        </h2>
+
+        <p th:text="#{statistics.chartUnavailable}">
+            The chart resources could not be initialized. Refresh the page
+            and try again.
+        </p>
+    </section>
+
+    <noscript th:if="${selectedSensorId != null}">
+        <section class="statistics-page-state"
+                 aria-labelledby="statistics-javascript-heading">
+            <span class="statistics-page-state__indicator"
+                  aria-hidden="true"></span>
+
+            <h2 id="statistics-javascript-heading"
+                th:text="#{statistics.javascriptRequiredHeading}">
+                JavaScript is required for charts
+            </h2>
+
+            <p th:text="#{statistics.javascriptRequiredHelp}">
+                Enable JavaScript to view and navigate the statistics charts.
+            </p>
+        </section>
+    </noscript>
+
+    <div id="statisticsCharts"
+         class="statistics-chart-grid"
+         th:if="${selectedSensorId != null}"
+         hidden>
+        <section class="statistics-panel"
+                 aria-labelledby="hourlyChartTitle">
+            <header class="statistics-panel__header">
+                <p class="statistics-eyebrow"
+                   th:text="#{statistics.hourlyEyebrow}">
+                    Hourly view
+                </p>
+
+                <div class="date-nav-row">
+                    <button id="prevDayBtn"
+                            class="nav-arrow-button"
+                            type="button"
+                            aria-controls="hourlyChartRegion"
+                            th:aria-label="#{statistics.previousDay}"
+                            disabled>
+                        <span aria-hidden="true">&#8249;</span>
+                    </button>
+
+                    <h2 class="chart-title"
+                        id="hourlyChartTitle"
+                        th:text="${selectedSensorName
+                            + ' — '
+                            + #messages.msg(
+                                'statistics.todayHourly'
+                            )}">
+                        Sensor — Today's Hourly Statistics
+                    </h2>
+
+                    <button id="nextDayBtn"
+                            class="nav-arrow-button"
+                            type="button"
+                            aria-controls="hourlyChartRegion"
+                            th:aria-label="#{statistics.nextDay}"
+                            disabled>
+                        <span aria-hidden="true">&#8250;</span>
+                    </button>
+                </div>
+
+                <p class="statistics-panel__description"
+                   th:text="#{statistics.hourlyDescription}">
+                    Move between days to inspect when readings or detections
+                    were recorded.
+                </p>
+            </header>
+
+            <div id="hourlyRequestStatus"
+                 class="statistics-request-status"
+                 role="status"
+                 aria-live="polite"
+                 aria-atomic="true"
+                 data-state="loading"
+                 hidden>
+                <span class="statistics-request-status__indicator"
+                      aria-hidden="true"></span>
+
+                <p id="hourlyRequestMessage">
+                    Loading hourly statistics...
+                </p>
+
+                <button id="hourlyRetryButton"
+                        class="form-button form-button--primary"
+                        type="button"
+                        aria-controls="hourlyChartRegion"
+                        th:text="#{statistics.retry}"
+                        hidden>
+                    Retry
+                </button>
+            </div>
+
+            <div id="hourlyChartRegion"
+                 class="statistics-chart-region"
+                 aria-busy="false">
+                <div id="hourlyEmptyState"
+                     class="statistics-chart-empty"
+                     role="status"
+                     aria-live="polite"
+                     aria-atomic="true"
+                     hidden>
+                    <span class="statistics-chart-empty__indicator"
+                          aria-hidden="true"></span>
+
+                    <h3 th:text="#{statistics.noHourlyDataHeading}">
+                        No readings for this day
+                    </h3>
+
+                    <p th:text="#{statistics.noHourlyData}">
+                        No readings were recorded for this sensor on the
+                        selected day.
+                    </p>
+                </div>
+
+                <div id="hourlyChartCanvasWrapper"
+                     class="statistics-chart-wrapper">
+                    <canvas id="sensorHourlyChart"
+                            role="img"
+                            aria-details="hourlyDataDetails"
+                            th:aria-label="${#messages.msg(
+                                    'statistics.hourlyChartLabel'
                                 )
-                        }
-                    }
-                },
+                                + ': '
+                                + selectedSensorName}">
+                        <span th:text="#{statistics.chartFallback}">
+                            Your browser cannot display this statistics chart.
+                        </span>
+                    </canvas>
+                </div>
 
-                scales: {
-                    y: createYAxis(),
+                <details id="hourlyDataDetails"
+                         class="statistics-data"
+                         hidden>
+                    <summary id="hourlyDataSummary"
+                             class="statistics-data__summary"
+                             th:text="#{statistics.hourlyDataTableSummary}">
+                        View hourly data table
+                    </summary>
 
-                    x: {
-                        grid: {
-                            color:
-                                'rgba(55, 65, 81, 0.2)'
-                        },
+                    <div class="statistics-data__scroll"
+                         role="region"
+                         tabindex="0"
+                         aria-labelledby="hourlyDataSummary">
+                        <table class="statistics-data__table">
+                            <caption id="hourlyDataCaption"
+                                     th:text="${selectedSensorName
+                                         + ' — '
+                                         + #messages.msg(
+                                             'statistics.todayHourly'
+                                         )
+                                         + ' — '
+                                         + #messages.msg(
+                                             'statistics.dataTableCaption'
+                                         )}">
+                                Sensor — Today's Hourly Statistics — Data table
+                            </caption>
 
-                        title: {
-                            display: true,
-                            text: i18n.hourAxis,
-                            color: '#9ca3af'
-                        },
+                            <thead>
+                            <tr>
+                                <th scope="col"
+                                    th:text="#{statistics.chart.hour}">
+                                    Hour
+                                </th>
 
-                        ticks: {
-                            color: '#d1d5db'
-                        }
-                    }
-                }
-            }
+                                <th class="statistics-data__value"
+                                    scope="col"
+                                    th:text="${#messages.msg(
+                                            'statistics.axis.'
+                                            + selectedSensorType.name()
+                                        )
+                                        + (measurementUnitSymbol == ''
+                                            ? ''
+                                            : ' ('
+                                                + measurementUnitSymbol
+                                                + ')')}">
+                                    Value
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="hourlyDataTableBody"></tbody>
+                        </table>
+                    </div>
+                </details>
+
+            </div>
+        </section>
+
+        <section class="statistics-panel"
+                 aria-labelledby="weeklyChartTitle">
+            <header class="statistics-panel__header">
+                <p class="statistics-eyebrow"
+                   th:text="#{statistics.weeklyEyebrow}">
+                    Seven-day view
+                </p>
+
+                <h2 class="chart-title"
+                    id="weeklyChartTitle"
+                    th:text="${selectedSensorName
+                        + ' — '
+                        + #messages.msg(
+                            'statistics.lastSevenDays'
+                        )}">
+                    Sensor — Last 7 Days
+                </h2>
+
+                <p class="statistics-panel__description"
+                   th:text="#{statistics.weeklyDescription}">
+                    Compare the selected sensor's daily results across the
+                    latest seven-day period.
+                </p>
+            </header>
+
+            <div class="statistics-chart-region">
+                <div id="weeklyEmptyState"
+                     class="statistics-chart-empty"
+                     role="status"
+                     aria-live="polite"
+                     aria-atomic="true"
+                     hidden>
+                    <span class="statistics-chart-empty__indicator"
+                          aria-hidden="true"></span>
+
+                    <h3 th:text="#{statistics.noWeeklyDataHeading}">
+                        No readings in this period
+                    </h3>
+
+                    <p th:text="#{statistics.noWeeklyData}">
+                        No readings were recorded for this sensor during the
+                        latest seven-day period.
+                    </p>
+                </div>
+
+                <div id="weeklyChartCanvasWrapper"
+                     class="statistics-chart-wrapper">
+                    <canvas id="sensorWeeklyChart"
+                            role="img"
+                            aria-details="weeklyDataDetails"
+                            th:aria-label="${#messages.msg(
+                                    'statistics.weeklyChartLabel'
+                                )
+                                + ': '
+                                + selectedSensorName}">
+                        <span th:text="#{statistics.chartFallback}">
+                            Your browser cannot display this statistics chart.
+                        </span>
+                    </canvas>
+                </div>
+
+                <details id="weeklyDataDetails"
+                         class="statistics-data"
+                         hidden>
+                    <summary id="weeklyDataSummary"
+                             class="statistics-data__summary"
+                             th:text="#{statistics.weeklyDataTableSummary}">
+                        View seven-day data table
+                    </summary>
+
+                    <div class="statistics-data__scroll"
+                         role="region"
+                         tabindex="0"
+                         aria-labelledby="weeklyDataSummary">
+                        <table class="statistics-data__table">
+                            <caption th:text="${selectedSensorName
+                                    + ' — '
+                                    + #messages.msg(
+                                        'statistics.lastSevenDays'
+                                    )
+                                    + ' — '
+                                    + #messages.msg(
+                                        'statistics.dataTableCaption'
+                                    )}">
+                                Sensor — Last 7 Days — Data table
+                            </caption>
+
+                            <thead>
+                            <tr>
+                                <th scope="col"
+                                    th:text="#{statistics.chart.date}">
+                                    Date
+                                </th>
+
+                                <th class="statistics-data__value"
+                                    scope="col"
+                                    th:text="${#messages.msg(
+                                            'statistics.axis.'
+                                            + selectedSensorType.name()
+                                        )
+                                        + (measurementUnitSymbol == ''
+                                            ? ''
+                                            : ' ('
+                                                + measurementUnitSymbol
+                                                + ')')}">
+                                    Value
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="weeklyDataTableBody"></tbody>
+                        </table>
+                    </div>
+                </details>
+
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script id="statistics-page-data"
+        type="text/plain"
+        th:inline="javascript"
+        th:if="${selectedSensorId != null}">
+    {
+        "selectedSensorId": /*[[${selectedSensorId}]]*/ 1,
+        "selectedSensorName": /*[[${selectedSensorName}]]*/ "Sensor",
+        "sensorType": /*[[${selectedSensorType.name()}]]*/ "TEMPERATURE",
+        "measurementUnitSymbol": /*[[${measurementUnitSymbol}]]*/ "°C",
+        "weeklyData": /*[[${weeklyData}]]*/ [],
+        "hourlyData": /*[[${hourlyData}]]*/ [],
+        "today": /*[[${today}]]*/ "2026-07-14",
+        "i18n": {
+            "dailyDataset": {
+                "TEMPERATURE": /*[[#{statistics.dataset.daily.TEMPERATURE}]]*/ "Daily Average Temperature",
+                "HUMIDITY": /*[[#{statistics.dataset.daily.HUMIDITY}]]*/ "Daily Average Humidity",
+                "MOTION": /*[[#{statistics.dataset.daily.MOTION}]]*/ "Daily Motion Detections"
+            },
+            "hourlyDataset": {
+                "TEMPERATURE": /*[[#{statistics.dataset.hourly.TEMPERATURE}]]*/ "Hourly Average Temperature",
+                "HUMIDITY": /*[[#{statistics.dataset.hourly.HUMIDITY}]]*/ "Hourly Average Humidity",
+                "MOTION": /*[[#{statistics.dataset.hourly.MOTION}]]*/ "Hourly Motion Detections"
+            },
+            "axis": {
+                "TEMPERATURE": /*[[#{statistics.axis.TEMPERATURE}]]*/ "Temperature",
+                "HUMIDITY": /*[[#{statistics.axis.HUMIDITY}]]*/ "Relative Humidity",
+                "MOTION": /*[[#{statistics.axis.MOTION}]]*/ "Motion Detections"
+            },
+            "tooltipAverage": /*[[#{statistics.tooltipAverage}]]*/ "Average",
+            "tooltipDetections": /*[[#{statistics.tooltipDetections}]]*/ "Detections",
+            "noDataRecorded": /*[[#{statistics.noDataRecorded}]]*/ "No data recorded",
+            "todayHourly": /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
+            "hourlyStatistics": /*[[#{statistics.hourlyStatistics}]]*/ "Hourly Statistics",
+            "hourAxis": /*[[#{statistics.hourAxis}]]*/ "Hour of the Day",
+            "dataTableCaption": /*[[#{statistics.dataTableCaption}]]*/ "Data table",
+            "loadingHourly": /*[[#{statistics.loadingHourly}]]*/ "Loading hourly statistics...",
+            "hourlyLoaded": /*[[#{statistics.hourlyLoaded}]]*/ "Hourly statistics loaded.",
+            "hourlyLoadError": /*[[#{statistics.hourlyLoadError}]]*/ "Hourly statistics could not be loaded. The current view has not changed.",
+            "hourlyOffline": /*[[#{statistics.hourlyOffline}]]*/ "You are offline. Reconnect, then retry.",
+            "connectionRestoredRetry": /*[[#{statistics.connectionRestoredRetry}]]*/ "Connection restored. Retry to load the requested day.",
+            "days": [
+                /*[[#{statistics.day.sunday}]]*/ "Sunday",
+                /*[[#{statistics.day.monday}]]*/ "Monday",
+                /*[[#{statistics.day.tuesday}]]*/ "Tuesday",
+                /*[[#{statistics.day.wednesday}]]*/ "Wednesday",
+                /*[[#{statistics.day.thursday}]]*/ "Thursday",
+                /*[[#{statistics.day.friday}]]*/ "Friday",
+                /*[[#{statistics.day.saturday}]]*/ "Saturday"
+            ]
         }
-    );
-
-    const todayDate = parseDateString(
-        /*[[${today}]]*/ '2026-07-14'
-    );
-
-    let currentDate = new Date(todayDate);
-
-    const hourlyChartTitle = document
-        .getElementById('hourlyChartTitle');
-
-    const previousDayButton = document
-        .getElementById('prevDayBtn');
-
-    const nextDayButton = document
-        .getElementById('nextDayBtn');
-
-    function updateChartTitle(date) {
-        if (formatDateForApi(date)
-            === formatDateForApi(todayDate)) {
-            hourlyChartTitle.textContent =
-                `${selectedSensorName} — `
-                + i18n.todayHourly;
-
-            return;
-        }
-
-        const dayName =
-            i18n.days[date.getDay()];
-
-        const day = String(
-            date.getDate()
-        ).padStart(2, '0');
-
-        const month = String(
-            date.getMonth() + 1
-        ).padStart(2, '0');
-
-        hourlyChartTitle.textContent =
-            `${selectedSensorName} — `
-            + `${dayName}, `
-            + `${day}-${month}-${date.getFullYear()} — `
-            + i18n.hourlyStatistics;
     }
-
-    function updateNavigationState(loading = false) {
-        previousDayButton.disabled = loading;
-
-        nextDayButton.disabled =
-            loading
-            || formatDateForApi(currentDate)
-            >= formatDateForApi(todayDate);
-    }
-
-    async function fetchHourlyData(date) {
-        const parameters = new URLSearchParams({
-            date: formatDateForApi(date)
-        });
-
-        const response = await fetch(
-            `/api/sensors/${
-                encodeURIComponent(selectedSensorId)
-            }/statistics/hourly?${
-                parameters.toString()
-            }`
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to load hourly statistics `
-                + `(HTTP ${response.status})`
-            );
-        }
-
-        return response.json();
-    }
-
-    function applyHourlyData(data, date) {
-        const chartData =
-            toHourlyChartData(data);
-
-        hourlyChart.data.labels =
-            chartData.labels;
-
-        hourlyChart.data.datasets[0].data =
-            chartData.values;
-
-        hourlyChart.update();
-        updateChartTitle(date);
-    }
-
-    async function navigateDate(direction) {
-        if (direction === 'next'
-            && nextDayButton.disabled) {
-            return;
-        }
-
-        const targetDate =
-            new Date(currentDate);
-
-        targetDate.setDate(
-            targetDate.getDate()
-            + (direction === 'next' ? 1 : -1)
-        );
-
-        updateNavigationState(true);
-
-        try {
-            const data =
-                await fetchHourlyData(targetDate);
-
-            currentDate = targetDate;
-
-            applyHourlyData(
-                data,
-                currentDate
-            );
-        } catch (error) {
-            console.error(error);
-        } finally {
-            updateNavigationState(false);
-        }
-    }
-
-    previousDayButton.addEventListener(
-        'click',
-        () => navigateDate('previous')
-    );
-
-    nextDayButton.addEventListener(
-        'click',
-        () => navigateDate('next')
-    );
-
-    updateNavigationState();
-
-    /*]]>*/
 </script>
 
 </body>

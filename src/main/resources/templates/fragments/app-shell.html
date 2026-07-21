@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header class="app-header"
+        th:fragment="authenticatedHeader(activePage, selectedSensorId)">
+    <a class="skip-link"
+       href="#main-content"
+       th:text="#{nav.skipToContent}">
+        Skip to main content
+    </a>
+
+    <div class="app-header__inner">
+
+        <a class="app-brand"
+           th:if="${selectedSensorId != null}"
+           th:href="@{/(sensorId=${selectedSensorId})}">
+            <span class="app-brand__mark" aria-hidden="true"></span>
+            <span th:text="#{app.title}">IoT Sensor Monitor</span>
+        </a>
+
+        <a class="app-brand"
+           th:if="${selectedSensorId == null}"
+           th:href="@{/}">
+            <span class="app-brand__mark" aria-hidden="true"></span>
+            <span th:text="#{app.title}">IoT Sensor Monitor</span>
+        </a>
+
+        <nav class="app-nav" th:aria-label="#{nav.primary}">
+            <ul class="app-nav__list">
+                <li>
+                    <a class="app-nav__link"
+                       th:if="${selectedSensorId != null}"
+                       th:href="@{/(sensorId=${selectedSensorId})}"
+                       th:attr="aria-current=${activePage == 'dashboard' ? 'page' : null}"
+                       th:text="#{nav.home}">
+                        Home
+                    </a>
+
+                    <a class="app-nav__link"
+                       th:if="${selectedSensorId == null}"
+                       th:href="@{/}"
+                       th:attr="aria-current=${activePage == 'dashboard' ? 'page' : null}"
+                       th:text="#{nav.home}">
+                        Home
+                    </a>
+                </li>
+
+                <li>
+                    <a class="app-nav__link"
+                       th:if="${selectedSensorId != null}"
+                       th:href="@{/statistics(sensorId=${selectedSensorId})}"
+                       th:attr="aria-current=${activePage == 'statistics' ? 'page' : null}"
+                       th:text="#{nav.statistics}">
+                        View Statistics
+                    </a>
+
+                    <a class="app-nav__link"
+                       th:if="${selectedSensorId == null}"
+                       th:href="@{/statistics}"
+                       th:attr="aria-current=${activePage == 'statistics' ? 'page' : null}"
+                       th:text="#{nav.statistics}">
+                        View Statistics
+                    </a>
+                </li>
+
+                <li>
+                    <a class="app-nav__link"
+                       th:href="@{/user/sensors}"
+                       th:attr="aria-current=${activePage == 'sensors' ? 'page' : null}"
+                       th:text="#{nav.sensors}">
+                        Manage Sensors
+                    </a>
+                </li>
+
+                <li>
+                    <a class="app-nav__link"
+                       th:href="@{/user/alert-rules}"
+                       th:attr="aria-current=${activePage == 'alert-rules' ? 'page' : null}"
+                       th:text="#{nav.alertRules}">
+                        Alert Rules
+                    </a>
+                </li>
+
+                <li>
+                    <a class="app-nav__link"
+                       th:href="@{/user/preferences}"
+                       th:attr="aria-current=${activePage == 'preferences' ? 'page' : null}"
+                       th:text="#{nav.preferences}">
+                        Preferences
+                    </a>
+                </li>
+
+                <li>
+                    <form class="app-nav__logout-form"
+                          th:action="@{/logout}"
+                          method="post">
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}">
+
+                        <button class="app-nav__logout-button"
+                                type="submit"
+                                th:text="#{nav.logout}">
+                            Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<header class="app-header"
+        th:fragment="publicHeader(activePage)">
+    <a class="skip-link"
+       href="#main-content"
+       th:text="#{nav.skipToContent}">
+        Skip to main content
+    </a>
+
+    <div class="app-header__inner">
+        <a class="app-brand" th:href="@{/login}">
+            <span class="app-brand__mark" aria-hidden="true"></span>
+            <span th:text="#{app.title}">IoT Sensor Monitor</span>
+        </a>
+
+        <nav class="app-nav" th:aria-label="#{nav.account}">
+            <ul class="app-nav__list">
+                <li>
+                    <a class="app-nav__link"
+                       th:href="@{/login}"
+                       th:attr="aria-current=${activePage == 'login' ? 'page' : null}"
+                       th:text="#{auth.login}">
+                        Login
+                    </a>
+                </li>
+
+                <li>
+                    <a class="app-nav__link"
+                       th:href="@{/register}"
+                       th:attr="aria-current=${activePage == 'register' ? 'page' : null}"
+                       th:text="#{auth.createAccount}">
+                        Create Account
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<footer class="app-footer"
+        th:fragment="footer">
+    <p class="app-footer__text">
+        <span>&copy;</span>
+        <span th:text="#{app.title}">IoT Sensor Monitor</span>
+    </p>
+</footer>
+
+</body>
+</html>
