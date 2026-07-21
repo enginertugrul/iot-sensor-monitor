@@ -1,6 +1,5 @@
 .app-main--preferences {
     display: grid;
-    width: 100%;
     max-width: 64rem;
     gap: var(--space-8);
 }

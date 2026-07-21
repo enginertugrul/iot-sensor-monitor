@@ -1,6 +1,5 @@
 .app-main--alert-rules {
     display: grid;
-    width: 100%;
     gap: var(--space-8);
 }
 
@@ -220,7 +219,6 @@
 .app-main--alert-rules .alert-rules-table {
     width: 100%;
     min-width: 64rem;
-    border-collapse: collapse;
     text-align: left;
 }
 

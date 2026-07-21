@@ -1,6 +1,5 @@
 .app-main--sensors {
     display: grid;
-    width: 100%;
     gap: var(--space-8);
 }
 
@@ -212,7 +211,6 @@
 .app-main--sensors .sensors-table {
     width: 100%;
     min-width: 64rem;
-    border-collapse: collapse;
     text-align: left;
 }
 

@@ -243,7 +243,6 @@
          th:if="${selectedSensorId != null}"
          hidden>
         <section class="statistics-panel"
-                 id="hourlyChartPanel"
                  aria-labelledby="hourlyChartTitle">
             <header class="statistics-panel__header">
                 <p class="statistics-eyebrow"
@@ -409,7 +408,6 @@
         </section>
 
         <section class="statistics-panel"
-                 id="weeklyChartPanel"
                  aria-labelledby="weeklyChartTitle">
             <header class="statistics-panel__header">
                 <p class="statistics-eyebrow"
@@ -434,8 +432,7 @@
                 </p>
             </header>
 
-            <div id="weeklyChartRegion"
-                 class="statistics-chart-region">
+            <div class="statistics-chart-region">
                 <div id="weeklyEmptyState"
                      class="statistics-chart-empty"
                      role="status"

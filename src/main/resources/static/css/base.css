@@ -57,7 +57,6 @@
     --space-8: 2rem;
     --space-10: 2.5rem;
     --space-12: 3rem;
-    --space-16: 4rem;
 
     --size-touch-target: 2.75rem;
     --size-app-header: 4.5rem;
@@ -74,8 +73,6 @@
     --transition-fast: 150ms ease;
     --transition-normal: 200ms ease;
 
-    --content-width-dashboard: 56.25rem;
-    --content-width-chart: 53.125rem;
     --content-width-wide: 72rem;
 }
 
@@ -180,15 +177,6 @@ small {
     font-size: var(--font-size-sm);
 }
 
-code {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background-color: var(--color-surface-muted);
-    color: var(--color-info);
-    font-family: var(--font-family-mono);
-    font-size: 0.9em;
-    padding: 0.15em 0.4em;
-}
 
 a {
     color: var(--color-link);

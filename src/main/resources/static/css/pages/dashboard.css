@@ -1,6 +1,5 @@
 .app-main--dashboard {
     display: grid;
-    width: 100%;
     gap: var(--space-8);
 }
 
@@ -159,9 +158,6 @@
     padding: var(--space-4);
 }
 
-.app-main--dashboard .sensor-selector .form-control {
-    min-width: 0;
-}
 
 .app-main--dashboard .sensor-selector noscript {
     display: block;
@@ -204,7 +200,6 @@
 .app-main--dashboard .readings-table {
     width: 100%;
     min-width: 46rem;
-    border-collapse: collapse;
     text-align: left;
 }
 

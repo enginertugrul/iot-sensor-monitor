@@ -1,6 +1,5 @@
 .app-main--auth {
     display: grid;
-    width: 100%;
     place-items: start center;
 }
 
