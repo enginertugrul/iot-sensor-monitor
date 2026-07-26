@@ -122,6 +122,12 @@ public class SensorServiceImpl implements SensorService {
     }
 
 
+    @Override
+    @Transactional
+    public void deleteSensor(Long sensorId, Long ownerId) {
+        Sensor sensor = getOwnedSensor(sensorId, ownerId);
+        sensorRepository.delete(sensor);
+    }
 
     @Override
     @Transactional(readOnly = true)
