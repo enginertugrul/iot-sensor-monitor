@@ -2,7 +2,10 @@ package com.enginertugrul.iottemperaturemonitor.controller;
 
 import com.enginertugrul.iottemperaturemonitor.dto.sensor.CreatedSensorDTO;
 import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorForm;
+import com.enginertugrul.iottemperaturemonitor.dto.sensor.SensorUpdateForm;
+import com.enginertugrul.iottemperaturemonitor.entity.sensor.Sensor;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
+import com.enginertugrul.iottemperaturemonitor.exception.DuplicateSensorNameException;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
 import com.enginertugrul.iottemperaturemonitor.service.sensor.SensorService;
 import com.enginertugrul.iottemperaturemonitor.support.timezone.TimezoneCatalog;
@@ -59,7 +62,7 @@ public class SensorController {
 
         try {
             createdSensor =  sensorService.createSensor(ownerId, form);
-        } catch (IllegalArgumentException ex) {
+        } catch (DuplicateSensorNameException ex) {
             bindingResult.rejectValue("name", "sensors.nameDuplicate");
             addPageData(model, ownerId);
             return "sensors";
@@ -72,9 +75,71 @@ public class SensorController {
         return "redirect:/user/sensors";
     }
 
+
+    @GetMapping("/{sensorId}/edit")
+    public String getSensorsEditPage(@AuthenticationPrincipal AuthenticatedUser authenticatedUser , @PathVariable Long sensorId, Model model) {
+
+        Long ownerId =  authenticatedUser.getAppUserId();
+
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form",sensorService.getSensorUpdateForm(sensorId,ownerId) );
+        }
+
+        addEditPageData(model, sensorId, ownerId);
+        return "sensor-edit";
+
+    }
+
+
+    @PostMapping("/{sensorId}/edit")
+    public String updateSensor(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            @Valid @ModelAttribute("form") SensorUpdateForm form,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes
+            ) {
+
+        Long ownerId = authenticatedUser.getAppUserId();
+
+        if(bindingResult.hasErrors()) {
+            addEditPageData(model, sensorId, ownerId);
+            return "sensor-edit";
+        }
+
+        try {
+            sensorService.updateSensor(sensorId, ownerId, form);
+        }catch (DuplicateSensorNameException ex) {
+            bindingResult.rejectValue("name", "sensors.nameDuplicate");
+            addEditPageData(model, sensorId, ownerId);
+            return "sensor-edit";
+        }
+
+        redirectAttributes.addFlashAttribute("sensorUpdated", true);
+
+        return "redirect:/user/sensors";
+
+    }
+
+
+
     private void addPageData(Model model, Long ownerId) {
         model.addAttribute("sensorTypes", SensorType.values());
         model.addAttribute("timezoneOptions", timezoneCatalog.getTimezoneOptions());
         model.addAttribute("sensors", sensorService.getSensorsForUser(ownerId));
     }
+
+
+    private void addEditPageData(Model model,Long sensorId,Long ownerId) {
+
+        Sensor sensor = sensorService.getSensorForUser(sensorId,ownerId);
+
+        model.addAttribute("sensorId", sensor.getId());
+        model.addAttribute("sensorName", sensor.getName());
+        model.addAttribute("sensorType", sensor.getType());
+        model.addAttribute("timezoneOptions",timezoneCatalog.getTimezoneOptions() );
+    }
+
+
 }
