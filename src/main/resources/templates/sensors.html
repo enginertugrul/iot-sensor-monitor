@@ -118,13 +118,23 @@
 
 
     <div class="sensors-notices"
-         th:if="${sensorUpdated == true}">
+         th:if="${sensorUpdated == true or sensorDeleted == true}">
         <p class="form-status form-status--success"
            role="status"
            aria-live="polite"
            aria-atomic="true"
+           th:if="${sensorUpdated == true}"
            th:text="#{sensors.updated}">
             Sensor updated successfully.
+        </p>
+
+        <p class="form-status form-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           th:if="${sensorDeleted == true}"
+           th:text="#{sensors.deleted}">
+            Sensor and all related data deleted successfully.
         </p>
     </div>
 
@@ -508,6 +518,15 @@
                                     + sensor.name}"
                                th:text="#{sensors.edit}">
                                 Edit
+                            </a>
+
+                            <a class="sensor-action-link sensor-action-link--danger"
+                               th:href="@{/user/sensors/{sensorId}/delete(sensorId=${sensor.id})}"
+                               th:aria-label="${#messages.msg('sensors.delete')
+                                    + ': '
+                                    + sensor.name}"
+                               th:text="#{sensors.delete}">
+                                Delete
                             </a>
 
                         </div>

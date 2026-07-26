@@ -123,6 +123,37 @@ public class SensorController {
     }
 
 
+    @GetMapping("/{sensorId}/delete")
+    public String getSensorDeletePage(@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+                                      @PathVariable Long sensorId,
+                                      Model model) {
+
+        Long ownerId = authenticatedUser.getAppUserId();
+        Sensor sensor = sensorService.getSensorForUser(sensorId,ownerId);
+
+        model.addAttribute("sensorId",sensor.getId());
+        model.addAttribute("sensorName",sensor.getName());
+        model.addAttribute("sensorType",sensor.getType());
+        model.addAttribute("sensorCity",sensor.getCity());
+        model.addAttribute("sensorDistrict",sensor.getDistrict());
+        model.addAttribute("sensorHomeLocation",sensor.getHomeLocation());
+
+        return "sensor-delete";
+    }
+
+    @PostMapping("/{sensorId}/delete")
+    public String deleteSensor(@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+                               @PathVariable Long sensorId,
+                               RedirectAttributes redirectAttributes) {
+
+        sensorService.deleteSensor(sensorId,authenticatedUser.getAppUserId());
+
+        redirectAttributes.addFlashAttribute("sensorDeleted",true);
+
+        return "redirect:/user/sensors";
+    }
+
+
 
     private void addPageData(Model model, Long ownerId) {
         model.addAttribute("sensorTypes", SensorType.values());
