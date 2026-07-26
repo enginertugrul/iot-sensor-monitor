@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="#{sensors.deleteTitle}">
+    Delete Sensor | IoT Sensor Monitor
+  </title>
+  <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+  <link rel="stylesheet" th:href="@{/css/base.css}">
+  <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+  <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/sensors.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('sensors', ${null})}"></header>
+
+<main id="main-content"
+      class="app-main app-main--sensors"
+      tabindex="-1">
+  <header class="sensors-page-header">
+    <div class="sensors-page-header__content">
+      <p class="sensors-eyebrow sensors-eyebrow--danger"
+         th:text="#{sensors.deleteEyebrow}">
+        Danger zone
+      </p>
+
+      <h1 th:text="#{sensors.deleteHeading}">
+        Delete Sensor
+      </h1>
+
+      <p class="sensors-page-header__description"
+         th:text="#{sensors.deleteDescription}">
+        Review the sensor and the data that will be permanently deleted.
+      </p>
+    </div>
+  </header>
+
+  <section class="sensor-delete-panel"
+           aria-labelledby="sensor-delete-heading"
+           aria-describedby="sensor-delete-warning">
+    <header class="sensor-delete-panel__header">
+            <span class="sensor-delete-panel__icon"
+                  aria-hidden="true"></span>
+
+      <div>
+        <h2 id="sensor-delete-heading"
+            th:text="${sensorName}">
+          North Entrance Sensor
+        </h2>
+
+        <p class="sensor-delete-panel__warning"
+           id="sensor-delete-warning"
+           th:text="#{sensors.deleteWarning}">
+          Deleting this sensor will permanently delete the sensor,
+          all of its readings, and all alert rules associated with it.
+          This action cannot be undone. Are you sure?
+        </p>
+      </div>
+    </header>
+
+    <dl class="sensor-delete-summary">
+      <div class="sensor-delete-summary__item">
+        <dt th:text="#{sensors.type}">
+          Sensor Type
+        </dt>
+
+        <dd th:text="${#messages.msg(
+                        'sensorType.' + sensorType.name()
+                    )}">
+          Temperature sensor
+        </dd>
+      </div>
+
+      <div class="sensor-delete-summary__item">
+        <dt th:text="#{sensors.site}">
+          Region
+        </dt>
+
+        <dd>
+                    <span th:text="${sensorCity}">
+                        Istanbul
+                    </span>
+
+          <span th:text="${sensorDistrict}">
+                        Kadikoy
+                    </span>
+        </dd>
+      </div>
+
+      <div class="sensor-delete-summary__item">
+        <dt th:text="#{sensors.homeLocation}">
+          Installation Location
+        </dt>
+
+        <dd th:text="${sensorHomeLocation}">
+          Building A - Floor 2
+        </dd>
+      </div>
+    </dl>
+
+    <div class="sensor-delete-actions">
+      <a class="form-button form-button--secondary"
+         th:href="@{/user/sensors}"
+         th:text="#{sensors.cancel}">
+        Cancel
+      </a>
+
+      <form class="sensor-delete-form"
+            th:action="@{/user/sensors/{sensorId}/delete(sensorId=${sensorId})}"
+            method="post"
+            aria-describedby="sensor-delete-warning">
+        <input type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}">
+
+        <button class="form-button form-button--danger"
+                type="submit"
+                th:text="#{sensors.confirmDelete}">
+          Yes, delete sensor
+        </button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+</body>
+</html>

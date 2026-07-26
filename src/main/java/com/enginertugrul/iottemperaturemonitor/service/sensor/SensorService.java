@@ -20,5 +20,7 @@ public interface SensorService {
 
     void updateSensor(Long sensorId, Long ownerId, SensorUpdateForm sensorUpdateForm);
 
+    void deleteSensor(Long sensorId,Long ownerId);
+
     String getDefaultTimezoneForUser(Long ownerId);
 }

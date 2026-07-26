@@ -433,6 +433,133 @@
 }
 
 
+.app-main--sensors .sensors-eyebrow--danger {
+    color: var(--color-danger);
+}
+
+.app-main--sensors .sensor-action-link--danger {
+    border-color: var(--color-danger);
+    background-color: rgba(248, 113, 113, 0.08);
+    color: var(--color-danger);
+}
+
+.app-main--sensors .sensor-action-link--danger:hover {
+    border-color: var(--color-danger);
+    background-color: rgba(248, 113, 113, 0.18);
+    color: var(--color-danger);
+}
+
+.app-main--sensors .sensor-delete-panel {
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    padding: clamp(
+            var(--space-5),
+            4vw,
+            var(--space-8)
+    );
+}
+
+.app-main--sensors .sensor-delete-panel__header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-4);
+}
+
+.app-main--sensors .sensor-delete-panel__header h2 {
+    margin: 0 0 var(--space-3);
+}
+
+.app-main--sensors .sensor-delete-panel__icon {
+    position: relative;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-pill);
+    background-color: rgba(248, 113, 113, 0.1);
+}
+
+.app-main--sensors .sensor-delete-panel__icon::before,
+.app-main--sensors .sensor-delete-panel__icon::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.25rem;
+    height: 0.125rem;
+    background-color: var(--color-danger);
+    content: "";
+}
+
+.app-main--sensors .sensor-delete-panel__icon::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.app-main--sensors .sensor-delete-panel__icon::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.app-main--sensors .sensor-delete-panel__warning {
+    max-width: 48rem;
+    margin: 0;
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+}
+
+.app-main--sensors .sensor-delete-summary {
+    display: grid;
+    margin: var(--space-6) 0 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+.app-main--sensors .sensor-delete-summary__item {
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+    padding: var(--space-4);
+}
+
+.app-main--sensors .sensor-delete-summary__item dt {
+    margin-bottom: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.app-main--sensors .sensor-delete-summary__item dd {
+    margin: 0;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.app-main--sensors .sensor-delete-summary__item dd span {
+    display: block;
+}
+
+.app-main--sensors .sensor-delete-summary__item dd span + span {
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+}
+
+.app-main--sensors .sensor-delete-actions {
+    display: flex;
+    margin-top: var(--space-6);
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.app-main--sensors .sensor-delete-form {
+    margin: 0;
+}
+
+
 
 @media (max-width: 72rem) {
     .app-main--sensors .sensors-table-scroll-hint {
@@ -473,6 +600,11 @@
     .app-main--sensors .sensors-table td {
         padding: var(--space-3) var(--space-4);
     }
+
+    .app-main--sensors .sensor-delete-summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
 }
 
 @media (max-width: 40rem) {
@@ -497,4 +629,26 @@
     .app-main--sensors .sensor-token-panel__value .form-button {
         width: 100%;
     }
+
+    .app-main--sensors .sensor-delete-panel {
+        padding: var(--space-4);
+    }
+
+    .app-main--sensors .sensor-delete-panel__header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-main--sensors .sensor-delete-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .app-main--sensors .sensor-delete-form {
+        width: 100%;
+    }
+
+    .app-main--sensors .sensor-delete-actions .form-button {
+        width: 100%;
+    }
+
 }
