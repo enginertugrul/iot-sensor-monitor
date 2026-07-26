@@ -115,6 +115,20 @@
            aria-live="polite"
            aria-atomic="true"></p>
     </section>
+
+
+    <div class="sensors-notices"
+         th:if="${sensorUpdated == true}">
+        <p class="form-status form-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           th:text="#{sensors.updated}">
+            Sensor updated successfully.
+        </p>
+    </div>
+
+
     <section class="sensors-panel"
              aria-labelledby="add-sensor-heading">
         <header class="sensors-panel__header">
@@ -464,6 +478,7 @@
                     </td>
 
                     <td>
+
                         <div class="sensor-actions">
 
                             <a class="sensor-action-link"
@@ -482,6 +497,17 @@
                                     + sensor.name}"
                                th:text="#{sensors.viewStatistics}">
                                 View statistics
+                            </a>
+
+                            <a class="sensor-action-link"
+                               th:href="@{/user/sensors/{sensorId}/edit(
+                                   sensorId=${sensor.id}
+                               )}"
+                               th:aria-label="${#messages.msg('sensors.edit')
+                                    + ': '
+                                    + sensor.name}"
+                               th:text="#{sensors.edit}">
+                                Edit
                             </a>
 
                         </div>
