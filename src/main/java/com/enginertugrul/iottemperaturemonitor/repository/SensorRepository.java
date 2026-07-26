@@ -16,5 +16,7 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
     boolean existsByOwnerIdAndNameIgnoreCase(Long ownerId, String name);
 
+    boolean existsByOwnerIdAndNameIgnoreCaseAndIdNot(Long ownerId,String name,Long sensorId);
+
     Optional<Sensor> findByIngestionTokenHash(String ingestionTokenHash);
 }
