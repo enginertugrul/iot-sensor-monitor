@@ -3,6 +3,8 @@ package com.enginertugrul.iottemperaturemonitor.dto.auth;
 
 import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iottemperaturemonitor.validation.PasswordConfirmation;
+import com.enginertugrul.iottemperaturemonitor.validation.PasswordsMatch;
 import com.enginertugrul.iottemperaturemonitor.validation.ValidZoneId;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,7 +15,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RegisterUserForm {
+@PasswordsMatch
+public class RegisterUserForm implements PasswordConfirmation {
 
     @NotBlank
     @Email
@@ -26,6 +29,9 @@ public class RegisterUserForm {
     @Size(min = 8 , max = 72)
     private String password;
 
+
+    @NotBlank
+    private String confirmPassword;
 
 
     @NotNull
