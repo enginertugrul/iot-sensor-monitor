@@ -57,6 +57,9 @@ public class AppUser {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -107,6 +110,10 @@ public class AppUser {
                 Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE)
         );
         this.updatedAt = Instant.now();
+    }
+
+    public boolean isEmailVerified() {
+        return this.emailVerifiedAt != null;
     }
 
     public void disable() {
