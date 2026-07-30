@@ -116,6 +116,25 @@ public class AppUser {
         return this.emailVerifiedAt != null;
     }
 
+    public void verifyEmail(Instant verifiedAt) {
+        Instant requiredVerifiedAt = Objects.requireNonNull(verifiedAt, "verifiedAt must not be null");
+
+        if (emailVerifiedAt != null) {
+            return;
+        }
+
+        if (createdAt == null) {
+            throw new IllegalStateException("createdAt must not be null");
+        }
+
+        if (requiredVerifiedAt.isBefore(createdAt)) {
+            throw new IllegalArgumentException("verifiedAt must not be before createdAt");
+        }
+
+        this.emailVerifiedAt = requiredVerifiedAt;
+        this.updatedAt = requiredVerifiedAt;
+    }
+
     public void disable() {
         this.enabled = false;
         this.updatedAt = Instant.now();
