@@ -4,9 +4,9 @@ import java.util.Optional;
 
 public interface EmailVerificationService {
 
-    EmailVerificationCodeDelivery issueInitialCode(Long userId);
+    void issueInitialCode(Long userId);
 
-    Optional<EmailVerificationCodeDelivery> requestNewCode(String email, String clientKey);
+    void requestNewCode(String email, String clientKey);
 
     EmailVerificationResult verifyCode(String email, String rawCode, String clientKey);
 }

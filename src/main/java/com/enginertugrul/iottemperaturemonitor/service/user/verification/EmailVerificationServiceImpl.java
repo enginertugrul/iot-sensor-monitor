@@ -9,6 +9,7 @@ import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerifi
 import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerificationPolicy;
 import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerificationRateLimiter;
 import com.enginertugrul.iottemperaturemonitor.security.verification.GeneratedEmailVerificationCode;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,25 +26,25 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     private final EmailVerificationCodeGenerator emailVerificationCodeGenerator;
     private final EmailVerificationPolicy policy;
     private final EmailVerificationRateLimiter rateLimiter;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public EmailVerificationServiceImpl(
-            AppUserRepository appUserRepository,
-            EmailVerificationChallengeRepository emailVerificationChallengeRepository,
-            EmailVerificationCodeGenerator emailVerificationCodeGenerator,
-            EmailVerificationPolicy policy,
-            EmailVerificationRateLimiter rateLimiter
-    ) {
+
+    public EmailVerificationServiceImpl(AppUserRepository appUserRepository, EmailVerificationChallengeRepository emailVerificationChallengeRepository, EmailVerificationCodeGenerator emailVerificationCodeGenerator, EmailVerificationPolicy policy, EmailVerificationRateLimiter rateLimiter, ApplicationEventPublisher eventPublisher) {
         this.appUserRepository = appUserRepository;
         this.emailVerificationChallengeRepository = emailVerificationChallengeRepository;
         this.emailVerificationCodeGenerator = emailVerificationCodeGenerator;
         this.policy = policy;
         this.rateLimiter = rateLimiter;
+        this.eventPublisher = eventPublisher;
     }
+
 
     @Override
     @Transactional
-    public EmailVerificationCodeDelivery issueInitialCode(Long userId) {
+    public void issueInitialCode(Long userId) {
+
         Long requiredUserId = requireUserId(userId);
+
         AppUser user = appUserRepository.findByIdForUpdate(requiredUserId)
                 .orElseThrow(EmailVerificationUserNotFoundException::new);
 
@@ -58,12 +59,15 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             throw new IllegalStateException("Initial email verification challenge already exists");
         }
 
-        return issueCode(user,null,Instant.now());
+        issueCode(user,null,Instant.now());
     }
+
+
 
     @Override
     @Transactional
-    public Optional<EmailVerificationCodeDelivery> requestNewCode(String email, String clientKey) {
+    public void requestNewCode(String email, String clientKey) {
+
         Instant requestedAt = Instant.now();
         String normalizedEmail = normalizeEmailOrNull(email);
         String addressRateLimitKey = normalizedEmail == null
@@ -73,13 +77,13 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         boolean requestAllowed = rateLimiter.allowCodeIssue(addressRateLimitKey,clientKey,requestedAt);
 
         if (!requestAllowed || normalizedEmail == null) {
-            return Optional.empty();
+            return;
         }
 
         Optional<AppUser> userResult = appUserRepository.findByEmailForUpdate(normalizedEmail);
 
         if (userResult.isEmpty()) {
-            return Optional.empty();
+            return;
         }
 
         AppUser user = userResult.get();
@@ -88,23 +92,28 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
         if (user.isEmailVerified()) {
             existingChallenge.ifPresent(emailVerificationChallengeRepository::delete);
-            return Optional.empty();
+            return;
         }
 
         if (!user.isEnabled()) {
-            return Optional.empty();
+            return;
         }
 
         if (existingChallenge.isPresent() && !existingChallenge.get().isResendAvailableAt(requestedAt)) {
-            return Optional.empty();
+            return;
         }
 
-        return Optional.of(issueCode(user,existingChallenge.orElse(null),requestedAt));
+        issueCode(user,existingChallenge.orElse(null),requestedAt);
+
     }
+
+
+
 
     @Override
     @Transactional
     public EmailVerificationResult verifyCode(String email, String rawCode, String clientKey) {
+
         Instant attemptedAt = Instant.now();
 
         if (!rateLimiter.allowVerification(clientKey,attemptedAt)) {
@@ -153,13 +162,14 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         return EmailVerificationResult.VERIFIED;
     }
 
-    private EmailVerificationCodeDelivery issueCode(
-            AppUser user,
-            EmailVerificationChallenge existingChallenge,
-            Instant issuedAt
-    ) {
-        GeneratedEmailVerificationCode generatedCode =
-                emailVerificationCodeGenerator.generate(user.getId());
+
+
+
+
+
+    private void issueCode(AppUser user, EmailVerificationChallenge existingChallenge,Instant issuedAt) {
+
+        GeneratedEmailVerificationCode generatedCode = emailVerificationCodeGenerator.generate(user.getId());
 
         Instant expiresAt = issuedAt.plus(policy.getCodeLifetime());
         Instant resendAvailableAt = issuedAt.plus(policy.getResendCooldown());
@@ -181,13 +191,16 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             );
         }
 
-        return new EmailVerificationCodeDelivery(
+        EmailVerificationCodeDelivery delivery = new EmailVerificationCodeDelivery(
                 user.getId(),
                 user.getEmail(),
                 user.getPreferredLanguage(),
                 generatedCode.rawCode(),
                 expiresAt
         );
+
+        eventPublisher.publishEvent(delivery);
+
     }
 
     private Long requireUserId(Long userId) {
