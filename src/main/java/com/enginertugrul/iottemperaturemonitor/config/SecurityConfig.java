@@ -14,7 +14,22 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/login", "/register", "/favicon.png").permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/login",
+                                "/register",
+                                "/verify-email",
+                                "/favicon.png"
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/login",
+                                "/register",
+                                "/verify-email",
+                                "/verify-email/request",
+                                "/verify-email/resend",
+                                "/verify-email/change-address"
+                        ).permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/readings/temperature" , "/readings/humidity" , "/readings/motion").permitAll()
                         .anyRequest().authenticated()

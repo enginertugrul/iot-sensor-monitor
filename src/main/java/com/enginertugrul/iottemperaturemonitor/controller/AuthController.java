@@ -1,9 +1,12 @@
 package com.enginertugrul.iottemperaturemonitor.controller;
 
 import com.enginertugrul.iottemperaturemonitor.dto.auth.RegisterUserForm;
+import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.service.user.AppUserService;
+import com.enginertugrul.iottemperaturemonitor.support.web.PendingEmailVerificationSession;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -50,6 +53,7 @@ public class AuthController {
             @Valid @ModelAttribute("form") RegisterUserForm form,
             BindingResult bindingResult,
             Model model,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
@@ -57,8 +61,10 @@ public class AuthController {
             return "register";
         }
 
+        AppUser registeredUser;
+
         try {
-            appUserService.createUser(form);
+            registeredUser = appUserService.createUser(form);
 
         } catch (DateTimeException ex) {
             bindingResult.rejectValue("preferredTimezone", "timezone.invalid");
@@ -70,8 +76,10 @@ public class AuthController {
             return "register";
         }
 
-        redirectAttributes.addAttribute("registered", true);
-        return "redirect:/login";
+        PendingEmailVerificationSession.start( request, registeredUser.getEmail(), registeredUser.getPreferredLanguage() );
+
+        redirectAttributes.addAttribute("accountCreated", true);
+        return "redirect:/verify-email";
     }
 
     private void addRegistrationOptions(Model model) {

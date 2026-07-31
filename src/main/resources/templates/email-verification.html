@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" th:lang="${#locale.language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="#{emailVerification.pageTitle}">
+    Verify Email | IoT Sensor Monitor
+  </title>
+  <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+  <link rel="stylesheet" th:href="@{/css/base.css}">
+  <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+  <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/auth.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/app-shell :: publicHeader('email-verification')}"></header>
+
+<main id="main-content" class="app-main app-main--auth" tabindex="-1">
+  <section class="auth-card auth-card--verification"
+           aria-labelledby="email-verification-title">
+    <header class="auth-header">
+      <h1 id="email-verification-title"
+          th:text="#{emailVerification.heading}">
+        Verify Your Email
+      </h1>
+
+      <p class="auth-subtitle"
+         th:unless="${pendingVerification}"
+         th:text="#{emailVerification.requestSubtitle}">
+        Enter your email address to request a verification code.
+      </p>
+
+      <p class="auth-subtitle"
+         th:if="${pendingVerification}"
+         th:text="#{emailVerification.codeSubtitle(${maskedEmail})}">
+        Enter the latest eight-digit code sent to the masked email address.
+      </p>
+    </header>
+
+    <p class="auth-status auth-status--success"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       tabindex="-1"
+       data-focus-status
+       th:if="${accountCreated}"
+       th:text="#{emailVerification.accountCreated}">
+      Your account was created and a verification code was requested.
+    </p>
+
+    <p class="auth-status auth-status--success"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       tabindex="-1"
+       data-focus-status
+       th:if="${codeRequested}"
+       th:text="#{emailVerification.requestAccepted}">
+      If another code can be issued, it will be sent shortly.
+    </p>
+
+    <form class="form-stack"
+          th:unless="${pendingVerification}"
+          th:action="@{/verify-email/request}"
+          th:object="${requestForm}"
+          method="post">
+      <input type="hidden"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}">
+
+      <div class="form-field">
+
+        <label class="form-label"
+               for="verification-email"
+               th:text="#{auth.email}">
+          Email
+        </label>
+
+        <input class="form-control"
+               id="verification-email"
+               type="email"
+               maxlength="320"
+               th:field="*{email}"
+               th:errorclass="form-control--invalid"
+               th:aria-invalid="${#fields.hasErrors('email')}"
+               th:aria-describedby="${#fields.hasErrors('email')
+                           ? 'verification-email-help verification-email-error'
+                           : 'verification-email-help'}"
+               autocomplete="email"
+               autocapitalize="none"
+               spellcheck="false"
+               required>
+
+        <p class="form-help"
+           id="verification-email-help"
+           th:text="#{emailVerification.emailHelp}">
+          Enter the email address used for your account.
+        </p>
+
+        <div class="form-feedback form-feedback--error"
+             id="verification-email-error"
+             role="alert"
+             th:if="${#fields.hasErrors('email')}"
+             th:errors="*{email}">
+          Email error
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button class="form-button form-button--primary"
+                type="submit"
+                th:text="#{emailVerification.requestCode}">
+          Send Verification Code
+        </button>
+      </div>
+    </form>
+
+    <div th:if="${pendingVerification}">
+
+      <form class="form-stack"
+            th:action="@{/verify-email}"
+            th:object="${codeForm}"
+            method="post">
+        <input type="hidden"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}">
+
+        <div class="form-field">
+          <label class="form-label"
+                 for="verification-code"
+                 th:text="#{emailVerification.code}">
+            Verification Code
+          </label>
+
+          <input class="form-control auth-verification-code"
+                 id="verification-code"
+                 type="text"
+                 name="code"
+                 inputmode="numeric"
+                 autocomplete="one-time-code"
+                 minlength="8"
+                 maxlength="8"
+                 pattern="[0-9]{8}"
+                 th:classappend="${#fields.hasErrors('code')}
+                               ? 'form-control--invalid'
+                               : ''"
+                 th:aria-invalid="${#fields.hasErrors('code')}"
+                 th:aria-describedby="${#fields.hasErrors('code')
+                               ? 'verification-code-help verification-code-error'
+                               : 'verification-code-help'}"
+                 required>
+
+          <p class="form-help"
+             id="verification-code-help"
+             th:text="#{emailVerification.codeHelp}">
+            Enter the eight digits without spaces.
+          </p>
+
+          <div class="form-feedback form-feedback--error"
+               id="verification-code-error"
+               role="alert"
+               th:if="${#fields.hasErrors('code')}"
+               th:errors="*{code}">
+            Verification code error
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="form-button form-button--primary"
+                  type="submit"
+                  th:text="#{emailVerification.verify}">
+            Verify Email
+          </button>
+        </div>
+
+      </form>
+
+      <section class="auth-resend"
+               aria-labelledby="email-verification-resend-title">
+        <h2 class="auth-resend__heading"
+            id="email-verification-resend-title"
+            th:text="#{emailVerification.resendHeading}">
+          Did Not Receive a Code?
+        </h2>
+
+        <p class="auth-resend__help"
+           th:text="#{emailVerification.resendHelp}">
+          You can request another code after the waiting period.
+        </p>
+
+        <div class="auth-verification-secondary-actions">
+          <form th:action="@{/verify-email/resend}" method="post">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <button class="form-button form-button--secondary"
+                    type="submit"
+                    th:text="#{emailVerification.resend}">
+              Send a New Code
+            </button>
+
+          </form>
+
+          <form th:action="@{/verify-email/change-address}" method="post">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <button class="form-button form-button--secondary"
+                    type="submit"
+                    th:text="#{emailVerification.changeAddress}">
+              Use a Different Email
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <p class="auth-switch">
+      <a th:href="@{/login}"
+         th:text="#{emailVerification.backToLogin}">
+        Back to Login
+      </a>
+    </p>
+  </section>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
+
+</body>
+</html>
