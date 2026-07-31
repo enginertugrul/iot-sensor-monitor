@@ -44,6 +44,10 @@ public class PasswordResetChallenge {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+
+
+
+
     public PasswordResetChallenge(
             AppUser user,
             String codeHash,
@@ -63,6 +67,81 @@ public class PasswordResetChallenge {
         validateState();
     }
 
+
+
+
+
+    public void rotateCode(String codeHash, Instant issuedAt, Instant expiresAt, Instant resendAvailableAt) {
+
+        this.codeHash = DomainChecks.requireText(codeHash, "codeHash");
+        this.issuedAt = Objects.requireNonNull(issuedAt, "issuedAt must not be null");
+        this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt must not be null");
+        this.resendAvailableAt = Objects.requireNonNull(
+                resendAvailableAt,
+                "resendAvailableAt must not be null"
+        );
+
+        this.failedAttempts = 0;
+        this.updatedAt = this.issuedAt;
+
+        validateState();
+
+    }
+
+
+
+
+
+    public void recordFailedAttempt(Instant attemptedAt) {
+        Instant requiredAttemptedAt = Objects.requireNonNull(
+                attemptedAt,
+                "attemptedAt must not be null"
+        );
+
+        if (requiredAttemptedAt.isBefore(issuedAt)) {
+            throw new IllegalArgumentException(
+                    "attemptedAt must not be before issuedAt"
+            );
+        }
+
+        this.failedAttempts++;
+        this.updatedAt = requiredAttemptedAt;
+
+        validateState();
+    }
+
+
+
+
+    public boolean isExpiredAt(Instant checkedAt) {
+
+        Instant requiredCheckedAt = Objects.requireNonNull(checkedAt,"checkedAt must not be null");
+        return !requiredCheckedAt.isBefore(expiresAt);
+    }
+
+
+
+
+
+    public boolean isResendAvailableAt(Instant checkedAt) {
+        Instant requiredCheckedAt = Objects.requireNonNull(checkedAt,"checkedAt must not be null");
+
+        return !requiredCheckedAt.isBefore(resendAvailableAt);
+    }
+
+
+
+    public boolean hasReachedAttemptLimit(int maximumFailedAttempts) {
+        if (maximumFailedAttempts < 1) {
+            throw new IllegalArgumentException("maximumFailedAttempts must be positive");
+        }
+
+        return failedAttempts >= maximumFailedAttempts;
+    }
+
+
+
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
@@ -76,11 +155,16 @@ public class PasswordResetChallenge {
         validateState();
     }
 
+
+
     @PreUpdate
     void preUpdate() {
-        updatedAt = Instant.now();
         validateState();
     }
+
+
+
+
 
     private void validateState() {
         Objects.requireNonNull(user, "user must not be null");
@@ -110,5 +194,11 @@ public class PasswordResetChallenge {
         if (updatedAt.isBefore(createdAt)) {
             throw new IllegalStateException("updatedAt must not be before createdAt");
         }
+
+
     }
+
+
+
+
 }

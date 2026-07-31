@@ -5,16 +5,20 @@ import com.enginertugrul.iottemperaturemonitor.entity.user.EmailVerificationChal
 import com.enginertugrul.iottemperaturemonitor.exception.EmailVerificationUserNotFoundException;
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
 import com.enginertugrul.iottemperaturemonitor.repository.EmailVerificationChallengeRepository;
+import com.enginertugrul.iottemperaturemonitor.security.onetimecode.GeneratedOneTimeCode;
 import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerificationCodeGenerator;
 import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerificationPolicy;
 import com.enginertugrul.iottemperaturemonitor.security.verification.EmailVerificationRateLimiter;
-import com.enginertugrul.iottemperaturemonitor.security.verification.GeneratedEmailVerificationCode;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+
+
+
+
 
 @Service
 public class EmailVerificationServiceImpl implements EmailVerificationService {
@@ -29,6 +33,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     private final ApplicationEventPublisher eventPublisher;
 
 
+
     public EmailVerificationServiceImpl(AppUserRepository appUserRepository, EmailVerificationChallengeRepository emailVerificationChallengeRepository, EmailVerificationCodeGenerator emailVerificationCodeGenerator, EmailVerificationPolicy policy, EmailVerificationRateLimiter rateLimiter, ApplicationEventPublisher eventPublisher) {
         this.appUserRepository = appUserRepository;
         this.emailVerificationChallengeRepository = emailVerificationChallengeRepository;
@@ -37,6 +42,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         this.rateLimiter = rateLimiter;
         this.eventPublisher = eventPublisher;
     }
+
 
 
     @Override
@@ -169,7 +175,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
     private void issueCode(AppUser user, EmailVerificationChallenge existingChallenge,Instant issuedAt) {
 
-        GeneratedEmailVerificationCode generatedCode = emailVerificationCodeGenerator.generate(user.getId());
+        GeneratedOneTimeCode generatedCode = emailVerificationCodeGenerator.generate(user.getId());
 
         Instant expiresAt = issuedAt.plus(policy.getCodeLifetime());
         Instant resendAvailableAt = issuedAt.plus(policy.getResendCooldown());
@@ -203,6 +209,9 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
     }
 
+
+
+
     private Long requireUserId(Long userId) {
         if (userId == null || userId < 1) {
             throw new IllegalArgumentException("userId must be positive");
@@ -211,6 +220,9 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
         return userId;
     }
 
+
+
+
     private String normalizeEmailOrNull(String email) {
         try {
             return AppUser.normalizeEmail(email);
@@ -218,4 +230,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             return null;
         }
     }
+
+
+
 }
