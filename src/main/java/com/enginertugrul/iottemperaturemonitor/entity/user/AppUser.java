@@ -57,6 +57,9 @@ public class AppUser {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -107,6 +110,29 @@ public class AppUser {
                 Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE)
         );
         this.updatedAt = Instant.now();
+    }
+
+    public boolean isEmailVerified() {
+        return this.emailVerifiedAt != null;
+    }
+
+    public void verifyEmail(Instant verifiedAt) {
+        Instant requiredVerifiedAt = Objects.requireNonNull(verifiedAt, "verifiedAt must not be null");
+
+        if (emailVerifiedAt != null) {
+            return;
+        }
+
+        if (createdAt == null) {
+            throw new IllegalStateException("createdAt must not be null");
+        }
+
+        if (requiredVerifiedAt.isBefore(createdAt)) {
+            throw new IllegalArgumentException("verifiedAt must not be before createdAt");
+        }
+
+        this.emailVerifiedAt = requiredVerifiedAt;
+        this.updatedAt = requiredVerifiedAt;
     }
 
     public void disable() {

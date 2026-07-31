@@ -5,6 +5,7 @@ import com.enginertugrul.iottemperaturemonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
+import com.enginertugrul.iottemperaturemonitor.service.user.verification.EmailVerificationService;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,13 @@ public class AppUserServiceImpl implements AppUserService {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService  emailVerificationService;
 
 
-    public AppUserServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder) {
+    public AppUserServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Override
@@ -44,7 +47,10 @@ public class AppUserServiceImpl implements AppUserService {
                 registerUserForm.getPreferredTimezone()
         );
 
-        return appUserRepository.save(appUser);
+        AppUser savedUser =  appUserRepository.saveAndFlush(appUser);
+        emailVerificationService.issueInitialCode(savedUser.getId());
+        return savedUser;
+
     }
 
     @Override

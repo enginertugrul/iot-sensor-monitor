@@ -53,6 +53,17 @@
             Registration completed. You can log in.
         </p>
 
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           tabindex="-1"
+           data-focus-status
+           th:if="${emailVerified}"
+           th:text="#{emailVerification.verified}">
+            Your email has been verified. You can now log in.
+        </p>
+
         <form class="form-stack"
               th:action="@{/login}"
               method="post">
@@ -119,6 +130,18 @@
                 Create Account
             </a>
         </p>
+
+        <p class="auth-secondary-action">
+            <span th:text="#{emailVerification.loginPrompt}">
+                Need to verify an existing account?
+            </span>
+
+            <a th:href="@{/verify-email}"
+               th:text="#{emailVerification.open}">
+                Verify Email
+            </a>
+        </p>
+
     </section>
 </main>
 
