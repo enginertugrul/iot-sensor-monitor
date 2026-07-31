@@ -1,6 +1,7 @@
 package com.enginertugrul.iottemperaturemonitor.security;
 
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
+import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,6 +16,8 @@ public class AuthenticatedUser implements UserDetails, CredentialsContainer {
     private final String username;
     private String password;
     private final boolean enabled;
+    private final boolean emailVerified;
+    private final PreferredLanguage preferredLanguage;
     private final List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
     public AuthenticatedUser(AppUser appUser) {
@@ -22,10 +25,20 @@ public class AuthenticatedUser implements UserDetails, CredentialsContainer {
         this.username = appUser.getEmail();
         this.password = appUser.getPasswordHash();
         this.enabled = appUser.isEnabled();
+        this.emailVerified = appUser.isEmailVerified();
+        this.preferredLanguage = appUser.getPreferredLanguage();
     }
 
     public Long getAppUserId() {
         return appUserId;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public PreferredLanguage getPreferredLanguage() {
+        return preferredLanguage;
     }
 
     @Override

@@ -78,7 +78,7 @@ public class AuthController {
 
         PendingEmailVerificationSession.start( request, registeredUser.getEmail(), registeredUser.getPreferredLanguage() );
 
-        redirectAttributes.addAttribute("accountCreated", true);
+        redirectAttributes.addFlashAttribute("accountCreated", true);
         return "redirect:/verify-email";
     }
 

@@ -37,7 +37,20 @@
          th:text="#{emailVerification.codeSubtitle(${maskedEmail})}">
         Enter the latest eight-digit code sent to the masked email address.
       </p>
+
     </header>
+
+
+    <p class="auth-status auth-status--warning"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       tabindex="-1"
+       data-focus-status
+       th:if="${pendingVerification and param.verificationRequired != null}"
+       th:text="#{emailVerification.loginRequired}">
+      Email verification is required before you can sign in. Enter your latest code or request a new one.
+    </p>
 
     <p class="auth-status auth-status--success"
        role="status"

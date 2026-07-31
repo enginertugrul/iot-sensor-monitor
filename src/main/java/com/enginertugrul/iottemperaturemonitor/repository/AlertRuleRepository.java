@@ -27,6 +27,7 @@ public interface AlertRuleRepository extends JpaRepository<AlertRule, Long> {
             FROM AlertRule rule
             WHERE rule.sensor.id = :sensorId
               AND rule.enabled = true
+              AND rule.owner.emailVerifiedAt IS NOT NULL
             ORDER BY rule.id
             """)
     List<AlertRule> findEnabledForEvaluationBySensorId(

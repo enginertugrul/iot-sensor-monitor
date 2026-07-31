@@ -1,6 +1,5 @@
 package com.enginertugrul.iottemperaturemonitor.service.user.verification;
 
-import java.util.Optional;
 
 public interface EmailVerificationService {
 
