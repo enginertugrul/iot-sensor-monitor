@@ -8,6 +8,7 @@ import com.enginertugrul.iottemperaturemonitor.security.onetimecode.GeneratedOne
 import com.enginertugrul.iottemperaturemonitor.security.recovery.PasswordRecoveryCodeGenerator;
 import com.enginertugrul.iottemperaturemonitor.security.recovery.PasswordRecoveryPolicy;
 import com.enginertugrul.iottemperaturemonitor.security.recovery.PasswordRecoveryRateLimiter;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     private final PasswordRecoveryPolicy policy;
     private final PasswordRecoveryRateLimiter rateLimiter;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
 
 
@@ -43,7 +45,8 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
             PasswordRecoveryCodeGenerator passwordRecoveryCodeGenerator,
             PasswordRecoveryPolicy policy,
             PasswordRecoveryRateLimiter rateLimiter,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.appUserRepository = appUserRepository;
         this.passwordResetChallengeRepository = passwordResetChallengeRepository;
@@ -51,6 +54,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         this.policy = policy;
         this.rateLimiter = rateLimiter;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -58,7 +62,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
     @Override
     @Transactional
-    public Optional<PasswordRecoveryCodeDelivery> requestResetCode(String email,String clientKey) {
+    public void requestResetCode(String email,String clientKey) {
 
         Instant requestedAt = Instant.now();
         String normalizedEmail = normalizeEmailOrNull(email);
@@ -70,13 +74,13 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         boolean requestAllowed = rateLimiter.allowCodeIssue(addressRateLimitKey, clientKey, requestedAt);
 
         if (!requestAllowed || normalizedEmail == null) {
-            return Optional.empty();
+            return;
         }
 
         Optional<AppUser> userResult = appUserRepository.findByEmailForUpdate(normalizedEmail);
 
         if (userResult.isEmpty()) {
-            return Optional.empty();
+            return;
         }
 
         AppUser user = userResult.get();
@@ -85,16 +89,16 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
         if (!user.isEnabled() || !user.isEmailVerified()) {
             existingChallenge.ifPresent(passwordResetChallengeRepository::delete);
-            return Optional.empty();
+            return;
         }
 
         if (existingChallenge.isPresent() && !existingChallenge.get().isResendAvailableAt(requestedAt)) {
-            return Optional.empty();
+            return;
         }
 
-        PasswordRecoveryCodeDelivery delivery = issueCode(user,existingChallenge.orElse(null),requestedAt);
+        issueCode(user,existingChallenge.orElse(null),requestedAt);
 
-        return Optional.of(delivery);
+
     }
 
 
@@ -165,7 +169,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
 
 
-    private PasswordRecoveryCodeDelivery issueCode(AppUser user, PasswordResetChallenge existingChallenge, Instant issuedAt) {
+    private void issueCode(AppUser user, PasswordResetChallenge existingChallenge, Instant issuedAt) {
 
         GeneratedOneTimeCode generatedCode = passwordRecoveryCodeGenerator.generate(user.getId());
 
@@ -197,13 +201,16 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         }
 
 
-        return new PasswordRecoveryCodeDelivery(
+        PasswordRecoveryCodeDelivery delivery = new PasswordRecoveryCodeDelivery(
                 user.getId(),
                 user.getEmail(),
                 user.getPreferredLanguage(),
                 generatedCode.rawCode(),
                 expiresAt
         );
+
+        eventPublisher.publishEvent(delivery);
+
     }
 
 
