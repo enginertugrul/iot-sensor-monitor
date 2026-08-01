@@ -1,8 +1,7 @@
 package com.enginertugrul.iottemperaturemonitor.security.verification;
 
-public interface EmailVerificationCodeGenerator {
+import com.enginertugrul.iottemperaturemonitor.security.onetimecode.OneTimeCodeGenerator;
 
-    GeneratedEmailVerificationCode generate(Long userId);
+public interface EmailVerificationCodeGenerator extends OneTimeCodeGenerator {
 
-    boolean matches(Long userId, String rawCode, String codeHash);
 }

@@ -135,6 +135,13 @@ public class AppUser {
         this.updatedAt = requiredVerifiedAt;
     }
 
+
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = DomainChecks.requireText(passwordHash, "passwordHash");
+        this.updatedAt = Instant.now();
+    }
+
+
     public void disable() {
         this.enabled = false;
         this.updatedAt = Instant.now();

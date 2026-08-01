@@ -87,6 +87,12 @@
     width: 100%;
 }
 
+.auth-field-link {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    justify-self: end;
+}
+
 .auth-switch {
     display: flex;
     margin: var(--space-6) 0 0;
@@ -104,11 +110,13 @@
     font-weight: var(--font-weight-semibold);
 }
 
-.auth-card--verification {
+.auth-card--verification,
+.auth-card--recovery {
     max-width: 32rem;
 }
 
-.auth-verification-code {
+.auth-verification-code,
+.auth-recovery-code{
     direction: ltr;
     font-family: var(--font-family-mono);
     font-size: var(--font-size-xl);
@@ -136,13 +144,15 @@
     text-align: center;
 }
 
-.auth-verification-secondary-actions {
+.auth-verification-secondary-actions,
+.auth-recovery-secondary-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
 }
 
-.auth-verification-secondary-actions form {
+.auth-verification-secondary-actions form,
+.auth-recovery-secondary-actions form {
     margin: 0;
 }
 
@@ -172,7 +182,8 @@
         flex-direction: column;
     }
 
-    .auth-verification-secondary-actions {
+    .auth-verification-secondary-actions,
+    .auth-recovery-secondary-actions {
         grid-template-columns: minmax(0, 1fr);
     }
 

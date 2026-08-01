@@ -1,8 +1,8 @@
-package com.enginertugrul.iottemperaturemonitor.security.verification;
+package com.enginertugrul.iottemperaturemonitor.security.onetimecode;
 
-public record GeneratedEmailVerificationCode(String rawCode, String codeHash) {
+public record GeneratedOneTimeCode(String rawCode, String codeHash) {
 
-    public GeneratedEmailVerificationCode {
+    public GeneratedOneTimeCode {
         if (rawCode == null || !rawCode.matches("[0-9]{8}")) {
             throw new IllegalArgumentException("rawCode must contain exactly eight digits");
         }
@@ -14,6 +14,6 @@ public record GeneratedEmailVerificationCode(String rawCode, String codeHash) {
 
     @Override
     public String toString() {
-        return "GeneratedEmailVerificationCode[rawCode=[REDACTED], codeHash=[REDACTED]]";
+        return "GeneratedOneTimeCode[rawCode=[REDACTED], codeHash=[REDACTED]]";
     }
 }

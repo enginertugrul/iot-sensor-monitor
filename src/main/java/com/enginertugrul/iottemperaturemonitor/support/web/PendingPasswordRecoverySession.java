@@ -1,38 +1,25 @@
 package com.enginertugrul.iottemperaturemonitor.support.web;
 
 import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
-import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import java.util.Objects;
 import java.util.Optional;
 
+public final class PendingPasswordRecoverySession {
 
+    private static final String EMAIL_ATTRIBUTE =
+            PendingPasswordRecoverySession.class.getName() + ".email";
 
+    private PendingPasswordRecoverySession() {}
 
-public final class PendingEmailVerificationSession {
-
-
-    private static final String EMAIL_ATTRIBUTE = PendingEmailVerificationSession.class.getName() + ".email";
-
-
-    private PendingEmailVerificationSession() {}
-
-
-
-    public static void start(HttpServletRequest request, String email, PreferredLanguage preferredLanguage) {
-
-        Objects.requireNonNull(request, "request must not be null");
-        PreferredLanguage requiredLanguage = Objects.requireNonNull(preferredLanguage, "preferredLanguage must not be null");
+    public static void start(HttpServletRequest request,String email) {
+        Objects.requireNonNull(request,"request must not be null");
 
         HttpSession session = getOrRotateSession(request);
         session.setAttribute(EMAIL_ATTRIBUTE,AppUser.normalizeEmail(email));
-        PublicLocaleSession.remember(request,requiredLanguage);
     }
-
-
-
 
     public static Optional<String> findEmail(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
@@ -45,10 +32,6 @@ public final class PendingEmailVerificationSession {
         return value instanceof String email ? Optional.of(email) : Optional.empty();
     }
 
-
-
-
-
     public static void clearEmail(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
 
@@ -57,8 +40,9 @@ public final class PendingEmailVerificationSession {
         }
 
         session.removeAttribute(EMAIL_ATTRIBUTE);
-        request.changeSessionId();
     }
+
+
 
     private static HttpSession getOrRotateSession(HttpServletRequest request) {
         HttpSession existingSession = request.getSession(false);

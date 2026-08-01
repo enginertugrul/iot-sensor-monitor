@@ -37,6 +37,13 @@
             Invalid email or password.
         </p>
 
+        <p class="auth-status auth-status--warning"
+           role="alert"
+           th:if="${param.sessionExpired}"
+           th:text="#{auth.sessionExpired}">
+            Your session ended because the account password was reset. Sign in again with the new password.
+        </p>
+
         <p class="auth-status auth-status--success"
            role="status"
            aria-live="polite"
@@ -62,6 +69,17 @@
            th:if="${emailVerified}"
            th:text="#{emailVerification.verified}">
             Your email has been verified. You can now log in.
+        </p>
+
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           tabindex="-1"
+           data-focus-status
+           th:if="${passwordReset}"
+           th:text="#{passwordRecovery.resetSuccessful}">
+            Your password has been reset. Sign in with your new password.
         </p>
 
         <form class="form-stack"
@@ -109,6 +127,13 @@
                             ? 'login-error'
                             : null}"
                        required>
+
+                <a class="auth-field-link"
+                   th:href="@{/forgot-password}"
+                   th:text="#{passwordRecovery.forgot}">
+                    Forgot your password?
+                </a>
+
             </div>
 
             <div class="form-actions">

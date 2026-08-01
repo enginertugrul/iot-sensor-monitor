@@ -2,7 +2,7 @@ package com.enginertugrul.iottemperaturemonitor.config;
 
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
 import com.enginertugrul.iottemperaturemonitor.security.AuthenticatedUser;
-import com.enginertugrul.iottemperaturemonitor.support.web.PendingEmailVerificationSession;
+import com.enginertugrul.iottemperaturemonitor.support.web.PublicLocaleSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -10,6 +10,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.LocaleResolver;
 
 import java.util.Locale;
+
+
+
 
 public class UserPreferenceLocaleResolver implements LocaleResolver {
 
@@ -21,7 +24,7 @@ public class UserPreferenceLocaleResolver implements LocaleResolver {
 
     @Override
     public Locale resolveLocale(HttpServletRequest request) {
-        Locale publicLocale = PendingEmailVerificationSession.findPreferredLanguage(request)
+        Locale publicLocale = PublicLocaleSession.findPreferredLanguage(request)
                 .map(preferredLanguage -> preferredLanguage.toLocale())
                 .orElse(Locale.ENGLISH);
 

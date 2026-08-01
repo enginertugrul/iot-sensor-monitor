@@ -1,4 +1,4 @@
-package com.enginertugrul.iottemperaturemonitor.security.verification;
+package com.enginertugrul.iottemperaturemonitor.security.recovery;
 
 import com.enginertugrul.iottemperaturemonitor.security.onetimecode.HmacDigest;
 import com.enginertugrul.iottemperaturemonitor.security.onetimecode.HmacSha256;
@@ -6,16 +6,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 
-@Component
-public class EmailVerificationHmac implements HmacDigest {
 
+
+@Component
+public class PasswordRecoveryHmac implements HmacDigest {
 
     private final HmacDigest delegate;
 
-    public EmailVerificationHmac ( @Value("${app.security.email-verification.code-hmac-secret-base64}") String encodedSecret) {
 
-        this.delegate = new HmacSha256(encodedSecret, "Email verification HMAC secret");
 
+
+    public PasswordRecoveryHmac(@Value("${app.security.password-recovery.code-hmac-secret-base64}") String encodedSecret) {
+        this.delegate = new HmacSha256(encodedSecret,"Password recovery HMAC secret");
     }
 
 
@@ -26,9 +28,13 @@ public class EmailVerificationHmac implements HmacDigest {
     }
 
 
+
+
     @Override
     public boolean matches(String purpose, String value, String expectedDigest) {
         return delegate.matches(purpose,value,expectedDigest);
     }
+
+
 
 }
