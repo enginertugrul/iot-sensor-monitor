@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/register",
                                 "/verify-email",
+                                "/forgot-password",
                                 "/favicon.png"
                         ).permitAll()
                         .requestMatchers(
@@ -37,7 +38,11 @@ public class SecurityConfig {
                                 "/verify-email",
                                 "/verify-email/request",
                                 "/verify-email/resend",
-                                "/verify-email/change-address"
+                                "/verify-email/change-address",
+                                "/forgot-password/request",
+                                "/forgot-password/reset",
+                                "/forgot-password/resend",
+                                "/forgot-password/change-address"
                         ).permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/readings/temperature" , "/readings/humidity" , "/readings/motion").permitAll()

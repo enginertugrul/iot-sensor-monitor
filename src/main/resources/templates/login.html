@@ -71,6 +71,17 @@
             Your email has been verified. You can now log in.
         </p>
 
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           tabindex="-1"
+           data-focus-status
+           th:if="${passwordReset}"
+           th:text="#{passwordRecovery.resetSuccessful}">
+            Your password has been reset. Sign in with your new password.
+        </p>
+
         <form class="form-stack"
               th:action="@{/login}"
               method="post">
@@ -116,6 +127,13 @@
                             ? 'login-error'
                             : null}"
                        required>
+
+                <a class="auth-field-link"
+                   th:href="@{/forgot-password}"
+                   th:text="#{passwordRecovery.forgot}">
+                    Forgot your password?
+                </a>
+
             </div>
 
             <div class="form-actions">
