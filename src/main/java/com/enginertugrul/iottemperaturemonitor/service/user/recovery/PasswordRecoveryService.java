@@ -1,6 +1,5 @@
 package com.enginertugrul.iottemperaturemonitor.service.user.recovery;
 
-import java.util.Optional;
 
 public interface PasswordRecoveryService {
 

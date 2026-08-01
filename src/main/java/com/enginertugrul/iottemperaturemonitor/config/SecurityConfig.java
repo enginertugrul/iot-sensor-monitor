@@ -5,8 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.SessionLimit;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 public class SecurityConfig {
@@ -14,7 +18,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            EmailVerificationAuthenticationSuccessHandler emailVerificationAuthenticationSuccessHandler
+            EmailVerificationAuthenticationSuccessHandler emailVerificationAuthenticationSuccessHandler,
+            SessionRegistry sessionRegistry
     ) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
@@ -51,6 +56,13 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
+                .sessionManagement(session -> session
+                        .sessionConcurrency(concurrency -> concurrency
+                                .maximumSessions(SessionLimit.UNLIMITED)
+                                .expiredUrl("/login?sessionExpired")
+                                .sessionRegistry(sessionRegistry)
+                        )
+                )
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 PathPatternRequestMatcher.pathPattern(
@@ -70,4 +82,16 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
 }

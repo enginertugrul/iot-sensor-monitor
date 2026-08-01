@@ -77,6 +77,24 @@ public class AuthenticatedUser implements UserDetails, CredentialsContainer {
     }
 
     @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+
+        if (!(object instanceof AuthenticatedUser authenticatedUser)) {
+            return false;
+        }
+
+        return appUserId.equals(authenticatedUser.appUserId);
+    }
+
+    @Override
+    public int hashCode() {
+        return appUserId.hashCode();
+    }
+
+    @Override
     public void eraseCredentials() {
         this.password = null;
     }

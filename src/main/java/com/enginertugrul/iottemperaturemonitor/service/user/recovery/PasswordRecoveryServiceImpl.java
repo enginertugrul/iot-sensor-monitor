@@ -160,6 +160,8 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         user.updatePasswordHash(passwordHash);
         passwordResetChallengeRepository.delete(challenge);
 
+        eventPublisher.publishEvent(new PasswordResetCompletedEvent(user.getId()));
+
         return PasswordRecoveryResult.PASSWORD_RESET;
     }
 
@@ -217,7 +219,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
 
     private String normalizeEmailOrNull(String email) {
-        if ( email.length() > MAXIMUM_EMAIL_LENGTH) {
+        if ( email == null || email.length() > MAXIMUM_EMAIL_LENGTH) {
             return null;
         }
 

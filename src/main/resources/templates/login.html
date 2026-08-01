@@ -37,6 +37,13 @@
             Invalid email or password.
         </p>
 
+        <p class="auth-status auth-status--warning"
+           role="alert"
+           th:if="${param.sessionExpired}"
+           th:text="#{auth.sessionExpired}">
+            Your session ended because the account password was reset. Sign in again with the new password.
+        </p>
+
         <p class="auth-status auth-status--success"
            role="status"
            aria-live="polite"
