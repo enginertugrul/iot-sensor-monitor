@@ -29,6 +29,10 @@
     font-size: var(--font-size-lg);
 }
 
+.app-main--preferences .preferences-page-header__actions {
+    margin-top: var(--space-5);
+}
+
 .app-main--preferences .preferences-panel {
     position: relative;
     min-width: 0;
