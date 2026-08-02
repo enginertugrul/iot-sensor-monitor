@@ -41,7 +41,7 @@
            role="alert"
            th:if="${param.sessionExpired}"
            th:text="#{auth.sessionExpired}">
-            Your session ended because the account password was reset. Sign in again with the new password.
+            Your session ended because the account password was changed. Sign in again with the new password.
         </p>
 
         <p class="auth-status auth-status--success"
@@ -80,6 +80,17 @@
            th:if="${passwordReset}"
            th:text="#{passwordRecovery.resetSuccessful}">
             Your password has been reset. Sign in with your new password.
+        </p>
+
+        <p class="auth-status auth-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           tabindex="-1"
+           data-focus-status
+           th:if="${passwordChanged}"
+           th:text="#{passwordChange.changed}">
+            Your password has been changed. Sign in with your new password.
         </p>
 
         <form class="form-stack"

@@ -36,6 +36,15 @@
             Choose how language, temperature values, and timestamps are
             presented throughout the application.
         </p>
+
+        <div class="form-actions preferences-page-header__actions">
+            <a class="form-button form-button--secondary"
+               th:href="@{/user/preferences/password}"
+               th:text="#{preferences.changePassword}">
+                Change Password
+            </a>
+        </div>
+
     </header>
 
     <p class="form-status form-status--success"

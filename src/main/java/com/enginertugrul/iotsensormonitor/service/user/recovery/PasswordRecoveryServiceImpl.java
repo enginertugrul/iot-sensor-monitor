@@ -8,6 +8,7 @@ import com.enginertugrul.iotsensormonitor.security.onetimecode.GeneratedOneTimeC
 import com.enginertugrul.iotsensormonitor.security.recovery.PasswordRecoveryCodeGenerator;
 import com.enginertugrul.iotsensormonitor.security.recovery.PasswordRecoveryPolicy;
 import com.enginertugrul.iotsensormonitor.security.recovery.PasswordRecoveryRateLimiter;
+import com.enginertugrul.iotsensormonitor.service.user.password.PasswordChangedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -160,7 +161,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         user.updatePasswordHash(passwordHash);
         passwordResetChallengeRepository.delete(challenge);
 
-        eventPublisher.publishEvent(new PasswordResetCompletedEvent(user.getId()));
+        eventPublisher.publishEvent(new PasswordChangedEvent(user.getId()));
 
         return PasswordRecoveryResult.PASSWORD_RESET;
     }
