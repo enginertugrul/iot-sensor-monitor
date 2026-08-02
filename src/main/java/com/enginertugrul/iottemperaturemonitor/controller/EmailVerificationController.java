@@ -21,6 +21,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.Locale;
 import java.util.Optional;
 
+
+
+
+
 @Controller
 @RequestMapping("/verify-email")
 public class EmailVerificationController {
@@ -65,19 +69,16 @@ public class EmailVerificationController {
             BindingResult bindingResult,
             Locale locale,
             HttpServletRequest request,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         if (bindingResult.hasErrors()) {
             PendingEmailVerificationSession.clearEmail(request);
             return redirectWithErrors("requestForm",requestForm,bindingResult,redirectAttributes);
         }
 
         String normalizedEmail = AppUser.normalizeEmail(requestForm.getEmail());
-        PendingEmailVerificationSession.start(
-                request,
-                normalizedEmail,
-                preferredLanguageFor(locale)
-        );
+
+        PendingEmailVerificationSession.start(request, normalizedEmail, preferredLanguageFor(locale) );
 
         emailVerificationService.requestNewCode(normalizedEmail,request.getRemoteAddr());
         redirectAttributes.addFlashAttribute("codeRequested",true);
@@ -95,6 +96,7 @@ public class EmailVerificationController {
             HttpServletRequest request,
             RedirectAttributes redirectAttributes
     ) {
+
         Optional<String> pendingEmail = PendingEmailVerificationSession.findEmail(request);
 
         if (pendingEmail.isEmpty()) {
@@ -130,8 +132,8 @@ public class EmailVerificationController {
     @PostMapping("/resend")
     public String resendCode(
             HttpServletRequest request,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         Optional<String> pendingEmail = PendingEmailVerificationSession.findEmail(request);
 
         if (pendingEmail.isEmpty()) {
@@ -160,13 +162,10 @@ public class EmailVerificationController {
             String formAttribute,
             Object form,
             BindingResult bindingResult,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         redirectAttributes.addFlashAttribute(formAttribute,form);
-        redirectAttributes.addFlashAttribute(
-                BindingResult.MODEL_KEY_PREFIX + formAttribute,
-                bindingResult
-        );
+        redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + formAttribute, bindingResult);
 
         return REDIRECT_TO_VERIFICATION;
     }
@@ -176,6 +175,7 @@ public class EmailVerificationController {
 
 
     private PreferredLanguage preferredLanguageFor(Locale locale) {
+
         for (PreferredLanguage preferredLanguage : PreferredLanguage.values()) {
             if (preferredLanguage.toLocale().getLanguage().equalsIgnoreCase(locale.getLanguage())) {
                 return preferredLanguage;

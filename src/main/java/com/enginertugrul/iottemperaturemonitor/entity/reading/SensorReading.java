@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
+
 @Getter
 @Entity
 @Table(name = "sensor_readings")
@@ -40,41 +44,37 @@ public class SensorReading {
     @Column(name = "recorded_at", nullable = false)
     private Instant recordedAt;
 
-    private SensorReading(
-            Sensor sensor,
-            double numericValue,
-            MeasurementUnit unit,
-            Instant recordedAt) {
+
+
+
+
+    private SensorReading(Sensor sensor, double numericValue, MeasurementUnit unit, Instant recordedAt) {
 
         this.sensor = Objects.requireNonNull(sensor,"sensor must not be null");
-
         this.unit = Objects.requireNonNull(unit, "unit must not be null for numeric readings");
-
         this.recordedAt = Objects.requireNonNull(recordedAt, "recordedAt must not be null");
-
         this.numericValue = numericValue;
         this.booleanValue = null;
     }
 
-    private SensorReading(
-            Sensor sensor,
-            boolean booleanValue,
-            Instant recordedAt) {
+
+
+
+    private SensorReading(Sensor sensor, boolean booleanValue, Instant recordedAt) {
 
         this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
-
         this.recordedAt = Objects.requireNonNull(recordedAt, "recordedAt must not be null");
-
         this.numericValue = null;
         this.booleanValue = booleanValue;
         this.unit = null;
     }
 
 
-    public static SensorReading temperature(
-            Sensor sensor,
-            Double celsiusValue,
-            Instant recordedAt) {
+
+
+
+
+    public static SensorReading temperature(Sensor sensor, Double celsiusValue, Instant recordedAt) {
 
         requireSensorType(sensor, SensorType.TEMPERATURE);
 
@@ -89,10 +89,11 @@ public class SensorReading {
                 recordedAt);
     }
 
-    public static SensorReading humidity(
-            Sensor sensor,
-            Double humidityPercentage,
-            Instant recordedAt) {
+
+
+
+
+    public static SensorReading humidity(Sensor sensor, Double humidityPercentage, Instant recordedAt) {
 
         requireSensorType(sensor, SensorType.HUMIDITY);
 
@@ -107,17 +108,15 @@ public class SensorReading {
     }
 
 
-    public static SensorReading motion(
-            Sensor sensor,
-            boolean motionDetected,
-            Instant recordedAt) {
+    public static SensorReading motion(Sensor sensor, boolean motionDetected, Instant recordedAt) {
 
         requireSensorType(sensor, SensorType.MOTION);
 
-        return new SensorReading( sensor,
-                motionDetected,
-                recordedAt);
+        return new SensorReading( sensor,motionDetected,recordedAt);
     }
+
+
+
 
 
     private static void requireSensorType(Sensor sensor, SensorType expectedType) {

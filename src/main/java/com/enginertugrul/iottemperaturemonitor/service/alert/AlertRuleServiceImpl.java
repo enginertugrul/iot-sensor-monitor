@@ -19,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+
+
+
 @Service
 public class AlertRuleServiceImpl implements AlertRuleService {
 
@@ -46,6 +49,10 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
     }
 
+
+
+
+
     @Override
     @Transactional
     public void createNumericThresholdRule(Long ownerId, NumericThresholdAlertRuleForm form, TemperatureUnit preferredTemperatureUnit) {
@@ -63,6 +70,10 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
 
     }
+
+
+
+
 
     @Override
     @Transactional
@@ -107,8 +118,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
     private AlertRule getOwnedAlertRule(Long alertRuleId, Long ownerId ) {
 
-        return alertRuleRepository
-                .findByIdAndOwnerId(alertRuleId, ownerId)
+        return alertRuleRepository.findByIdAndOwnerId(alertRuleId, ownerId)
                 .orElseThrow(() -> new NoSuchElementException("Alert rule not found"));
     }
 
@@ -119,8 +129,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     private Double toCanonicalThreshold(Sensor sensor, Double submittedThreshold, TemperatureUnit preferredTemperatureUnit) {
 
         return switch (sensor.getType()) {
-            case TEMPERATURE ->
-                    temperatureUnitConverter.convertToCelsius(
+            case TEMPERATURE -> temperatureUnitConverter.convertToCelsius(
                                     submittedThreshold,
                                     preferredTemperatureUnit);
 
@@ -147,10 +156,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
                 rule.getRuleType(),
                 rule.getComparisonOperator(),
                 rule.getEventType(),
-                toDisplayThreshold(
-                        rule,
-                        preferredTemperatureUnit
-                ),
+                toDisplayThreshold(rule, preferredTemperatureUnit),
                 rule.getCooldownMinutes(),
                 rule.isEnabled()
         );

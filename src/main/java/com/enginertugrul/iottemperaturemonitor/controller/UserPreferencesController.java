@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+
+
+
 @Controller
 @RequestMapping("/user/preferences")
 public class UserPreferencesController {
@@ -25,14 +28,20 @@ public class UserPreferencesController {
     private final AppUserService appUserService;
     private final TimezoneCatalog timezoneCatalog;
 
+
+
     public UserPreferencesController(AppUserService appUserService, TimezoneCatalog timezoneCatalog) {
         this.appUserService = appUserService;
         this.timezoneCatalog = timezoneCatalog;
     }
 
 
+
+
+
     @GetMapping
     public String getPreferencesPage(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
+
         if (!model.containsAttribute("form")) {
             model.addAttribute("form", appUserService.getPreferences(user.getAppUserId()));
         }
@@ -41,14 +50,18 @@ public class UserPreferencesController {
         return "preferences";
     }
 
+
+
+
+
     @PostMapping
     public String updatePreferences(
             @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @ModelAttribute("form") UserPreferencesForm form,
             BindingResult bindingResult,
             Model model,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         if (bindingResult.hasErrors()) {
             addPageData(model);
             return "preferences";
@@ -59,11 +72,17 @@ public class UserPreferencesController {
         return "redirect:/user/preferences";
     }
 
+
+
+
+
+
     private void addPageData(Model model) {
         model.addAttribute("languages", PreferredLanguage.values());
         model.addAttribute("temperatureUnits", TemperatureUnit.values());
         model.addAttribute("timezoneOptions", timezoneCatalog.getTimezoneOptions());
     }
+
 
 
 }

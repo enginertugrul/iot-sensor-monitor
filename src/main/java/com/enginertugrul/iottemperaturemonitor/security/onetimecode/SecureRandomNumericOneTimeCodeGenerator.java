@@ -35,12 +35,10 @@ public final class SecureRandomNumericOneTimeCodeGenerator implements OneTimeCod
 
     @Override
     public GeneratedOneTimeCode generate(Long subjectId) {
+
         long requiredSubjectId = requireSubjectId(subjectId);
-        String rawCode = String.format(
-                Locale.ROOT,
-                "%08d",
-                secureRandom.nextInt(CODE_BOUND)
-        );
+
+        String rawCode = String.format(Locale.ROOT,"%08d",secureRandom.nextInt(CODE_BOUND));
 
         String codeHash = hmacDigest.digest(codePurpose,requiredSubjectId + ":" + rawCode);
 

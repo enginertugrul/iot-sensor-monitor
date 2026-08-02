@@ -17,17 +17,26 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+
+
+
 @Controller
 @RequestMapping("/user/sensors")
 public class SensorController {
 
+
+
     private final SensorService sensorService;
     private final TimezoneCatalog timezoneCatalog;
+
+
 
     public SensorController(SensorService sensorService, TimezoneCatalog timezoneCatalog) {
         this.sensorService = sensorService;
         this.timezoneCatalog = timezoneCatalog;
     }
+
+
 
     @GetMapping
     public String getSensorsPage(@AuthenticationPrincipal AuthenticatedUser authenticatedUser, Model model) {
@@ -43,14 +52,18 @@ public class SensorController {
         return "sensors";
     }
 
+
+
+
+
     @PostMapping
     public String createSensor(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @ModelAttribute("form") SensorForm form,
             BindingResult bindingResult,
             Model model,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         Long ownerId = authenticatedUser.getAppUserId();
 
         if (bindingResult.hasErrors()) {
@@ -76,8 +89,14 @@ public class SensorController {
     }
 
 
+
+
+
     @GetMapping("/{sensorId}/edit")
-    public String getSensorsEditPage(@AuthenticationPrincipal AuthenticatedUser authenticatedUser , @PathVariable Long sensorId, Model model) {
+    public String getSensorsEditPage(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            Model model) {
 
         Long ownerId =  authenticatedUser.getAppUserId();
 
@@ -87,8 +106,10 @@ public class SensorController {
 
         addEditPageData(model, sensorId, ownerId);
         return "sensor-edit";
-
     }
+
+
+
 
 
     @PostMapping("/{sensorId}/edit")
@@ -98,8 +119,7 @@ public class SensorController {
             @Valid @ModelAttribute("form") SensorUpdateForm form,
             BindingResult bindingResult,
             Model model,
-            RedirectAttributes redirectAttributes
-            ) {
+            RedirectAttributes redirectAttributes) {
 
         Long ownerId = authenticatedUser.getAppUserId();
 
@@ -123,10 +143,15 @@ public class SensorController {
     }
 
 
+
+
+
+
     @GetMapping("/{sensorId}/delete")
-    public String getSensorDeletePage(@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-                                      @PathVariable Long sensorId,
-                                      Model model) {
+    public String getSensorDeletePage(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            Model model) {
 
         Long ownerId = authenticatedUser.getAppUserId();
         Sensor sensor = sensorService.getSensorForUser(sensorId,ownerId);
@@ -141,10 +166,15 @@ public class SensorController {
         return "sensor-delete";
     }
 
+
+
+
+
     @PostMapping("/{sensorId}/delete")
-    public String deleteSensor(@AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-                               @PathVariable Long sensorId,
-                               RedirectAttributes redirectAttributes) {
+    public String deleteSensor(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            RedirectAttributes redirectAttributes) {
 
         sensorService.deleteSensor(sensorId,authenticatedUser.getAppUserId());
 

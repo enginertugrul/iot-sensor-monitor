@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneId;
 import java.util.Objects;
 
+
+
+
+
 @Component
 public class AlertTriggeredEventFactory {
 
@@ -28,8 +32,7 @@ public class AlertTriggeredEventFactory {
                 recipientSnapShot(owner),
                 sensorSnapshot(sensor),
                 reading.getRecordedAt(),
-                rule.getCooldownMinutes()
-        );
+                rule.getCooldownMinutes());
 
         return new AlertTriggeredEvent(context,triggerFrom(rule,reading));
 
@@ -44,11 +47,16 @@ public class AlertTriggeredEventFactory {
                 sensor.getCity(),sensor.getDistrict());
     }
 
+
+
+
     private AlertTriggeredEvent.RecipientSnapshot recipientSnapShot(AppUser owner) {
 
         return new AlertTriggeredEvent.RecipientSnapshot(owner.getEmail(),owner.getPreferredLanguage(),
                 owner.getPreferredTemperatureUnit(), ZoneId.of(owner.getPreferredTimezone()));
     }
+
+
 
 
     private AlertTriggeredEvent.Trigger triggerFrom(AlertRule rule, SensorReading reading) {
@@ -59,8 +67,7 @@ public class AlertTriggeredEventFactory {
                     new AlertTriggeredEvent.NumericThresholdTrigger(rule.getComparisonOperator(),
                             reading.getNumericValue(),
                             rule.getThresholdValue(),
-                            reading.getUnit()
-                            );
+                            reading.getUnit());
 
             case EVENT_DETECTED ->
                     switch (rule.getEventType()) {

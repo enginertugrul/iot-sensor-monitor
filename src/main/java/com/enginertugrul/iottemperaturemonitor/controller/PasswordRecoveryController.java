@@ -44,6 +44,9 @@ public class PasswordRecoveryController {
         this.passwordRecoveryService = passwordRecoveryService;
     }
 
+
+
+
     @GetMapping
     public String getRecoveryPage(Model model,HttpServletRequest request) {
         if (!model.containsAttribute("requestForm")) {
@@ -64,13 +67,14 @@ public class PasswordRecoveryController {
 
 
 
+
+
     @PostMapping("/request")
     public String requestCode(
             @Valid @ModelAttribute("requestForm") PasswordRecoveryRequestForm requestForm,
             BindingResult bindingResult,
             HttpServletRequest request,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
             PendingPasswordRecoverySession.clearEmail(request);
@@ -78,6 +82,7 @@ public class PasswordRecoveryController {
         }
 
         String normalizedEmail = AppUser.normalizeEmail(requestForm.getEmail());
+
         PendingPasswordRecoverySession.start(request,normalizedEmail);
 
         passwordRecoveryService.requestResetCode(normalizedEmail,request.getRemoteAddr());
@@ -89,6 +94,8 @@ public class PasswordRecoveryController {
 
 
 
+
+
     @PostMapping("/reset")
     public String resetPassword(
             @Valid @ModelAttribute("resetForm") PasswordResetForm resetForm,
@@ -96,8 +103,7 @@ public class PasswordRecoveryController {
             Locale locale,
             HttpServletRequest request,
             HttpServletResponse response,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
 
         Optional<String> pendingEmail = PendingPasswordRecoverySession.findEmail(request);
 
@@ -165,8 +171,7 @@ public class PasswordRecoveryController {
             String formAttribute,
             Object form,
             BindingResult bindingResult,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
 
         redirectAttributes.addFlashAttribute(formAttribute,form);
         redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + formAttribute,bindingResult);
@@ -176,24 +181,19 @@ public class PasswordRecoveryController {
 
 
 
+
     private String redirectWithResetErrors(
             PasswordResetForm submittedForm,
             BindingResult sourceBindingResult,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         PasswordResetForm sanitizedForm = new PasswordResetForm();
-        BindingResult sanitizedBindingResult = copyWithoutRejectedValues(
-                sanitizedForm,
-                "resetForm",
-                sourceBindingResult
-        );
+
+        BindingResult sanitizedBindingResult = copyWithoutRejectedValues(sanitizedForm, "resetForm",sourceBindingResult);
 
         submittedForm.clearSensitiveValues();
         redirectAttributes.addFlashAttribute("resetForm",sanitizedForm);
-        redirectAttributes.addFlashAttribute(
-                BindingResult.MODEL_KEY_PREFIX + "resetForm",
-                sanitizedBindingResult
-        );
+        redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "resetForm",sanitizedBindingResult);
 
         return REDIRECT_TO_RECOVERY;
     }
@@ -202,6 +202,7 @@ public class PasswordRecoveryController {
 
 
     private BindingResult copyWithoutRejectedValues(Object target,String objectName,BindingResult sourceBindingResult) {
+
         BeanPropertyBindingResult sanitizedBindingResult = new BeanPropertyBindingResult(target,objectName);
 
         for (ObjectError error : sourceBindingResult.getAllErrors()) {
@@ -210,9 +211,7 @@ public class PasswordRecoveryController {
                 continue;
             }
 
-            sanitizedBindingResult.addError(
-                    new ObjectError(objectName,error.getCodes(),error.getArguments(),error.getDefaultMessage())
-            );
+            sanitizedBindingResult.addError(new ObjectError(objectName,error.getCodes(),error.getArguments(),error.getDefaultMessage() ) );
         }
 
         return sanitizedBindingResult;
@@ -222,6 +221,7 @@ public class PasswordRecoveryController {
 
 
     private FieldError withoutRejectedValue(String objectName,FieldError fieldError) {
+
         return new FieldError(
                 objectName,
                 fieldError.getField(),
@@ -232,6 +232,7 @@ public class PasswordRecoveryController {
                 fieldError.getDefaultMessage()
         );
     }
+
 
 
 

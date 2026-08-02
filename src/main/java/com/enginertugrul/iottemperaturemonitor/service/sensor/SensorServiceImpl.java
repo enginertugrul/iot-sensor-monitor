@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
+
+
+
+
 @Service
 public class SensorServiceImpl implements SensorService {
 
@@ -31,6 +35,11 @@ public class SensorServiceImpl implements SensorService {
         this.appUserRepository = appUserRepository;
         this.sensorIngestionTokenGenerator = sensorIngestionTokenGenerator;
     }
+
+
+
+
+
 
     @Override
     @Transactional
@@ -65,6 +74,10 @@ public class SensorServiceImpl implements SensorService {
 
     }
 
+
+
+
+
     @Override
     @Transactional(readOnly = true)
     public List<SensorListItemDTO> getSensorsForUser(Long ownerId) {
@@ -74,12 +87,20 @@ public class SensorServiceImpl implements SensorService {
                 .toList();
     }
 
+
+
+
+
     @Override
     @Transactional(readOnly = true)
     public Sensor getSensorForUser(Long sensorId, Long ownerId) {
         return sensorRepository.findByIdAndOwnerId(sensorId, ownerId)
                 .orElseThrow(() -> new NoSuchElementException("Sensor not found"));
     }
+
+
+
+
 
     @Override
     @Transactional(readOnly = true)
@@ -97,6 +118,9 @@ public class SensorServiceImpl implements SensorService {
 
         return form;
     }
+
+
+
 
 
     @Override
@@ -122,12 +146,19 @@ public class SensorServiceImpl implements SensorService {
     }
 
 
+
+
+
     @Override
     @Transactional
     public void deleteSensor(Long sensorId, Long ownerId) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
         sensorRepository.delete(sensor);
     }
+
+
+
+
 
     @Override
     @Transactional(readOnly = true)

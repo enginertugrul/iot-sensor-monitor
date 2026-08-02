@@ -15,6 +15,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
 @Getter
 @Entity
 @Table(name = "alert_rules")
@@ -177,9 +180,14 @@ public class AlertRule {
         return cooldownEndsAt.isAfter(checkedAt);
     }
 
+
+
+
     public boolean canTriggerAt(Instant checkedAt) {
         return enabled && !isCooldownActiveAt(checkedAt);
     }
+
+
 
 
 
@@ -203,6 +211,10 @@ public class AlertRule {
     }
 
 
+
+
+
+
     private boolean matchesNumericReading(SensorReading reading) {
         return reading.getNumericValue() != null
                 && reading.getBooleanValue() == null
@@ -212,6 +224,10 @@ public class AlertRule {
                 thresholdValue
         );
     }
+
+
+
+
 
 
     private boolean matchesEventReading(SensorReading reading) {
@@ -292,6 +308,10 @@ public class AlertRule {
         }
     }
 
+
+
+
+
     private void requireEventDetectedShape() {
 
         if (sensor.getType() != SensorType.MOTION) {
@@ -307,6 +327,10 @@ public class AlertRule {
         }
 
     }
+
+
+
+
 
     private void requireOwnerMatchesSensor() {
         AppUser sensorOwner = Objects.requireNonNull(sensor.getOwner(), "sensor owner must not be null");

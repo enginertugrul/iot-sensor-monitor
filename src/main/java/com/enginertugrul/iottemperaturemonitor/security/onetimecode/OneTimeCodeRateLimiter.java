@@ -126,9 +126,7 @@ public final class OneTimeCodeRateLimiter {
 
 
     private void purgeExpiredCounters(Instant requestedAt) {
-        counters.entrySet().removeIf(
-                entry -> !requestedAt.isBefore(entry.getValue().expiresAt)
-        );
+        counters.entrySet().removeIf(entry -> !requestedAt.isBefore(entry.getValue().expiresAt));
     }
 
 

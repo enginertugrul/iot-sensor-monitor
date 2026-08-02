@@ -10,10 +10,7 @@ public class InvalidSensorReadingException extends RuntimeException {
         super(message);
     }
 
-    public InvalidSensorReadingException(
-            String message,
-            Throwable cause
-    ) {
+    public InvalidSensorReadingException(String message,Throwable cause) {
         super(message, cause);
     }
 }

@@ -4,6 +4,9 @@ import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 
 import java.time.ZonedDateTime;
 
+
+
+
 public record SensorReadingViewDTO(
         SensorType sensorType,
         String location,

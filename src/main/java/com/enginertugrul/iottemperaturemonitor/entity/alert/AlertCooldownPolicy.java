@@ -2,6 +2,9 @@ package com.enginertugrul.iottemperaturemonitor.entity.alert;
 
 import com.enginertugrul.iottemperaturemonitor.entity.DomainChecks;
 
+
+
+
 public final class AlertCooldownPolicy {
 
     public static final int DEFAULT_MINUTES = 60;
@@ -11,14 +14,7 @@ public final class AlertCooldownPolicy {
     private AlertCooldownPolicy() {
     }
 
-    public static int requireValid(
-            Integer cooldownMinutes
-    ) {
-        return DomainChecks.requireIntegerBetween(
-                cooldownMinutes,
-                MIN_MINUTES,
-                MAX_MINUTES,
-                "cooldownMinutes"
-        );
+    public static int requireValid(Integer cooldownMinutes) {
+        return DomainChecks.requireIntegerBetween(cooldownMinutes,MIN_MINUTES,MAX_MINUTES, "cooldownMinutes");
     }
 }

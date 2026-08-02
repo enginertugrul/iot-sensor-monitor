@@ -5,6 +5,9 @@ import com.enginertugrul.iottemperaturemonitor.entity.alert.AlertRuleType;
 import com.enginertugrul.iottemperaturemonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iottemperaturemonitor.entity.sensor.SensorType;
 
+
+
+
 public record AlertRuleListItemDTO(
         Long id,
         Long sensorId,

@@ -6,6 +6,10 @@ import com.enginertugrul.iottemperaturemonitor.entity.user.PreferredLanguage;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
+
 public final class EmailVerificationCodeDelivery {
 
     private final Long userId;
@@ -13,6 +17,10 @@ public final class EmailVerificationCodeDelivery {
     private final PreferredLanguage preferredLanguage;
     private final String rawCode;
     private final Instant expiresAt;
+
+
+
+
 
     public EmailVerificationCodeDelivery(
             Long userId,
@@ -35,6 +43,9 @@ public final class EmailVerificationCodeDelivery {
         this.rawCode = rawCode;
         this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt must not be null");
     }
+
+
+
 
     public Long userId() {
         return userId;

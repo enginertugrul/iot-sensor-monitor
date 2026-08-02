@@ -11,6 +11,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Objects;
 
+
+
+
+
 @Getter
 @Entity
 @Table(name = "sensors")
@@ -59,6 +63,10 @@ public class Sensor {
     @Column(name = "last_seen_at")
     private Instant lastSeenAt;
 
+
+
+
+
     public Sensor(
             AppUser owner,
             SensorType type,
@@ -81,6 +89,10 @@ public class Sensor {
         this.updatedAt = now;
     }
 
+
+
+
+
     public void updateDetails(
             String name,
             String city,
@@ -96,15 +108,26 @@ public class Sensor {
         this.updatedAt = Instant.now();
     }
 
+
+
+
+
     public void deactivate() {
         this.active = false;
         this.updatedAt = Instant.now();
     }
 
+
+
+
     public void activate() {
         this.active = true;
         this.updatedAt = Instant.now();
     }
+
+
+
+
 
     @PrePersist
     void prePersist() {
@@ -119,10 +142,18 @@ public class Sensor {
         }
     }
 
+
+
+
+
     @PreUpdate
     void preUpdate() {
         updatedAt = Instant.now();
     }
+
+
+
+
 
     private static String normalizeTimezone(String value) {
         String timezone = DomainChecks.requireText(value, "timezone");
@@ -130,10 +161,15 @@ public class Sensor {
     }
 
 
+
+
     public void assignIngestionTokenHash(String ingestionTokenHash) {
         this.ingestionTokenHash = ingestionTokenHash;
         this.updatedAt = Instant.now();
     }
+
+
+
 
     public void markSeen(Instant seenAt) {
         this.lastSeenAt = seenAt;

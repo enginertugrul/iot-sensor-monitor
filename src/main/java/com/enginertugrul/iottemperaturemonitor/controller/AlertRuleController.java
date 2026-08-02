@@ -24,9 +24,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+
+
+
+
 @Controller
 @RequestMapping("/user/alert-rules")
 public class AlertRuleController {
+
+
 
     private final AlertRuleService alertRuleService;
     private final SensorService sensorService;
@@ -59,11 +65,12 @@ public class AlertRuleController {
 
 
     @PostMapping("/numeric-threshold")
-    public String createNumericThresholdRule(@AuthenticationPrincipal AuthenticatedUser user,
-                                             @Valid @ModelAttribute("numericForm") NumericThresholdAlertRuleForm form,
-                                             BindingResult bindingResult,
-                                             Model model,
-                                             RedirectAttributes redirectAttributes) {
+    public String createNumericThresholdRule(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @ModelAttribute("numericForm") NumericThresholdAlertRuleForm form,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         Long ownerId = user.getAppUserId();
         if(bindingResult.hasErrors()){
@@ -91,11 +98,12 @@ public class AlertRuleController {
 
 
     @PostMapping("/motion-detected")
-    public String createMotionDetectedRule(@AuthenticationPrincipal AuthenticatedUser user,
-                                           @Valid @ModelAttribute("motionForm") MotionEventAlertRuleForm form,
-                                           BindingResult bindingResult,
-                                           Model model,
-                                           RedirectAttributes redirectAttributes) {
+    public String createMotionDetectedRule(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @Valid @ModelAttribute("motionForm") MotionEventAlertRuleForm form,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         Long ownerId = user.getAppUserId();
 
@@ -126,8 +134,7 @@ public class AlertRuleController {
     public String enableAlertRule(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long alertRuleId,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
 
         alertRuleService.setAlertRuleEnabled(user.getAppUserId(),alertRuleId, true);
         redirectAttributes.addFlashAttribute("alertRuleEnabled", true);
@@ -142,20 +149,22 @@ public class AlertRuleController {
     public String disableAlertRule(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long alertRuleId,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
         alertRuleService.setAlertRuleEnabled(user.getAppUserId(),alertRuleId, false);
         redirectAttributes.addFlashAttribute("alertRuleDisabled", true);
         return "redirect:/user/alert-rules";
     }
 
 
+
+
+
     @PostMapping("/{alertRuleId}/delete")
     public String deleteAlertRule(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long alertRuleId,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
 
         alertRuleService.deleteAlertRule(user.getAppUserId(),alertRuleId);
         redirectAttributes.addFlashAttribute("alertRuleDeleted", true);
@@ -178,13 +187,11 @@ public class AlertRuleController {
     private void addPageData(Model model, Long ownerId) {
 
         if (!model.containsAttribute("numericForm")) {
-            model.addAttribute("numericForm",
-                    new NumericThresholdAlertRuleForm());
+            model.addAttribute("numericForm", new NumericThresholdAlertRuleForm());
         }
 
         if (!model.containsAttribute("motionForm")) {
-            model.addAttribute("motionForm",
-                    new MotionEventAlertRuleForm());
+            model.addAttribute("motionForm",new MotionEventAlertRuleForm());
         }
 
 
