@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.enginertugrul</groupId>
-    <artifactId>iot-temperature-monitor</artifactId>
+    <artifactId>iot-sensor-monitor</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>iot-temperature-monitor</name>
-    <description>iot-temperature-monitor</description>
+    <name>iot-sensor-monitor</name>
+    <description>iot-sensor-monitor</description>
     <url/>
     <licenses>
         <license/>
