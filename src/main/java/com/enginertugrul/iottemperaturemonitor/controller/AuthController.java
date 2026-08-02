@@ -19,6 +19,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 
+
+
+
 @Controller
 public class AuthController {
 
@@ -31,6 +34,9 @@ public class AuthController {
     }
 
 
+
+
+
     @GetMapping("/login")
     public String getLoginPage() {
 
@@ -38,8 +44,12 @@ public class AuthController {
     }
 
 
+
+
+
     @GetMapping("/register")
     public String getRegisterPage(Model model) {
+
         if (!model.containsAttribute("form")) {
             model.addAttribute("form", new RegisterUserForm());
         }
@@ -48,14 +58,19 @@ public class AuthController {
         return "register";
     }
 
+
+
+
+
     @PostMapping("/register")
     public String register(
             @Valid @ModelAttribute("form") RegisterUserForm form,
             BindingResult bindingResult,
             Model model,
             HttpServletRequest request,
-            RedirectAttributes redirectAttributes
-    ) {
+            RedirectAttributes redirectAttributes) {
+
+
         if (bindingResult.hasErrors()) {
             addRegistrationOptions(model);
             return "register";
@@ -81,6 +96,12 @@ public class AuthController {
         redirectAttributes.addFlashAttribute("accountCreated", true);
         return "redirect:/verify-email";
     }
+
+
+
+
+
+
 
     private void addRegistrationOptions(Model model) {
         model.addAttribute("languages", PreferredLanguage.values());

@@ -96,13 +96,9 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
 
     private String buildNumericBody(Context context, NumericThresholdTrigger trigger, Locale locale) {
 
-        DisplayValues displayValues =
-                toDisplayValues(context, trigger, locale);
+        DisplayValues displayValues = toDisplayValues(context, trigger, locale);
 
-        String comparison =
-                messageSource.getMessage("comparisonOperator." + trigger.comparisonOperator().name(),
-                        null,
-                        locale);
+        String comparison = messageSource.getMessage("comparisonOperator." + trigger.comparisonOperator().name(),null, locale);
 
         return messageSource.getMessage("email.alert." + sensorMessageSegment(context.sensor().type()) + ".body",
                 new Object[]{
@@ -126,32 +122,20 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
 
             case MeasurementUnit.C -> new DisplayValues(
                     temperatureUnitConverter
-                            .convertFromCelsius(
-                                    trigger.readingValue(),
-                                    context.recipient()
-                                            .preferredTemperatureUnit()
-                            ),
+                            .convertFromCelsius(trigger.readingValue(),context.recipient().preferredTemperatureUnit()),
                     temperatureUnitConverter
-                            .convertFromCelsius(
-                                    trigger.thresholdValue(),
-                                    context.recipient()
-                                            .preferredTemperatureUnit()
+                            .convertFromCelsius(trigger.thresholdValue(),context.recipient().preferredTemperatureUnit()
                             ),
-                    temperatureUnitConverter.getSymbol(
-                            context.recipient()
-                                    .preferredTemperatureUnit()
-                    )
+                    temperatureUnitConverter.getSymbol(context.recipient().preferredTemperatureUnit())
             );
 
             case MeasurementUnit.PERCENT -> new DisplayValues(
                     trigger.readingValue(),
                     trigger.thresholdValue(),
-                    messageSource.getMessage(
-                            HUMIDITY_SYMBOL_KEY,
-                            null,
-                            locale
-                    )
+                    messageSource.getMessage(HUMIDITY_SYMBOL_KEY,null,locale)
             );
+
+
         };
     }
 

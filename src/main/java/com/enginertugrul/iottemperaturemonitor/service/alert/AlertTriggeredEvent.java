@@ -10,12 +10,21 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Objects;
 
+
+
+
+
 public record AlertTriggeredEvent(Context context , Trigger trigger) {
+
+
 
     public AlertTriggeredEvent {
         Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(trigger, "trigger must not be null");
     }
+
+
+
 
 
     public record Context(long alertRuleId, RecipientSnapshot recipient, SensorSnapshot sensor, Instant recordedAt , int cooldownMinutes){
@@ -25,6 +34,10 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
             Objects.requireNonNull(recordedAt, "recordedAt must not be null");
         }
     }
+
+
+
+
 
     public record RecipientSnapshot(String email, PreferredLanguage language, TemperatureUnit preferredTemperatureUnit, ZoneId timezone){
 
@@ -38,6 +51,8 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
         }
 
     }
+
+
 
 
     public record SensorSnapshot(long id, SensorType type, String name, String homeLocation, String city,
@@ -55,8 +70,12 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
     }
 
 
+
+
     public sealed interface Trigger permits NumericThresholdTrigger, MotionDetectedTrigger {
     }
+
+
 
 
     public record NumericThresholdTrigger(ComparisonOperator comparisonOperator, double readingValue, double thresholdValue, MeasurementUnit unit) implements Trigger {
@@ -69,6 +88,7 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
         }
 
     }
+
 
 
     public record MotionDetectedTrigger() implements Trigger{

@@ -11,6 +11,9 @@ import java.util.List;
 @Repository
 public interface SensorReadingRepository extends JpaRepository<SensorReading, Long> {
 
+
+
+
     @Modifying
     @Query("DELETE FROM SensorReading r WHERE r.recordedAt < :cutoffTimestamp")
     void deleteOlderThan(Instant cutoffTimestamp);
@@ -41,6 +44,8 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
 
+
+
     @NativeQuery("""
             SELECT
                 CAST(
@@ -67,6 +72,8 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
 
+
+
     @NativeQuery("""
             SELECT
                 DATE(sr.recorded_at AT TIME ZONE :timezone) AS date,
@@ -86,6 +93,8 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
             @Param("endExclusive") Instant endExclusive,
             @Param("timezone") String timezone
     );
+
+
 
 
 

@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
 @Service
 public class AlertEvaluationServiceImpl implements AlertEvaluationService {
 
@@ -19,6 +22,8 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
     private final AlertRuleRepository alertRuleRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AlertTriggeredEventFactory alertTriggeredEventFactory;
+
+
 
     public AlertEvaluationServiceImpl(AlertRuleRepository alertRuleRepository, ApplicationEventPublisher eventPublisher, AlertTriggeredEventFactory alertTriggeredEventFactory) {
         this.alertRuleRepository = alertRuleRepository;
@@ -32,15 +37,14 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
     public void evaluateReading(SensorReading reading) {
 
         SensorReading requiredReading = Objects.requireNonNull(reading, "reading must not be null");
-
         Long sensorId = requiredReading.getSensor().getId();
 
         alertRuleRepository.findEnabledForEvaluationBySensorId(sensorId).stream()
                 .filter( rule -> rule.isTriggeredBy(requiredReading))
                 .forEach( rule -> triggerIfCooldownAllows(rule,requiredReading));
 
-
     }
+
 
 
 
@@ -50,24 +54,14 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
 
 
         if (!rule.canTriggerAt(recordedAt)) {
-            LOGGER.info(
-                    "Alert suppressed by cooldown. "
-                            + "alertRuleId={}, sensorId={}",
-                    rule.getId(),
-                    reading.getSensor().getId()
-            );
-
+            LOGGER.info("Alert suppressed by cooldown. " + "alertRuleId={}, sensorId={}", rule.getId(), reading.getSensor().getId());
             return;
         }
 
         rule.markTriggered(recordedAt);
         eventPublisher.publishEvent(alertTriggeredEventFactory.from(rule,reading));
 
-        LOGGER.info( "Alert triggered. alertRuleId={}, " + "sensorId={}, sensorType={}",
-                rule.getId(),
-                reading.getSensor().getId(),
-                reading.getSensor().getType()
-        );
+        LOGGER.info( "Alert triggered. alertRuleId={}, " + "sensorId={}, sensorType={}", rule.getId(), reading.getSensor().getId(),reading.getSensor().getType());
 
     }
 

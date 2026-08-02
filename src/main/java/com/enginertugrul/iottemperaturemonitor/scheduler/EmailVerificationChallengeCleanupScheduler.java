@@ -7,20 +7,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+
+
+
 @Component
 public class EmailVerificationChallengeCleanupScheduler {
 
     private final EmailVerificationChallengeRepository emailVerificationChallengeRepository;
 
-    public EmailVerificationChallengeCleanupScheduler(
-            EmailVerificationChallengeRepository emailVerificationChallengeRepository
-    ) {
+
+
+    public EmailVerificationChallengeCleanupScheduler(EmailVerificationChallengeRepository emailVerificationChallengeRepository) {
         this.emailVerificationChallengeRepository = emailVerificationChallengeRepository;
     }
+
+
 
     @Scheduled(fixedDelayString = "${app.security.email-verification.cleanup-interval:PT1H}")
     @Transactional
     public void purgeExpiredChallenges() {
         emailVerificationChallengeRepository.deleteExpiredAtOrBefore(Instant.now());
     }
+
+
 }

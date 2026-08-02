@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
+
 @Getter
 @Entity
 @Table(name = "password_reset_challenges")
@@ -76,10 +80,7 @@ public class PasswordResetChallenge {
         this.codeHash = DomainChecks.requireText(codeHash, "codeHash");
         this.issuedAt = Objects.requireNonNull(issuedAt, "issuedAt must not be null");
         this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt must not be null");
-        this.resendAvailableAt = Objects.requireNonNull(
-                resendAvailableAt,
-                "resendAvailableAt must not be null"
-        );
+        this.resendAvailableAt = Objects.requireNonNull(resendAvailableAt,"resendAvailableAt must not be null");
 
         this.failedAttempts = 0;
         this.updatedAt = this.issuedAt;
@@ -93,15 +94,11 @@ public class PasswordResetChallenge {
 
 
     public void recordFailedAttempt(Instant attemptedAt) {
-        Instant requiredAttemptedAt = Objects.requireNonNull(
-                attemptedAt,
-                "attemptedAt must not be null"
-        );
+
+        Instant requiredAttemptedAt = Objects.requireNonNull(attemptedAt,"attemptedAt must not be null");
 
         if (requiredAttemptedAt.isBefore(issuedAt)) {
-            throw new IllegalArgumentException(
-                    "attemptedAt must not be before issuedAt"
-            );
+            throw new IllegalArgumentException("attemptedAt must not be before issuedAt");
         }
 
         this.failedAttempts++;

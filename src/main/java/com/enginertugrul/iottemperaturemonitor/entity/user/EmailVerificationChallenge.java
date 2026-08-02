@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Objects;
 
+
+
+
 @Getter
 @Entity
 @Table(name = "email_verification_challenges")
@@ -47,6 +50,8 @@ public class EmailVerificationChallenge {
 
 
 
+
+
     public EmailVerificationChallenge(
             AppUser user,
             String codeHash,
@@ -67,6 +72,10 @@ public class EmailVerificationChallenge {
     }
 
 
+
+
+
+
     public void rotateCode(
             String codeHash,
             Instant issuedAt,
@@ -82,6 +91,11 @@ public class EmailVerificationChallenge {
         validateState();
     }
 
+
+
+
+
+
     public void recordFailedAttempt(Instant attemptedAt) {
         Instant requiredAttemptedAt = Objects.requireNonNull(attemptedAt, "attemptedAt must not be null");
 
@@ -94,15 +108,28 @@ public class EmailVerificationChallenge {
         validateState();
     }
 
+
+
+
+
+
     public boolean isExpiredAt(Instant checkedAt) {
         Instant requiredCheckedAt = Objects.requireNonNull(checkedAt, "checkedAt must not be null");
         return !requiredCheckedAt.isBefore(expiresAt);
     }
 
+
+
+
+
     public boolean isResendAvailableAt(Instant checkedAt) {
         Instant requiredCheckedAt = Objects.requireNonNull(checkedAt, "checkedAt must not be null");
         return !requiredCheckedAt.isBefore(resendAvailableAt);
     }
+
+
+
+
 
     public boolean hasReachedAttemptLimit(int maximumFailedAttempts) {
         if (maximumFailedAttempts < 1) {
@@ -111,6 +138,10 @@ public class EmailVerificationChallenge {
 
         return failedAttempts >= maximumFailedAttempts;
     }
+
+
+
+
 
 
     @PrePersist
@@ -127,10 +158,15 @@ public class EmailVerificationChallenge {
     }
 
 
+
+
+
     @PreUpdate
     void preUpdate() {
         validateState();
     }
+
+
 
 
 

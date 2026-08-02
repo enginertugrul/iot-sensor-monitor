@@ -11,16 +11,26 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 
+
+
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
+
+
     boolean existsByEmail(String email);
 
+
+
     Optional<AppUser> findByEmail(String email);
+
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT appUser FROM AppUser appUser WHERE appUser.id = :userId")
     Optional<AppUser> findByIdForUpdate(@Param("userId") Long userId);
+
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT appUser FROM AppUser appUser WHERE appUser.email = :email")

@@ -1,8 +1,15 @@
 package com.enginertugrul.iottemperaturemonitor.entity;
 
+
+
+
 public final class DomainChecks {
 
     private DomainChecks() {}
+
+
+
+
 
     public static String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
@@ -11,6 +18,9 @@ public final class DomainChecks {
 
         return value.trim();
     }
+
+
+
 
 
     public static Double requireFiniteDouble(Double value, String fieldName) {
@@ -23,10 +33,13 @@ public final class DomainChecks {
     }
 
 
-    public static Integer requireIntegerBetween(Integer value,
-                                                int minInclusive,
-                                                int maxInclusive,
-                                                String fieldName) {
+
+
+    public static Integer requireIntegerBetween(
+            Integer value,
+            int minInclusive,
+            int maxInclusive,
+            String fieldName) {
 
 
         if (value == null) {
@@ -34,9 +47,7 @@ public final class DomainChecks {
         }
 
         if (value < minInclusive || value > maxInclusive) {
-            throw new IllegalArgumentException(
-                    fieldName + " must be between " + minInclusive + " and " + maxInclusive
-            );
+            throw new IllegalArgumentException(fieldName + " must be between " + minInclusive + " and " + maxInclusive);
         }
 
         return value;

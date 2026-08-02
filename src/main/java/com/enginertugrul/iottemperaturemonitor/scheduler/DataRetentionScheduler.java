@@ -8,11 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+
+
+
 @Component
 public class DataRetentionScheduler {
 
 
     private final SensorReadingRepository sensorReadingRepository;
+
+
 
     public DataRetentionScheduler(SensorReadingRepository sensorReadingRepository) {
         this.sensorReadingRepository = sensorReadingRepository;

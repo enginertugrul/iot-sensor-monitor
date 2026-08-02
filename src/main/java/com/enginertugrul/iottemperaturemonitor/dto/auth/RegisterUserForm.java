@@ -13,6 +13,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+
+
+
 @Getter
 @Setter
 @PasswordsMatch
@@ -22,7 +25,6 @@ public class RegisterUserForm implements PasswordConfirmation {
     @Email
     @Size(max = 320)
     private String email;
-
 
 
     @NotBlank

@@ -16,11 +16,17 @@ import java.util.Locale;
 
 public class UserPreferenceLocaleResolver implements LocaleResolver {
 
+
+
+
     private final AppUserRepository appUserRepository;
 
     public UserPreferenceLocaleResolver(AppUserRepository appUserRepository) {
         this.appUserRepository = appUserRepository;
     }
+
+
+
 
     @Override
     public Locale resolveLocale(HttpServletRequest request) {
@@ -42,8 +48,11 @@ public class UserPreferenceLocaleResolver implements LocaleResolver {
     }
 
 
+
     @Override
     public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {
         // Locale is controlled by the user's stored preference.
     }
+
+
 }

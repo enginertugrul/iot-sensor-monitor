@@ -11,24 +11,11 @@ import java.util.List;
 public interface SensorReadingService {
 
 
-    List<SensorReadingViewDTO> getRecentReadings(
-            Long sensorId,
-            Long ownerId,
-            TemperatureUnit temperatureUnit
-    );
+    List<SensorReadingViewDTO> getRecentReadings(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit);
 
-    SensorStatisticsDTO getStatistics(
-            Long sensorId,
-            Long ownerId,
-            TemperatureUnit temperatureUnit
-    );
+    SensorStatisticsDTO getStatistics(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit);
 
-    List<SensorHourlyStatisticDTO> getHourlyStatisticsForDate(
-            Long sensorId,
-            Long ownerId,
-            LocalDate date,
-            TemperatureUnit temperatureUnit
-    );
+    List<SensorHourlyStatisticDTO> getHourlyStatisticsForDate(Long sensorId, Long ownerId, LocalDate date, TemperatureUnit temperatureUnit);
 
 
 }

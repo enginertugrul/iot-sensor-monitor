@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.Optional;
 
+
+
 public interface EmailVerificationChallengeRepository extends JpaRepository<EmailVerificationChallenge,Long> {
 
 
@@ -18,8 +20,13 @@ public interface EmailVerificationChallengeRepository extends JpaRepository<Emai
     @Query("SELECT challenge FROM EmailVerificationChallenge challenge WHERE challenge.user.id = :userId")
     Optional<EmailVerificationChallenge> findByUserIdForUpdate(@Param("userId") Long userId);
 
+
+
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM EmailVerificationChallenge challenge WHERE challenge.expiresAt <= :cutoff")
     void deleteExpiredAtOrBefore(@Param("cutoff") Instant cutoff);
+
+
 
 }

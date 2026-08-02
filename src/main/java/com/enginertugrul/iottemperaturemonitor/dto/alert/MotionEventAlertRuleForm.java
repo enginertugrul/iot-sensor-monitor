@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+
+
+
 @Getter
 @Setter
 public class MotionEventAlertRuleForm {
@@ -15,13 +18,7 @@ public class MotionEventAlertRuleForm {
     private Long sensorId;
 
     @NotNull(message = "{alertRules.cooldownRequired}")
-    @Min(
-            value = AlertCooldownPolicy.MIN_MINUTES,
-            message = "{alertRules.cooldownMin}"
-    )
-    @Max(
-            value = AlertCooldownPolicy.MAX_MINUTES,
-            message = "{alertRules.cooldownMax}"
-    )
+    @Min(value = AlertCooldownPolicy.MIN_MINUTES, message = "{alertRules.cooldownMin}")
+    @Max(value = AlertCooldownPolicy.MAX_MINUTES, message = "{alertRules.cooldownMax}")
     private Integer cooldownMinutes;
 }

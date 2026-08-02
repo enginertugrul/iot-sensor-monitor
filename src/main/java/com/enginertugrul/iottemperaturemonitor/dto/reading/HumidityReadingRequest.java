@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+
+
+
 public record HumidityReadingRequest(
 
         @NotBlank
@@ -15,14 +18,8 @@ public record HumidityReadingRequest(
 
         @NotNull
         @IsFiniteDouble
-        @DecimalMin(
-                value = "0.0",
-                message = "humidityPercentage must be at least 0"
-        )
-        @DecimalMax(
-                value = "100.0",
-                message = "humidityPercentage must not exceed 100"
-        )
+        @DecimalMin(value = "0.0", message = "humidityPercentage must be at least 0")
+        @DecimalMax(value = "100.0", message = "humidityPercentage must not exceed 100")
         Double humidityPercentage
 ) {
 }

@@ -11,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+
+
+
+
 @Service
 public class MotionReadingIngestionService {
 
@@ -26,29 +30,17 @@ public class MotionReadingIngestionService {
     }
 
     @Transactional
-    public void ingest(
-            String sensorToken,
-            boolean motionDetected
-    ) {
-        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(
-                sensorToken,
-                SensorType.MOTION
-        );
+    public void ingest(String sensorToken, boolean motionDetected) {
+
+        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken, SensorType.MOTION);
 
         Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {
-            reading = SensorReading.motion(
-                    sensor,
-                    motionDetected,
-                    recordedAt
-            );
+            reading = SensorReading.motion(sensor, motionDetected, recordedAt);
         } catch (IllegalArgumentException exception) {
-            throw new InvalidSensorReadingException(
-                    exception.getMessage(),
-                    exception
-            );
+            throw new InvalidSensorReadingException(exception.getMessage(), exception);
         }
 
         sensor.markSeen(recordedAt);

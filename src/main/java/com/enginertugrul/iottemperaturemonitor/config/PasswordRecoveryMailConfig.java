@@ -12,6 +12,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class PasswordRecoveryMailConfig {
 
+
+
     public static final String PASSWORD_RECOVERY_MAIL_EXECUTOR = "passwordRecoveryMailExecutor";
 
 

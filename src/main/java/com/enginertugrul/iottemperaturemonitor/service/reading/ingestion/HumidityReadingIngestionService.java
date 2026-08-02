@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+
+
+
 @Service
 public class HumidityReadingIngestionService {
 
@@ -26,29 +29,17 @@ public class HumidityReadingIngestionService {
     }
 
     @Transactional
-    public void ingest(
-            String sensorToken,
-            double humidityPercentage
-    ) {
-        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(
-                sensorToken,
-                SensorType.HUMIDITY
-        );
+    public void ingest(String sensorToken, double humidityPercentage) {
+
+        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken,SensorType.HUMIDITY);
 
         Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {
-            reading = SensorReading.humidity(
-                    sensor,
-                    humidityPercentage,
-                    recordedAt
-            );
+            reading = SensorReading.humidity(sensor, humidityPercentage, recordedAt);
         } catch (IllegalArgumentException exception) {
-            throw new InvalidSensorReadingException(
-                    exception.getMessage(),
-                    exception
-            );
+            throw new InvalidSensorReadingException(exception.getMessage(), exception);
         }
 
         sensor.markSeen(recordedAt);

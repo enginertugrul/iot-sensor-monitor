@@ -20,6 +20,11 @@ import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Objects;
 
+
+
+
+
+
 @Getter
 @Entity
 @Table(name = "app_users")
@@ -63,6 +68,11 @@ public class AppUser {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+
+
+
+
+
     public AppUser(String email, String passwordHash) {
         this(
                 email,
@@ -72,6 +82,8 @@ public class AppUser {
                 DEFAULT_PREFERRED_TIMEZONE
         );
     }
+
+
 
     public AppUser(
             String email,
@@ -87,34 +99,34 @@ public class AppUser {
                 preferredTemperatureUnit,
                 DEFAULT_PREFERRED_TEMPERATURE_UNIT
         );
-        this.preferredTimezone = normalizeTimezone(
-                Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE)
-        );
+        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE) );
 
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    public void updatePreferences(
-            PreferredLanguage preferredLanguage,
-            TemperatureUnit preferredTemperatureUnit,
-            String preferredTimezone
-    ) {
+
+
+
+
+    public void updatePreferences(PreferredLanguage preferredLanguage,TemperatureUnit preferredTemperatureUnit,String preferredTimezone) {
+
         this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage, DEFAULT_PREFERRED_LANGUAGE);
-        this.preferredTemperatureUnit = Objects.requireNonNullElse(
-                preferredTemperatureUnit,
-                DEFAULT_PREFERRED_TEMPERATURE_UNIT
-        );
-        this.preferredTimezone = normalizeTimezone(
-                Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE)
-        );
+        this.preferredTemperatureUnit = Objects.requireNonNullElse(preferredTemperatureUnit,DEFAULT_PREFERRED_TEMPERATURE_UNIT);
+        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE));
         this.updatedAt = Instant.now();
     }
+
+
 
     public boolean isEmailVerified() {
         return this.emailVerifiedAt != null;
     }
+
+
+
+
 
     public void verifyEmail(Instant verifiedAt) {
         Instant requiredVerifiedAt = Objects.requireNonNull(verifiedAt, "verifiedAt must not be null");
@@ -136,10 +148,14 @@ public class AppUser {
     }
 
 
+
+
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = DomainChecks.requireText(passwordHash, "passwordHash");
         this.updatedAt = Instant.now();
     }
+
+
 
 
     public void disable() {
@@ -147,10 +163,14 @@ public class AppUser {
         this.updatedAt = Instant.now();
     }
 
+
+
     public void enable() {
         this.enabled = true;
         this.updatedAt = Instant.now();
     }
+
+
 
     @PrePersist
     void prePersist() {
@@ -177,18 +197,27 @@ public class AppUser {
         }
     }
 
+
+
     @PreUpdate
     void preUpdate() {
         updatedAt = Instant.now();
     }
 
+
+
+
     public static String normalizeEmail(String value) {
         return DomainChecks.requireText(value, "email").toLowerCase(Locale.ROOT);
     }
+
+
+
 
     private static String normalizeTimezone(String value) {
         String timezone = DomainChecks.requireText(value, "preferredTimezone");
         return ZoneId.of(timezone).getId();
     }
+
 
 }

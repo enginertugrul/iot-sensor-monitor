@@ -9,6 +9,9 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HexFormat;
 
+
+
+
 @Component
 public class SecureRandomSensorIngestionTokenGenerator implements SensorIngestionTokenGenerator {
 
@@ -16,22 +19,27 @@ public class SecureRandomSensorIngestionTokenGenerator implements SensorIngestio
 
     private final SecureRandom secureRandom = new SecureRandom();
 
+
+
+
     @Override
     public GeneratedSensorIngestionToken generate() {
+
         byte[] bytes = new byte[TOKEN_BYTE_LENGTH];
         secureRandom.nextBytes(bytes);
 
-        String rawToken = Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(bytes);
-
+        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         String tokenHash = hash(rawToken);
 
         return new GeneratedSensorIngestionToken(rawToken, tokenHash);
     }
 
+
+
+
     @Override
     public String hash(String rawToken) {
+
         String normalizedToken = normalize(rawToken);
 
         try {
@@ -43,6 +51,9 @@ public class SecureRandomSensorIngestionTokenGenerator implements SensorIngestio
         }
     }
 
+
+
+
     private String normalize(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             throw new IllegalArgumentException("sensor ingestion token must not be blank");
@@ -50,4 +61,6 @@ public class SecureRandomSensorIngestionTokenGenerator implements SensorIngestio
 
         return rawToken.trim();
     }
+
+
 }

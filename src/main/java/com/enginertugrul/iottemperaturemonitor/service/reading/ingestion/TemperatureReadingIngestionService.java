@@ -11,47 +11,40 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+
+
+
 @Service
 public class TemperatureReadingIngestionService {
+
 
     private final SensorIngestionAccessService sensorIngestionAccessService;
     private final SensorReadingRepository readingRepository;
     private final AlertEvaluationService alertEvaluationService;
 
-    public TemperatureReadingIngestionService(
-            SensorIngestionAccessService sensorIngestionAccessService,
-            SensorReadingRepository readingRepository,
-            AlertEvaluationService alertEvaluationService
-    ) {
+
+
+    public TemperatureReadingIngestionService(SensorIngestionAccessService sensorIngestionAccessService, SensorReadingRepository readingRepository, AlertEvaluationService alertEvaluationService) {
         this.sensorIngestionAccessService = sensorIngestionAccessService;
         this.readingRepository = readingRepository;
         this.alertEvaluationService = alertEvaluationService;
     }
 
+
+
+
     @Transactional
-    public void ingest(
-            String sensorToken,
-            double celsiusValue
-    ) {
-        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(
-                sensorToken,
-                SensorType.TEMPERATURE
-        );
+    public void ingest(String sensorToken, double celsiusValue) {
+
+        Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken, SensorType.TEMPERATURE);
 
         Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {
-            reading = SensorReading.temperature(
-                    sensor,
-                    celsiusValue,
-                    recordedAt
-            );
+            reading = SensorReading.temperature(sensor, celsiusValue, recordedAt);
         } catch (IllegalArgumentException exception) {
-            throw new InvalidSensorReadingException(
-                    exception.getMessage(),
-                    exception
-            );
+            throw new InvalidSensorReadingException(exception.getMessage(), exception);
         }
 
         sensor.markSeen(recordedAt);

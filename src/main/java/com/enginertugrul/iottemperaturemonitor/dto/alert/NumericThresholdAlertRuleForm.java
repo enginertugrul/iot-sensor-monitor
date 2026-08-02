@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+
+
+
 @Getter
 @Setter
 public class NumericThresholdAlertRuleForm {
@@ -16,10 +19,7 @@ public class NumericThresholdAlertRuleForm {
     @NotNull(message = "{alertRules.sensorRequired}")
     private Long sensorId;
 
-    @NotNull(
-            message =
-                    "{alertRules.comparisonOperatorRequired}"
-    )
+    @NotNull(message ="{alertRules.comparisonOperatorRequired}")
     private ComparisonOperator comparisonOperator;
 
     @NotNull(message = "{alertRules.thresholdRequired}")
@@ -27,13 +27,7 @@ public class NumericThresholdAlertRuleForm {
     private Double thresholdValue;
 
     @NotNull(message = "{alertRules.cooldownRequired}")
-    @Min(
-            value = AlertCooldownPolicy.MIN_MINUTES,
-            message = "{alertRules.cooldownMin}"
-    )
-    @Max(
-            value = AlertCooldownPolicy.MAX_MINUTES,
-            message = "{alertRules.cooldownMax}"
-    )
+    @Min(value = AlertCooldownPolicy.MIN_MINUTES, message = "{alertRules.cooldownMin}")
+    @Max(value = AlertCooldownPolicy.MAX_MINUTES, message = "{alertRules.cooldownMax}")
     private Integer cooldownMinutes;
 }

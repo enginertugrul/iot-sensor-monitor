@@ -7,8 +7,12 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+
+
 @Repository
 public interface SensorRepository extends JpaRepository<Sensor, Long> {
+
+
 
     List<Sensor> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
@@ -19,4 +23,6 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
     boolean existsByOwnerIdAndNameIgnoreCaseAndIdNot(Long ownerId,String name,Long sensorId);
 
     Optional<Sensor> findByIngestionTokenHash(String ingestionTokenHash);
+
+
 }

@@ -11,6 +11,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+
+
+
 public interface AlertRuleRepository extends JpaRepository<AlertRule, Long> {
 
     @EntityGraph(attributePaths = {"sensor"})

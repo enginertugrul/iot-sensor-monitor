@@ -6,12 +6,15 @@ import com.enginertugrul.iottemperaturemonitor.entity.user.AppUser;
 import com.enginertugrul.iottemperaturemonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iottemperaturemonitor.repository.AppUserRepository;
 import com.enginertugrul.iottemperaturemonitor.service.user.verification.EmailVerificationService;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
+
+
+
+
 
 @Service
 public class AppUserServiceImpl implements AppUserService {
@@ -26,6 +29,11 @@ public class AppUserServiceImpl implements AppUserService {
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationService = emailVerificationService;
     }
+
+
+
+
+
 
     @Override
     @Transactional
@@ -53,6 +61,10 @@ public class AppUserServiceImpl implements AppUserService {
 
     }
 
+
+
+
+
     @Override
     @Transactional(readOnly = true)
     public UserPreferencesForm getPreferences(Long userId) {
@@ -68,19 +80,21 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
 
+
+
     @Override
     @Transactional
-    @Modifying
     public void updatePreferences(Long userId, UserPreferencesForm userPreferencesForm) {
 
         AppUser user = appUserRepository.findById(userId).orElseThrow(()-> new NoSuchElementException("User not found"));
 
-        user.updatePreferences(userPreferencesForm.getPreferredLanguage()
-        , userPreferencesForm.getTemperatureUnit()
-        , userPreferencesForm.getPreferredTimezone()
-        );
+        user.updatePreferences(userPreferencesForm.getPreferredLanguage(), userPreferencesForm.getTemperatureUnit(), userPreferencesForm.getPreferredTimezone());
 
     }
+
+
+
+
 
     @Transactional(readOnly = true)
     protected void ensureEmailIsAvailable(String normalizedEmail) {
@@ -90,6 +104,8 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
 
+
+
     @Override
     @Transactional(readOnly = true)
     public TemperatureUnit getPreferredTemperatureUnit(Long userId) {
@@ -97,5 +113,8 @@ public class AppUserServiceImpl implements AppUserService {
                 .map(AppUser::getPreferredTemperatureUnit)
                 .orElseThrow( ()-> new NoSuchElementException("User not found"));
     }
+
+
+
 }
 
