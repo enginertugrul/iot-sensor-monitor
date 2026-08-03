@@ -5,46 +5,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{preferences.title}">
-        Preferences | IoT Sensor Monitor
+    <title th:text="#{accountSettings.title}">
+        Account Settings | IoT Sensor Monitor
     </title>
     <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
     <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
     <link rel="stylesheet" th:href="@{/css/components/forms.css}">
-    <link rel="stylesheet" th:href="@{/css/pages/preferences.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/account-settings.css}">
 </head>
 
 <body>
 
-<header th:replace="~{fragments/app-shell :: authenticatedHeader('preferences', ${null})}"></header>
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('settings', ${null})}"></header>
 
-<main id="main-content" class="app-main app-main--preferences" tabindex="-1">
-    <header class="preferences-page-header">
-        <p class="preferences-eyebrow"
-           th:text="#{preferences.eyebrow}">
-            Account settings
+<main id="main-content" class="app-main app-main--account-settings" tabindex="-1">
+    <header class="account-settings-page-header">
+        <p class="account-settings-eyebrow"
+           th:text="#{accountSettings.eyebrow}">
+            Account management
         </p>
 
-        <h1 id="preferences-title"
-            th:text="#{preferences.heading}">
-            Preferences
+        <h1 id="account-settings-title"
+            th:text="#{accountSettings.heading}">
+            Account Settings
         </h1>
 
-        <p class="preferences-page-header__description"
-           th:text="#{preferences.description}">
-            Choose how language, temperature values, and timestamps are
-            presented throughout the application.
+        <p class="account-settings-page-header__description"
+           th:text="#{accountSettings.description}">
+            Manage your account security and choose how language, temperature
+            values, and timestamps are displayed.
         </p>
 
-        <div class="form-actions preferences-page-header__actions">
+        <div class="form-actions account-settings-page-header__actions">
             <a class="form-button form-button--secondary"
-               th:href="@{/user/preferences/password}"
-               th:text="#{preferences.changePassword}">
+               th:href="@{/user/settings/password}"
+               th:text="#{accountSettings.changePassword}">
                 Change Password
             </a>
         </div>
-
     </header>
 
     <p class="form-status form-status--success"
@@ -71,7 +70,7 @@
         </header>
 
         <form class="preferences-form form-stack"
-              th:action="@{/user/preferences}"
+              th:action="@{/user/settings}"
               th:object="${form}"
               method="post">
             <input type="hidden"

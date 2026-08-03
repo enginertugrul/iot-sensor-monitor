@@ -1,15 +1,15 @@
-.app-main--preferences {
+.app-main--account-settings {
     display: grid;
     max-width: 64rem;
     gap: var(--space-8);
 }
 
-.app-main--preferences .preferences-page-header {
+.app-main--account-settings .account-settings-page-header {
     border-bottom: 1px solid var(--color-border);
     padding: var(--space-2) 0 var(--space-6);
 }
 
-.app-main--preferences .preferences-eyebrow {
+.app-main--account-settings .account-settings-eyebrow {
     margin-bottom: var(--space-2);
     color: var(--color-info);
     font-size: var(--font-size-xs);
@@ -18,22 +18,22 @@
     text-transform: uppercase;
 }
 
-.app-main--preferences .preferences-page-header h1 {
+.app-main--account-settings .account-settings-page-header h1 {
     margin-bottom: var(--space-3);
 }
 
-.app-main--preferences .preferences-page-header__description {
+.app-main--account-settings .account-settings-page-header__description {
     max-width: 48rem;
     margin-bottom: 0;
     color: var(--color-text-soft);
     font-size: var(--font-size-lg);
 }
 
-.app-main--preferences .preferences-page-header__actions {
+.app-main--account-settings .account-settings-page-header__actions {
     margin-top: var(--space-5);
 }
 
-.app-main--preferences .preferences-panel {
+.app-main--account-settings .preferences-panel {
     position: relative;
     min-width: 0;
     border: 1px solid var(--color-border);
@@ -48,7 +48,7 @@
     );
 }
 
-.app-main--preferences .preferences-panel::before {
+.app-main--account-settings .preferences-panel::before {
     position: absolute;
     top: 0;
     right: 0;
@@ -63,25 +63,25 @@
     content: "";
 }
 
-.app-main--preferences .preferences-panel__header {
+.app-main--account-settings .preferences-panel__header {
     max-width: 48rem;
 }
 
-.app-main--preferences .preferences-panel__header h2 {
+.app-main--account-settings .preferences-panel__header h2 {
     margin: 0 0 var(--space-3);
     font-size: var(--font-size-2xl);
 }
 
-.app-main--preferences .preferences-panel__header p {
+.app-main--account-settings .preferences-panel__header p {
     margin-bottom: 0;
     color: var(--color-text-muted);
 }
 
-.app-main--preferences .preferences-form {
+.app-main--account-settings .preferences-form {
     margin-top: var(--space-6);
 }
 
-.app-main--preferences .preferences-field {
+.app-main--account-settings .preferences-field {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background-color: var(--color-surface-muted);
@@ -91,52 +91,52 @@
             border-color var(--transition-fast);
 }
 
-.app-main--preferences .preferences-field:focus-within {
+.app-main--account-settings .preferences-field:focus-within {
     border-color: var(--color-focus);
     background-color: var(--color-surface-hover);
 }
 
-.app-main--preferences .preferences-field .form-control {
+.app-main--account-settings .preferences-field .form-control {
     background-color: var(--color-surface);
 }
 
-.app-main--preferences .preferences-field .form-control:hover:not(:disabled),
-.app-main--preferences .preferences-field .form-control:focus-visible {
+.app-main--account-settings .preferences-field .form-control:hover:not(:disabled),
+.app-main--account-settings .preferences-field .form-control:focus-visible {
     background-color: var(--color-surface);
 }
 
-.app-main--preferences .preferences-form__actions {
+.app-main--account-settings .preferences-form__actions {
     margin-top: var(--space-1);
     border-top: 1px solid var(--color-border);
     padding-top: var(--space-6);
     justify-content: space-between;
 }
 
-.app-main--preferences .preferences-save-note {
+.app-main--account-settings .preferences-save-note {
     max-width: 30rem;
     margin: 0;
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
 }
 
-.app-main--preferences .preferences-form__actions .form-button {
+.app-main--account-settings .preferences-form__actions .form-button {
     min-width: 12rem;
 }
 
 @media (max-width: 40rem) {
-    .app-main--preferences {
+    .app-main--account-settings {
         gap: var(--space-6);
     }
 
-    .app-main--preferences .preferences-panel {
+    .app-main--account-settings .preferences-panel {
         padding: var(--space-5) var(--space-4);
     }
 
-    .app-main--preferences .preferences-field {
+    .app-main--account-settings .preferences-field {
         padding: var(--space-4);
     }
 
-    .app-main--preferences .preferences-save-note {
+    .app-main--account-settings .preferences-save-note {
         max-width: none;
     }
 }
