@@ -1,5 +1,6 @@
 package com.enginertugrul.iotsensormonitor.controller;
 
+import com.enginertugrul.iotsensormonitor.dto.user.AccountSettingsPageDTO;
 import com.enginertugrul.iotsensormonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
@@ -42,11 +43,7 @@ public class AccountSettingsController {
     @GetMapping
     public String getAccountSettingsPage(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
 
-        if (!model.containsAttribute("form")) {
-            model.addAttribute("form", appUserService.getPreferences(user.getAppUserId()));
-        }
-
-        addPageData(model);
+        addPageData(user.getAppUserId(), model);
         return "account-settings";
     }
 
@@ -63,7 +60,7 @@ public class AccountSettingsController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            addPageData(model);
+            addPageData(user.getAppUserId(), model);
             return "account-settings";
         }
 
@@ -77,10 +74,17 @@ public class AccountSettingsController {
 
 
 
-    private void addPageData(Model model) {
-        model.addAttribute("languages", PreferredLanguage.values());
-        model.addAttribute("temperatureUnits", TemperatureUnit.values());
-        model.addAttribute("timezoneOptions", timezoneCatalog.getTimezoneOptions());
+    private void addPageData(Long userId,Model model) {
+        AccountSettingsPageDTO page = appUserService.getAccountSettingsPage(userId);
+
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form",page.form());
+        }
+
+        model.addAttribute("accountDetails",page);
+        model.addAttribute("languages",PreferredLanguage.values());
+        model.addAttribute("temperatureUnits",TemperatureUnit.values());
+        model.addAttribute("timezoneOptions",timezoneCatalog.getTimezoneOptions());
     }
 
 
