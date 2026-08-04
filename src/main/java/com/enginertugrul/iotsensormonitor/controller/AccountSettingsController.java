@@ -1,5 +1,6 @@
 package com.enginertugrul.iotsensormonitor.controller;
 
+import com.enginertugrul.iotsensormonitor.dto.user.AccountSettingsPageDTO;
 import com.enginertugrul.iotsensormonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
@@ -21,8 +22,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
 @Controller
-@RequestMapping("/user/preferences")
-public class UserPreferencesController {
+@RequestMapping("/user/settings")
+public class AccountSettingsController {
 
 
     private final AppUserService appUserService;
@@ -30,7 +31,7 @@ public class UserPreferencesController {
 
 
 
-    public UserPreferencesController(AppUserService appUserService, TimezoneCatalog timezoneCatalog) {
+    public AccountSettingsController(AppUserService appUserService, TimezoneCatalog timezoneCatalog) {
         this.appUserService = appUserService;
         this.timezoneCatalog = timezoneCatalog;
     }
@@ -40,14 +41,10 @@ public class UserPreferencesController {
 
 
     @GetMapping
-    public String getPreferencesPage(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
+    public String getAccountSettingsPage(@AuthenticationPrincipal AuthenticatedUser user, Model model) {
 
-        if (!model.containsAttribute("form")) {
-            model.addAttribute("form", appUserService.getPreferences(user.getAppUserId()));
-        }
-
-        addPageData(model);
-        return "preferences";
+        addPageData(user.getAppUserId(), model);
+        return "account-settings";
     }
 
 
@@ -63,13 +60,13 @@ public class UserPreferencesController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            addPageData(model);
-            return "preferences";
+            addPageData(user.getAppUserId(), model);
+            return "account-settings";
         }
 
         appUserService.updatePreferences(user.getAppUserId(), form);
         redirectAttributes.addFlashAttribute("preferencesUpdated", true);
-        return "redirect:/user/preferences";
+        return "redirect:/user/settings";
     }
 
 
@@ -77,10 +74,17 @@ public class UserPreferencesController {
 
 
 
-    private void addPageData(Model model) {
-        model.addAttribute("languages", PreferredLanguage.values());
-        model.addAttribute("temperatureUnits", TemperatureUnit.values());
-        model.addAttribute("timezoneOptions", timezoneCatalog.getTimezoneOptions());
+    private void addPageData(Long userId,Model model) {
+        AccountSettingsPageDTO page = appUserService.getAccountSettingsPage(userId);
+
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form",page.form());
+        }
+
+        model.addAttribute("accountDetails",page);
+        model.addAttribute("languages",PreferredLanguage.values());
+        model.addAttribute("temperatureUnits",TemperatureUnit.values());
+        model.addAttribute("timezoneOptions",timezoneCatalog.getTimezoneOptions());
     }
 
 

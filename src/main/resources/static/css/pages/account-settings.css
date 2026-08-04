@@ -1,0 +1,268 @@
+.app-main--account-settings {
+    display: grid;
+    max-width: var(--content-width-wide);
+    gap: var(--space-8);
+}
+
+.app-main--account-settings .account-settings-page-header {
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-2) 0 var(--space-6);
+}
+
+.app-main--account-settings .account-settings-eyebrow {
+    margin-bottom: var(--space-2);
+    color: var(--color-info);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.app-main--account-settings .account-settings-page-header h1 {
+    margin-bottom: var(--space-3);
+}
+
+.app-main--account-settings .account-settings-page-header__description {
+    max-width: 48rem;
+    margin-bottom: 0;
+    color: var(--color-text-soft);
+    font-size: var(--font-size-lg);
+}
+
+.app-main--account-settings .account-settings-layout {
+    display: grid;
+    grid-template-columns: minmax(16rem,19rem) minmax(0,1fr);
+    align-items: start;
+    gap: var(--space-8);
+}
+
+.app-main--account-settings .account-profile-card,
+.app-main--account-settings .preferences-panel {
+    position: relative;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.app-main--account-settings .account-profile-card::before,
+.app-main--account-settings .preferences-panel::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: var(--space-1);
+    background: linear-gradient(90deg,var(--color-primary),var(--color-info));
+    content: "";
+}
+
+.app-main--account-settings .account-profile-card {
+    padding: var(--space-6);
+}
+
+.app-main--account-settings .account-profile-card__header {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
+    text-align: center;
+}
+
+.app-main--account-settings .account-profile-card__avatar {
+    width: clamp(7rem,14vw,9rem);
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-muted);
+    box-shadow: var(--shadow-md);
+    object-fit: cover;
+}
+
+.app-main--account-settings .account-profile-card__header h2 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+}
+
+.app-main--account-settings .account-profile-card__details {
+    width: 100%;
+    max-width: 36rem;
+    margin: var(--space-6) auto 0;
+}
+
+.app-main--account-settings .account-profile-card__detail {
+    display: grid;
+    border-top: 1px solid var(--color-border);
+    gap: var(--space-2);
+    padding: var(--space-4) 0;
+    text-align: center;
+}
+
+.app-main--account-settings .account-profile-card__detail dt {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.app-main--account-settings .account-profile-card__value {
+    min-width: 0;
+    margin: 0;
+    color: var(--color-text-soft);
+    font-weight: var(--font-weight-semibold);
+}
+
+.app-main--account-settings .account-profile-card__email-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.app-main--account-settings .account-profile-card__email {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.app-main--account-settings .account-profile-card__badge {
+    display: inline-flex;
+    min-height: 1.875rem;
+    border: 1px solid;
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-1) var(--space-3);
+    align-items: center;
+    white-space: nowrap;
+}
+
+.app-main--account-settings .account-profile-card__badge--verified {
+    border-color: var(--color-success);
+    background-color: var(--color-success-surface);
+    color: var(--color-success-text);
+}
+
+.app-main--account-settings .account-profile-card__badge--unverified {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-surface);
+    color: var(--color-warning-text);
+}
+
+.app-main--account-settings .account-profile-card__value time {
+    font-variant-numeric: tabular-nums;
+}
+
+.app-main--account-settings .account-profile-card__actions {
+    display: grid;
+    max-width: 20rem;
+    margin: var(--space-2) auto 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-5);
+}
+
+.app-main--account-settings .account-profile-card__actions .form-button {
+    width: 100%;
+}
+
+.app-main--account-settings .preferences-panel {
+    padding: clamp(var(--space-5),4vw,var(--space-8));
+}
+
+.app-main--account-settings .preferences-panel__header {
+    max-width: 48rem;
+}
+
+.app-main--account-settings .preferences-panel__header h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-2xl);
+}
+
+.app-main--account-settings .preferences-panel__header p {
+    margin-bottom: 0;
+    color: var(--color-text-muted);
+}
+
+.app-main--account-settings .preferences-form {
+    margin-top: var(--space-6);
+}
+
+.app-main--account-settings .preferences-field {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+    padding: var(--space-5);
+    transition: background-color var(--transition-fast),border-color var(--transition-fast);
+}
+
+.app-main--account-settings .preferences-field:focus-within {
+    border-color: var(--color-focus);
+    background-color: var(--color-surface-hover);
+}
+
+.app-main--account-settings .preferences-field .form-control {
+    background-color: var(--color-surface);
+}
+
+.app-main--account-settings .preferences-field .form-control:hover:not(:disabled),
+.app-main--account-settings .preferences-field .form-control:focus-visible {
+    background-color: var(--color-surface);
+}
+
+.app-main--account-settings .preferences-form__actions {
+    margin-top: var(--space-1);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-6);
+    justify-content: space-between;
+}
+
+.app-main--account-settings .preferences-save-note {
+    max-width: 30rem;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.app-main--account-settings .preferences-form__actions .form-button {
+    min-width: 12rem;
+}
+
+@media (max-width: 60rem) {
+    .app-main--account-settings .account-settings-layout {
+        grid-template-columns: minmax(0,1fr);
+    }
+}
+
+@media (max-width: 40rem) {
+    .app-main--account-settings {
+        gap: var(--space-6);
+    }
+
+    .app-main--account-settings .account-settings-layout {
+        gap: var(--space-6);
+    }
+
+    .app-main--account-settings .account-profile-card {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    .app-main--account-settings .account-profile-card__avatar {
+        width: 7rem;
+    }
+
+    .app-main--account-settings .account-profile-card__actions {
+        max-width: none;
+    }
+
+    .app-main--account-settings .preferences-panel {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    .app-main--account-settings .preferences-field {
+        padding: var(--space-4);
+    }
+
+    .app-main--account-settings .preferences-save-note {
+        max-width: none;
+    }
+}

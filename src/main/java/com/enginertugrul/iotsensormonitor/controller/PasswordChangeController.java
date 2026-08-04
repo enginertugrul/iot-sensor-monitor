@@ -31,11 +31,11 @@ import java.util.Locale;
 
 
 @Controller
-@RequestMapping("/user/preferences/password")
+@RequestMapping("/user/settings/password")
 public class PasswordChangeController {
 
     private static final String VIEW_NAME = "change-password";
-    private static final String REDIRECT_TO_PASSWORD_CHANGE = "redirect:/user/preferences/password";
+    private static final String REDIRECT_TO_PASSWORD_CHANGE = "redirect:/user/settings/password";
 
     private final PasswordChangeService passwordChangeService;
     private final SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();

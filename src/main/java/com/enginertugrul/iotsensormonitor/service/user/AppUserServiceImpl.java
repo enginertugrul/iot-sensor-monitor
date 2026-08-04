@@ -1,6 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.user;
 
 import com.enginertugrul.iotsensormonitor.dto.auth.RegisterUserForm;
+import com.enginertugrul.iotsensormonitor.dto.user.AccountSettingsPageDTO;
 import com.enginertugrul.iotsensormonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
@@ -10,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
 
 
@@ -67,7 +70,7 @@ public class AppUserServiceImpl implements AppUserService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserPreferencesForm getPreferences(Long userId) {
+    public AccountSettingsPageDTO getAccountSettingsPage(Long userId) {
 
         AppUser user = appUserRepository.findById(userId).orElseThrow(()-> new NoSuchElementException("User not found"));
 
@@ -76,7 +79,9 @@ public class AppUserServiceImpl implements AppUserService {
         form.setTemperatureUnit(user.getPreferredTemperatureUnit());
         form.setPreferredTimezone(user.getPreferredTimezone());
 
-        return form;
+        ZonedDateTime registeredAt = user.getCreatedAt().atZone(ZoneId.of(user.getPreferredTimezone()));
+
+        return new AccountSettingsPageDTO(form, user.getEmail(), user.isEmailVerified(), registeredAt);
     }
 
 

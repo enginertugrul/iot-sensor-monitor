@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{accountSettings.title}">
+        Account Settings | IoT Sensor Monitor
+    </title>
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/account-settings.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('settings', ${null})}"></header>
+
+<main id="main-content" class="app-main app-main--account-settings" tabindex="-1">
+    <header class="account-settings-page-header">
+        <p class="account-settings-eyebrow"
+           th:text="#{accountSettings.eyebrow}">
+            Account management
+        </p>
+
+        <h1 id="account-settings-title"
+            th:text="#{accountSettings.heading}">
+            Account Settings
+        </h1>
+
+        <p class="account-settings-page-header__description"
+           th:text="#{accountSettings.description}">
+            Review your account details, manage security, and choose how the
+            application displays information.
+        </p>
+    </header>
+
+    <p class="form-status form-status--success"
+       role="status"
+       aria-live="polite"
+       aria-atomic="true"
+       th:if="${preferencesUpdated}"
+       th:text="#{preferences.updated}">
+        Preferences updated successfully.
+    </p>
+
+    <div class="account-settings-layout">
+        <section class="account-profile-card"
+                 aria-labelledby="account-profile-heading">
+            <header class="account-profile-card__header">
+                <img class="account-profile-card__avatar"
+                     src="/images/user.png"
+                     th:src="@{/images/user.png}"
+                     alt=""
+                     width="512"
+                     height="512"
+                     decoding="async">
+
+                <h2 id="account-profile-heading"
+                    th:text="#{accountSettings.profileHeading}">
+                    Account profile
+                </h2>
+            </header>
+
+            <dl class="account-profile-card__details">
+                <div class="account-profile-card__detail">
+                    <dt th:text="#{accountSettings.email}">
+                        Email address
+                    </dt>
+
+                    <dd class="account-profile-card__value account-profile-card__email-row">
+                        <span class="account-profile-card__email"
+                              th:text="${accountDetails.email}">
+                            user@example.com
+                        </span>
+
+                        <span class="account-profile-card__badge account-profile-card__badge--verified"
+                              th:if="${accountDetails.emailVerified}"
+                              th:text="#{accountSettings.emailVerified}">
+                            Verified
+                        </span>
+
+                        <span class="account-profile-card__badge account-profile-card__badge--unverified"
+                              th:unless="${accountDetails.emailVerified}"
+                              th:text="#{accountSettings.emailUnverified}">
+                            Not verified
+                        </span>
+                    </dd>
+                </div>
+
+                <div class="account-profile-card__detail">
+                    <dt th:text="#{accountSettings.registeredSince}">
+                        Registered since
+                    </dt>
+
+                    <dd class="account-profile-card__value">
+                        <time th:datetime="${#temporals.format(accountDetails.registeredAt,'yyyy-MM-dd')}"
+                              th:text="${#temporals.format(accountDetails.registeredAt,'d MMMM yyyy')}">
+                            4 August 2026
+                        </time>
+                    </dd>
+                </div>
+            </dl>
+
+            <div class="account-profile-card__actions">
+                <a class="form-button form-button--secondary"
+                   th:href="@{/user/settings/password}"
+                   th:text="#{accountSettings.changePassword}">
+                    Change Password
+                </a>
+            </div>
+        </section>
+
+        <section class="preferences-panel"
+                 aria-labelledby="preferences-settings-heading">
+            <header class="preferences-panel__header">
+                <h2 id="preferences-settings-heading"
+                    th:text="#{preferences.panelHeading}">
+                    Display and regional settings
+                </h2>
+
+                <p th:text="#{preferences.panelDescription}">
+                    These settings apply to your account and can be changed at
+                    any time.
+                </p>
+            </header>
+
+            <form class="preferences-form form-stack"
+                  th:action="@{/user/settings}"
+                  th:object="${form}"
+                  method="post">
+                <input type="hidden"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+
+                <div class="form-grid form-grid--two-columns">
+                    <div class="form-field preferences-field">
+                        <label class="form-label"
+                               for="preferredLanguage"
+                               th:text="#{preferences.language}">
+                            Preferred Language
+                        </label>
+
+                        <select class="form-control"
+                                id="preferredLanguage"
+                                th:field="*{preferredLanguage}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('preferredLanguage')}"
+                                th:aria-describedby="${#fields.hasErrors('preferredLanguage')
+                                    ? 'preferred-language-help preferred-language-error'
+                                    : 'preferred-language-help'}"
+                                required>
+                            <option th:each="language : ${languages}"
+                                    th:value="${language}"
+                                    th:text="${#messages.msg(
+                                        'language.' + language.name()
+                                    )}">
+                                English
+                            </option>
+                        </select>
+
+                        <p class="form-help"
+                           id="preferred-language-help"
+                           th:text="#{preferences.languageHelp}">
+                            Controls the language used across your account pages.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="preferred-language-error"
+                             th:if="${#fields.hasErrors('preferredLanguage')}"
+                             th:errors="*{preferredLanguage}">
+                            Preferred language error
+                        </div>
+                    </div>
+
+                    <div class="form-field preferences-field">
+                        <label class="form-label"
+                               for="temperatureUnit"
+                               th:text="#{preferences.temperatureUnit}">
+                            Preferred Temperature Unit
+                        </label>
+
+                        <select class="form-control"
+                                id="temperatureUnit"
+                                th:field="*{temperatureUnit}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('temperatureUnit')}"
+                                th:aria-describedby="${#fields.hasErrors('temperatureUnit')
+                                    ? 'temperature-unit-help temperature-unit-error'
+                                    : 'temperature-unit-help'}"
+                                required>
+                            <option th:each="unit : ${temperatureUnits}"
+                                    th:value="${unit}"
+                                    th:text="${#messages.msg(
+                                        'temperatureUnit.' + unit.name()
+                                    )}">
+                                Celsius
+                            </option>
+                        </select>
+
+                        <p class="form-help"
+                           id="temperature-unit-help"
+                           th:text="#{preferences.temperatureUnitHelp}">
+                            Controls the unit used for temperature readings,
+                            statistics, and alert thresholds.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="temperature-unit-error"
+                             th:if="${#fields.hasErrors('temperatureUnit')}"
+                             th:errors="*{temperatureUnit}">
+                            Preferred temperature unit error
+                        </div>
+                    </div>
+
+                    <div class="form-field form-field--full preferences-field">
+                        <label class="form-label"
+                               for="preferredTimezone"
+                               th:text="#{preferences.timezone}">
+                            Preferred Timezone
+                        </label>
+
+                        <select class="form-control"
+                                id="preferredTimezone"
+                                th:field="*{preferredTimezone}"
+                                th:errorclass="form-control--invalid"
+                                th:aria-invalid="${#fields.hasErrors('preferredTimezone')}"
+                                th:aria-describedby="${#fields.hasErrors('preferredTimezone')
+                                    ? 'preferred-timezone-help preferred-timezone-error'
+                                    : 'preferred-timezone-help'}"
+                                required>
+                            <option th:each="timezoneOption : ${timezoneOptions}"
+                                    th:value="${timezoneOption.id}"
+                                    th:text="${timezoneOption.displayName}">
+                                Europe/Istanbul
+                            </option>
+                        </select>
+
+                        <p class="form-help"
+                           id="preferred-timezone-help"
+                           th:text="#{preferences.timezoneHelp}">
+                            Controls the local time used when reading timestamps
+                            are displayed.
+                        </p>
+
+                        <div class="form-feedback form-feedback--error"
+                             id="preferred-timezone-error"
+                             th:if="${#fields.hasErrors('preferredTimezone')}"
+                             th:errors="*{preferredTimezone}">
+                            Preferred timezone error
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions preferences-form__actions">
+                    <p class="preferences-save-note"
+                       th:text="#{preferences.saveNote}">
+                        Your changes take effect after you save.
+                    </p>
+
+                    <button class="form-button form-button--primary"
+                            type="submit"
+                            th:text="#{preferences.save}">
+                        Save Preferences
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+<script th:src="@{/js/components/focus-invalid-control.js}"></script>
+
+</body>
+</html>
