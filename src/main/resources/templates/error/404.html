@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,follow">
+    <title th:text="#{error.notFound.pageTitle}">
+        Page Not Found | IoT Sensor Monitor
+    </title>
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/error.css}">
+</head>
+
+<body class="error-page">
+
+<main id="main-content" class="app-main--error">
+    <section class="not-found-card"
+             aria-labelledby="not-found-title"
+             aria-describedby="not-found-description">
+        <div class="not-found-card__visual" aria-hidden="true">
+            <img class="not-found-card__logo"
+                 src="/images/app-logo.png"
+                 th:src="@{/images/app-logo.png}"
+                 width="512"
+                 height="512"
+                 alt=""
+                 decoding="async">
+        </div>
+
+        <div class="not-found-card__content">
+            <p class="not-found-card__brand"
+               th:text="#{app.title}">
+                IoT Sensor Monitor
+            </p>
+
+            <p class="not-found-card__status"
+               th:text="#{error.notFound.status}">
+                Error 404
+            </p>
+
+            <h1 id="not-found-title"
+                th:text="#{error.notFound.heading}">
+                We couldn't find that page
+            </h1>
+
+            <p id="not-found-description"
+               class="not-found-card__description"
+               th:text="#{error.notFound.description}">
+                The address may be incorrect, or the page may have moved. Return home to continue monitoring your sensors.
+            </p>
+
+            <div class="not-found-card__actions">
+                <a class="form-button form-button--primary"
+                   href="/"
+                   th:href="@{/}"
+                   th:text="#{error.notFound.home}">
+                    Return home
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>
