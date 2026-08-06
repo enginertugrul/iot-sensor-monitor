@@ -200,12 +200,16 @@
                 <div class="form-field form-field--full">
                     <label class="form-label"
                            for="timezone"
+                           th:for="${sensorTimezoneLocked
+                               ? 'timezone-locked'
+                               : 'timezone'}"
                            th:text="#{sensors.timezone}">
                         Timezone
                     </label>
 
                     <select class="form-control"
                             id="timezone"
+                            th:unless="${sensorTimezoneLocked}"
                             th:field="*{timezone}"
                             th:errorclass="form-control--invalid"
                             th:aria-invalid="${#fields.hasErrors('timezone')}"
@@ -220,9 +224,31 @@
                         </option>
                     </select>
 
+                    <input class="form-control"
+                           id="timezone-locked"
+                           type="text"
+                           th:if="${sensorTimezoneLocked}"
+                           th:classappend="${#fields.hasErrors('timezone')}
+                               ? 'form-control--invalid'
+                               : ''"
+                           th:value="${sensorTimezoneDisplayName}"
+                           th:aria-invalid="${#fields.hasErrors('timezone')}"
+                           th:aria-describedby="${#fields.hasErrors('timezone')
+                               ? 'timezone-help timezone-error'
+                               : 'timezone-help'}"
+                           readonly
+                           aria-readonly="true">
+
+                    <input type="hidden"
+                           th:if="${sensorTimezoneLocked}"
+                           name="timezone"
+                           th:value="${sensorTimezone}">
+
                     <p class="form-help"
                        id="timezone-help"
-                       th:text="#{sensors.timezoneHelp}">
+                       th:text="${sensorTimezoneLocked
+                           ? #messages.msg('sensors.timezoneLockedHelp')
+                           : #messages.msg('sensors.timezoneHelp')}">
                         Readings from this sensor will be presented in this timezone.
                     </p>
 
@@ -232,7 +258,9 @@
                          th:errors="*{timezone}">
                         Timezone error
                     </div>
+
                 </div>
+
             </div>
 
             <div class="form-actions">

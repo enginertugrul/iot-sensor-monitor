@@ -27,7 +27,7 @@ public class SensorIngestionAccessService {
 
         String hashedToken = tokenGenerator.hash(rawToken);
 
-        Sensor sensor = sensorRepository.findByIngestionTokenHash(hashedToken)
+        Sensor sensor = sensorRepository.findByIngestionTokenHashForUpdate(hashedToken)
                 .orElseThrow(InvalidSensorTokenException::new);
 
         if (!sensor.isActive()) {

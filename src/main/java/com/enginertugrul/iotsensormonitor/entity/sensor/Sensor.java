@@ -2,6 +2,7 @@ package com.enginertugrul.iotsensormonitor.entity.sensor;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
 import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
+import com.enginertugrul.iotsensormonitor.exception.SensorTimezoneLockedException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -100,11 +101,18 @@ public class Sensor {
             String homeLocation,
             String timezone
     ) {
+
+        String normalizedTimezone = normalizeTimezone(timezone);
+
+        if (hasRecordedReadings() && !this.timezone.equals(normalizedTimezone)) {
+            throw new SensorTimezoneLockedException();
+        }
+
         this.name = DomainChecks.requireText(name, "name");
         this.city = DomainChecks.requireText(city, "city");
         this.district = DomainChecks.requireText(district, "district");
         this.homeLocation = DomainChecks.requireText(homeLocation, "homeLocation");
-        this.timezone = normalizeTimezone(timezone);
+        this.timezone = normalizedTimezone;
         this.updatedAt = Instant.now();
     }
 
@@ -173,6 +181,11 @@ public class Sensor {
 
     public void markSeen(Instant seenAt) {
         this.lastSeenAt = seenAt;
+    }
+
+
+    public boolean hasRecordedReadings() {
+        return lastSeenAt != null;
     }
 
 
