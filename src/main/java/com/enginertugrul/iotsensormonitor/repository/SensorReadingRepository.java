@@ -14,9 +14,6 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
 
-    @Modifying
-    @Query("DELETE FROM SensorReading r WHERE r.recordedAt < :cutoffTimestamp")
-    void deleteOlderThan(Instant cutoffTimestamp);
 
     List<SensorReading> findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(Long sensorId, Long ownerId);
 
