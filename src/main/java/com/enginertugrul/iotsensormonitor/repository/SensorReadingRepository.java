@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SensorReadingRepository extends JpaRepository<SensorReading, Long> {
@@ -118,6 +119,45 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
             @Param("endExclusive") Instant endExclusive,
             @Param("timezone") String timezone
     );
+
+
+
+
+    @Query("""
+            SELECT MIN(reading.recordedAt)
+            FROM SensorReading reading
+            WHERE reading.sensor.id = :sensorId
+            """)
+    Optional<Instant> findEarliestRecordedAt(@Param("sensorId") Long sensorId);
+
+
+
+    @NativeQuery("""
+            SELECT
+                COUNT(*) AS "sourceSampleCount",
+                COUNT(sr.numeric_value) AS "numericSampleCount",
+                COUNT(sr.boolean_value) AS "booleanSampleCount",
+                COUNT(sr.unit) AS "unitSampleCount",
+                MIN(sr.unit) AS "minimumUnit",
+                MAX(sr.unit) AS "maximumUnit",
+                SUM(CAST(sr.numeric_value AS NUMERIC)) AS "numericSum",
+                MIN(sr.numeric_value) AS "numericMinimum",
+                MAX(sr.numeric_value) AS "numericMaximum",
+                COUNT(*) FILTER (
+                    WHERE sr.boolean_value IS TRUE
+                ) AS "trueSampleCount"
+            FROM sensor_readings sr
+            WHERE sr.sensor_id = :sensorId
+              AND sr.recorded_at >= :bucketStart
+              AND sr.recorded_at < :bucketEnd
+            """)
+    RawSensorReadingAggregateProjection aggregateForHourlySummary(
+            @Param("sensorId") Long sensorId,
+            @Param("bucketStart") Instant bucketStart,
+            @Param("bucketEnd") Instant bucketEnd
+    );
+
+
 
 
 

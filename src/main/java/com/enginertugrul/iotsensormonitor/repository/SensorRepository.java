@@ -20,6 +20,27 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
     List<Sensor> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
+
+    @Query("""
+            SELECT sensor.id
+            FROM Sensor sensor
+            WHERE sensor.lastSeenAt IS NOT NULL
+            ORDER BY sensor.id
+            """)
+    List<Long> findIdsWithRecordedReadingsOrderById();
+
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT sensor
+            FROM Sensor sensor
+            WHERE sensor.id = :sensorId
+            """)
+    Optional<Sensor> findByIdForUpdate(@Param("sensorId") Long sensorId);
+
+
+
     Optional<Sensor> findByIdAndOwnerId(Long id, Long ownerId);
 
 
