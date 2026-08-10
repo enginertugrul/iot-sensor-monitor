@@ -148,13 +148,13 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
                 ) AS "trueSampleCount"
             FROM sensor_readings sr
             WHERE sr.sensor_id = :sensorId
-              AND sr.recorded_at >= :bucketStart
-              AND sr.recorded_at < :bucketEnd
+              AND sr.recorded_at >= :startInclusive
+              AND sr.recorded_at < :endExclusive
             """)
-    RawSensorReadingAggregateProjection aggregateForHourlySummary(
+    RawSensorReadingAggregateProjection aggregateForSummaryRange(
             @Param("sensorId") Long sensorId,
-            @Param("bucketStart") Instant bucketStart,
-            @Param("bucketEnd") Instant bucketEnd
+            @Param("startInclusive") Instant startInclusive,
+            @Param("endExclusive") Instant endExclusive
     );
 
 

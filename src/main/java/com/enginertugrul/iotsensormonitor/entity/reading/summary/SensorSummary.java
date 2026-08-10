@@ -82,7 +82,6 @@ public abstract class SensorSummary {
         SensorSummaryAggregate requiredAggregate = Objects.requireNonNull(aggregate,"aggregate must not be null");
         Instant requiredRefreshedAt = Objects.requireNonNull(refreshedAt,"refreshedAt must not be null");
 
-        requiredAggregate.requireCompatibleWith(sensor.getType());
 
         if (requiredRefreshedAt.isBefore(this.refreshedAt)) {
             throw new IllegalArgumentException("refreshedAt must not move backwards");
@@ -110,6 +109,19 @@ public abstract class SensorSummary {
 
     public boolean isMotion() {
         return unit == null;
+    }
+
+
+
+    public SensorSummaryAggregate toAggregate() {
+
+        return SensorSummaryAggregate.restore(
+                sourceSampleCount,
+                unit,
+                numericSum,
+                numericMinimum,
+                numericMaximum,
+                trueSampleCount);
     }
 
 
@@ -143,8 +155,6 @@ public abstract class SensorSummary {
 
 
     protected void validateCommonState() {
-
-        Sensor requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
         Instant requiredBucketStart = Objects.requireNonNull(bucketStart,"bucketStart must not be null");
         Instant requiredBucketEnd = Objects.requireNonNull(bucketEnd,"bucketEnd must not be null");
         Instant requiredFinalizedAt = Objects.requireNonNull(finalizedAt,"finalizedAt must not be null");
@@ -162,15 +172,6 @@ public abstract class SensorSummary {
             throw new IllegalArgumentException("refreshedAt must not be before finalizedAt");
         }
 
-        SensorSummaryAggregate aggregate = SensorSummaryAggregate.restore(
-                sourceSampleCount,
-                unit,
-                numericSum,
-                numericMinimum,
-                numericMaximum,
-                trueSampleCount);
-
-        aggregate.requireCompatibleWith(requiredSensor.getType());
     }
 
 

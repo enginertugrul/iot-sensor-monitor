@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Repository
@@ -28,8 +29,12 @@ public interface SensorRollupCheckpointRepository extends JpaRepository<SensorRo
 
 
 
-
-    Optional<SensorRollupCheckpoint> findFirstByStageOrderByCoveredUntilAsc(RollupStage stage);
+    @Query("""
+    SELECT MIN(checkpoint.coveredUntil)
+    FROM SensorRollupCheckpoint checkpoint
+    WHERE checkpoint.stage = :stage
+    """)
+    Optional<Instant> findOldestCoveredUntilByStage(@Param("stage") RollupStage stage);
 
 
 

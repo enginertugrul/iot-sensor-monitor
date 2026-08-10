@@ -1,9 +1,7 @@
 package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
-import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
-import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -31,17 +29,15 @@ public final class SensorSummaryAggregate {
 
 
 
-    public static SensorSummaryAggregate emptyNumeric(SensorType sensorType) {
-        return numeric(sensorType,0,null,null,null);
+    public static SensorSummaryAggregate emptyNumeric(MeasurementUnit canonicalUnit) {
+        return numeric(0,canonicalUnit,null,null,null);
     }
 
 
 
 
-    public static SensorSummaryAggregate numeric(SensorType sensorType, long sourceSampleCount, BigDecimal numericSum, Double numericMinimum, Double numericMaximum) {
+    public static SensorSummaryAggregate numeric(long sourceSampleCount, MeasurementUnit canonicalUnit ,BigDecimal numericSum, Double numericMinimum, Double numericMaximum) {
 
-        SensorType requiredSensorType = Objects.requireNonNull(sensorType,"sensorType must not be null");
-        MeasurementUnit canonicalUnit = SensorMeasurementPolicy.requireCanonicalUnit(requiredSensorType);
 
         SensorSummaryAggregate aggregate = new SensorSummaryAggregate(
                 sourceSampleCount,
@@ -51,7 +47,8 @@ public final class SensorSummaryAggregate {
                 numericMaximum,
                 null);
 
-        aggregate.requireCompatibleWith(requiredSensorType);
+        aggregate.validateShape();
+
         return aggregate;
     }
 
@@ -74,62 +71,26 @@ public final class SensorSummaryAggregate {
                 null,
                 trueSampleCount);
 
-        aggregate.requireCompatibleWith(SensorType.MOTION);
+        aggregate.validateShape();
+
         return aggregate;
     }
 
 
 
     static SensorSummaryAggregate restore(long sourceSampleCount, MeasurementUnit unit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum, Long trueSampleCount) {
-        SensorSummaryAggregate aggregate = new SensorSummaryAggregate(
+
+        return new SensorSummaryAggregate(
                 sourceSampleCount,
                 unit,
                 numericSum,
                 numericMinimum,
                 numericMaximum,
                 trueSampleCount);
-
-        aggregate.validateShape();
-        return aggregate;
     }
 
 
 
-
-
-    void requireCompatibleWith(SensorType sensorType) {
-        SensorType requiredSensorType = Objects.requireNonNull(sensorType,"sensorType must not be null");
-        validateShape();
-
-        if (requiredSensorType == SensorType.MOTION) {
-            if (!isMotion()) {
-                throw new IllegalArgumentException("Motion sensors require motion summary values");
-            }
-
-            return;
-        }
-
-        MeasurementUnit expectedUnit = SensorMeasurementPolicy.requireCanonicalUnit(requiredSensorType);
-
-        if (!isNumeric() || unit != expectedUnit) {
-            throw new IllegalArgumentException(requiredSensorType + " summaries require canonical unit " + expectedUnit);
-        }
-
-        if (sourceSampleCount == 0) {
-            return;
-        }
-
-        SensorMeasurementPolicy.requireValidNumericValue(requiredSensorType,numericMinimum,"numericMinimum");
-        SensorMeasurementPolicy.requireValidNumericValue(requiredSensorType,numericMaximum,"numericMaximum");
-
-        BigDecimal sampleCount = BigDecimal.valueOf(sourceSampleCount);
-        BigDecimal minimumPossibleSum = BigDecimal.valueOf(numericMinimum).multiply(sampleCount);
-        BigDecimal maximumPossibleSum = BigDecimal.valueOf(numericMaximum).multiply(sampleCount);
-
-        if (numericSum.compareTo(minimumPossibleSum) < 0 || numericSum.compareTo(maximumPossibleSum) > 0) {
-            throw new IllegalArgumentException("numericSum must be consistent with the sample count and numeric range");
-        }
-    }
 
 
 

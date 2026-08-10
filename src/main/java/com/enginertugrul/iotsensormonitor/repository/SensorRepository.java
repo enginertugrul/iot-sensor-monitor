@@ -22,22 +22,17 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
 
     @Query("""
-            SELECT sensor.id
+            SELECT sensor.id AS id,
+                         sensor.type AS type,
+                                      sensor.timezone AS timezone
             FROM Sensor sensor
             WHERE sensor.lastSeenAt IS NOT NULL
             ORDER BY sensor.id
             """)
-    List<Long> findIdsWithRecordedReadingsOrderById();
+    List<RollupSensorProjection> findSensorsForRollup();
 
 
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-            SELECT sensor
-            FROM Sensor sensor
-            WHERE sensor.id = :sensorId
-            """)
-    Optional<Sensor> findByIdForUpdate(@Param("sensorId") Long sensorId);
 
 
 
