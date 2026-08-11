@@ -25,7 +25,7 @@ public class SensorDataLifecyclePolicy {
     private final Duration purgeInterval;
     private final int deleteBatchSize;
     private final int maximumBucketsPerRun;
-    private final int maximumDeleteBatchesPerRun;
+    private final int maximumDeleteBatchesPerTierPerRun;
 
 
 
@@ -41,7 +41,7 @@ public class SensorDataLifecyclePolicy {
             @Value("${app.sensor-data.lifecycle.purge-interval:PT1H}") Duration purgeInterval,
             @Value("${app.sensor-data.lifecycle.delete-batch-size:1000}") int deleteBatchSize,
             @Value("${app.sensor-data.lifecycle.maximum-buckets-per-run:500}") int maximumBucketsPerRun,
-            @Value("${app.sensor-data.lifecycle.maximum-delete-batches-per-run:10}") int maximumDeleteBatchesPerRun
+            @Value("${app.sensor-data.lifecycle.maximum-delete-batches-per-tier-per-run:10}") int maximumDeleteBatchesPerTierPerRun
     ) {
         this.rawRetention = requirePositive(rawRetention,"rawRetention");
         this.hourlyRetention = requirePositive(hourlyRetention,"hourlyRetention");
@@ -54,7 +54,7 @@ public class SensorDataLifecyclePolicy {
         this.purgeInterval = requirePositive(purgeInterval,"purgeInterval");
         this.deleteBatchSize = requireInRange(deleteBatchSize,1,10_000,"deleteBatchSize");
         this.maximumBucketsPerRun = requireInRange(maximumBucketsPerRun,1,10_000,"maximumBucketsPerRun");
-        this.maximumDeleteBatchesPerRun = requireInRange(maximumDeleteBatchesPerRun,1,100,"maximumDeleteBatchesPerRun");
+        this.maximumDeleteBatchesPerTierPerRun = requireInRange(maximumDeleteBatchesPerTierPerRun,1,100,"maximumDeleteBatchesPerTierPerRun");
 
         if (this.rawRetention.compareTo(this.hourlyRetention) >= 0
                 || this.hourlyRetention.compareTo(this.dailyRetention) >= 0) {

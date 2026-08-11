@@ -33,6 +33,16 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
 
 
+    @Query("""
+            SELECT sensor.id
+            FROM Sensor sensor
+            WHERE sensor.lastSeenAt IS NOT NULL
+            ORDER BY sensor.id
+            """)
+    List<Long> findSensorIdsContainingReadings();
+
+
+
 
 
 

@@ -43,7 +43,6 @@ public class HourlySensorRollupService {
 
 
 
-    @Transactional
     public HourlyRollupRunResult rollUpClosedHours(Instant eligibleCoveredUntil) {
 
         Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil);

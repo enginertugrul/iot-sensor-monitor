@@ -28,6 +28,8 @@ public interface SensorRollupCheckpointRepository extends JpaRepository<SensorRo
 
 
 
+    Optional<SensorRollupCheckpoint> findBySensorIdAndStage(Long sensorId, RollupStage stage);
+
 
     @Query("""
     SELECT MIN(checkpoint.coveredUntil)
