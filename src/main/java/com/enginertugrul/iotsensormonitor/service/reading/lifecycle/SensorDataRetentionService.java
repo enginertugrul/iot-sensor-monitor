@@ -1,7 +1,6 @@
 package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;
-import com.enginertugrul.iotsensormonitor.repository.RollupSensorProjection;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.repository.SensorRollupCheckpointRepository;
 import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataPurgeBatchResult.CoverageBlocker;
@@ -45,7 +44,7 @@ public class SensorDataRetentionService {
     public SensorDataRetentionRunResult purgeExpiredData(Instant currentTime) {
         Instant requiredCurrentTime = Objects.requireNonNull(currentTime,"currentTime must not be null");
 
-        List<Long> sensorIds = sensorRepository.findSensorIdsContainingReadings();
+        List<Long> sensorIds = sensorRepository.findSensorIdsWithReadingHistory();
 
         Instant rawRetentionBoundary = requiredCurrentTime
                 .minus(lifecyclePolicy.getRawRetention())

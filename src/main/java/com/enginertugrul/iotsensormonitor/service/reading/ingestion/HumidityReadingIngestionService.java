@@ -42,7 +42,7 @@ public class HumidityReadingIngestionService {
             throw new InvalidSensorReadingException(exception.getMessage(), exception);
         }
 
-        sensor.markSeen(recordedAt);
+        sensor.recordFirstReading(recordedAt);
         readingRepository.save(reading);
         alertEvaluationService.evaluateReading(reading);
     }

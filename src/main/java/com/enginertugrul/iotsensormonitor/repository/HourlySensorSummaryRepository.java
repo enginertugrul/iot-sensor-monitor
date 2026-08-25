@@ -12,10 +12,38 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+
+
 @Repository
 public interface HourlySensorSummaryRepository extends JpaRepository<HourlySensorSummary,Long> {
 
+
+
     Optional<HourlySensorSummary> findBySensorIdAndBucketStart(Long sensorId, Instant bucketStart);
+
+
+    @Query("""
+        SELECT summary
+        FROM HourlySensorSummary summary
+        WHERE summary.sensor.id = :sensorId
+          AND summary.bucketEnd > :retentionBoundary
+          AND summary.bucketStart < :endExclusive
+          AND summary.bucketEnd > :startInclusive
+        ORDER BY summary.bucketStart,summary.id
+        """)
+    List<HourlySensorSummary> findForStatisticsRange(
+            @Param("sensorId") Long sensorId,
+            @Param("retentionBoundary") Instant retentionBoundary,
+            @Param("startInclusive") Instant startInclusive,
+            @Param("endExclusive") Instant endExclusive
+    );
+
+
+
+
+
+
+
 
     @Query("""
             SELECT summary
@@ -33,7 +61,12 @@ public interface HourlySensorSummaryRepository extends JpaRepository<HourlySenso
 
 
 
+
+
     boolean existsBySensorIdAndBucketEndLessThanEqual(Long sensorId, Instant bucketEnd);
+
+
+
 
 
 

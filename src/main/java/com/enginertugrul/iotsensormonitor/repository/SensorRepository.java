@@ -22,13 +22,14 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
 
     @Query("""
-            SELECT sensor.id AS id,
-                         sensor.type AS type,
-                                      sensor.timezone AS timezone
-            FROM Sensor sensor
-            WHERE sensor.lastSeenAt IS NOT NULL
-            ORDER BY sensor.id
-            """)
+        SELECT sensor.id AS id,
+               sensor.type AS type,
+               sensor.timezone AS timezone,
+               sensor.firstReadingAt AS firstReadingAt
+        FROM Sensor sensor
+        WHERE sensor.firstReadingAt IS NOT NULL
+        ORDER BY sensor.id
+        """)
     List<RollupSensorProjection> findSensorsForRollup();
 
 
@@ -36,10 +37,10 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
     @Query("""
             SELECT sensor.id
             FROM Sensor sensor
-            WHERE sensor.lastSeenAt IS NOT NULL
+            WHERE sensor.firstReadingAt IS NOT NULL
             ORDER BY sensor.id
             """)
-    List<Long> findSensorIdsContainingReadings();
+    List<Long> findSensorIdsWithReadingHistory();
 
 
 

@@ -61,8 +61,8 @@ public class Sensor {
     @Column(name = "ingestion_token_hash" , length = 64)
     private String ingestionTokenHash;
 
-    @Column(name = "last_seen_at")
-    private Instant lastSeenAt;
+    @Column(name = "first_reading_at")
+    private Instant firstReadingAt;
 
 
 
@@ -179,13 +179,17 @@ public class Sensor {
 
 
 
-    public void markSeen(Instant seenAt) {
-        this.lastSeenAt = seenAt;
+    public void recordFirstReading(Instant recordedAt) {
+        Instant requiredRecordedAt = Objects.requireNonNull(recordedAt,"recordedAt must not be null");
+
+        if (firstReadingAt == null) {
+            firstReadingAt = requiredRecordedAt;
+        }
     }
 
 
     public boolean hasRecordedReadings() {
-        return lastSeenAt != null;
+        return firstReadingAt != null;
     }
 
 

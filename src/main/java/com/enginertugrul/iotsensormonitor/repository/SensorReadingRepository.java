@@ -1,13 +1,14 @@
 package com.enginertugrul.iotsensormonitor.repository;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface SensorReadingRepository extends JpaRepository<SensorReading, Long> {
@@ -17,6 +18,23 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
     List<SensorReading> findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(Long sensorId, Long ownerId);
+
+
+
+    @Query("""
+            SELECT reading
+            FROM SensorReading reading
+            WHERE reading.sensor.id = :sensorId
+              AND reading.recordedAt >= :startInclusive
+              AND reading.recordedAt < :endExclusive
+            ORDER BY reading.recordedAt,reading.id
+            """)
+    Slice<SensorReading> findForStatisticsRange(
+            @Param("sensorId") Long sensorId,
+            @Param("startInclusive") Instant startInclusive,
+            @Param("endExclusive") Instant endExclusive,
+            Pageable pageable
+    );
 
 
 
@@ -123,34 +141,23 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
 
-    @Query("""
-            SELECT MIN(reading.recordedAt)
-            FROM SensorReading reading
-            WHERE reading.sensor.id = :sensorId
-            """)
-    Optional<Instant> findEarliestRecordedAt(@Param("sensorId") Long sensorId);
 
 
 
     @NativeQuery("""
-            SELECT
-                COUNT(*) AS "sourceSampleCount",
-                COUNT(sr.numeric_value) AS "numericSampleCount",
-                COUNT(sr.boolean_value) AS "booleanSampleCount",
-                COUNT(sr.unit) AS "unitSampleCount",
-                MIN(sr.unit) AS "minimumUnit",
-                MAX(sr.unit) AS "maximumUnit",
-                SUM(CAST(sr.numeric_value AS NUMERIC)) AS "numericSum",
-                MIN(sr.numeric_value) AS "numericMinimum",
-                MAX(sr.numeric_value) AS "numericMaximum",
-                COUNT(*) FILTER (
-                    WHERE sr.boolean_value IS TRUE
-                ) AS "trueSampleCount"
-            FROM sensor_readings sr
-            WHERE sr.sensor_id = :sensorId
-              AND sr.recorded_at >= :startInclusive
-              AND sr.recorded_at < :endExclusive
-            """)
+        SELECT
+            COUNT(*) AS "sourceSampleCount",
+            SUM(CAST(sr.numeric_value AS NUMERIC)) AS "numericSum",
+            MIN(sr.numeric_value) AS "numericMinimum",
+            MAX(sr.numeric_value) AS "numericMaximum",
+            COUNT(*) FILTER (
+                WHERE sr.boolean_value IS TRUE
+            ) AS "trueSampleCount"
+        FROM sensor_readings sr
+        WHERE sr.sensor_id = :sensorId
+          AND sr.recorded_at >= :startInclusive
+          AND sr.recorded_at < :endExclusive
+        """)
     RawSensorReadingAggregateProjection aggregateForSummaryRange(
             @Param("sensorId") Long sensorId,
             @Param("startInclusive") Instant startInclusive,

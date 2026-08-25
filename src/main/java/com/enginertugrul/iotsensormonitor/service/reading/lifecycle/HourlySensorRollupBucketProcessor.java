@@ -6,6 +6,7 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorRollupChe
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.repository.*;
+import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
@@ -51,7 +52,7 @@ public class HourlySensorRollupBucketProcessor {
         Long sensorId = requiredSensor.getId();
 
 
-        SensorRollupCheckpoint checkpoint = loadOrInitializeCheckpoint(sensorId);
+        SensorRollupCheckpoint checkpoint = loadOrInitializeCheckpoint(sensor);
 
 
         if (!checkpoint.getCoveredUntil().isBefore(requiredEligibleCoveredUntil)) {
@@ -77,7 +78,7 @@ public class HourlySensorRollupBucketProcessor {
                         bucketStart,
                         bucketEnd);
 
-        SensorSummaryAggregate aggregate = SensorSummaryAggregationSupport.fromRawReadings(requiredSensor.getType(), rawAggregate);
+        SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(requiredSensor.getType(), rawAggregate);
 
 
         Instant completedAt = notBefore(Instant.now(),attemptedAt);
@@ -166,7 +167,7 @@ public class HourlySensorRollupBucketProcessor {
                         bucketEnd);
 
         SensorSummaryAggregate aggregate =
-                SensorSummaryAggregationSupport.fromRawReadings(requiredSensor.getType(), rawAggregate);
+                SensorSummaryAggregator.fromRawReadings(requiredSensor.getType(), rawAggregate);
 
 
         Instant refreshedAt = notBefore(Instant.now(),bucketEnd);
@@ -210,10 +211,10 @@ public class HourlySensorRollupBucketProcessor {
 
 
 
-    private SensorRollupCheckpoint loadOrInitializeCheckpoint(Long sensorId) {
+    private SensorRollupCheckpoint loadOrInitializeCheckpoint(RollupSensorProjection sensor) {
 
-        return checkpointRepository.findBySensorIdAndStageForUpdate(sensorId, RollupStage.RAW_TO_HOURLY)
-                .orElseGet(() -> initializeCheckpoint(sensorId));
+        return checkpointRepository.findBySensorIdAndStageForUpdate(sensor.getId(), RollupStage.RAW_TO_HOURLY)
+                .orElseGet(() -> initializeCheckpoint(sensor));
     }
 
 
@@ -222,21 +223,19 @@ public class HourlySensorRollupBucketProcessor {
 
 
 
-    private SensorRollupCheckpoint initializeCheckpoint(Long sensorId) {
+    private SensorRollupCheckpoint initializeCheckpoint(RollupSensorProjection sensor) {
 
-        Instant earliestRecordedAt = sensorReadingRepository
-                .findEarliestRecordedAt(sensorId)
-                .orElseThrow(() -> new IllegalStateException("Sensor has recorded readings but no raw reading exists"));
+        Instant firstReadingAt = sensor.getFirstReadingAt();
 
-        Instant coverageStartedAt = earliestRecordedAt.truncatedTo(ChronoUnit.HOURS);
+        Instant coverageStartedAt = firstReadingAt.truncatedTo(ChronoUnit.HOURS);
 
         Instant initializedAt = notBefore(Instant.now(), coverageStartedAt);
 
-        Sensor sensor = entityManager.getReference(Sensor.class, sensorId);
+        Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
 
         SensorRollupCheckpoint checkpoint =
                 SensorRollupCheckpoint.initialize(
-                        sensor,
+                        sensorReference,
                         RollupStage.RAW_TO_HOURLY,
                         coverageStartedAt,
                         initializedAt);

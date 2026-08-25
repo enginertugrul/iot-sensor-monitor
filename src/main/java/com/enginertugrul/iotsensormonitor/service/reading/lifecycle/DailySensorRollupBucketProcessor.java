@@ -7,6 +7,7 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorRollupChe
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.repository.*;
+import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class DailySensorRollupBucketProcessor {
         }
 
         SensorRollupCheckpoint hourlyCoverageCheckpoint = hourlyCoverageCheckpointCandidate.get();
-        SensorRollupCheckpoint dailyCoverageCheckpoint = loadOrInitializeDailyCoverageCheckpoint(sensorId, timeZone, hourlyCoverageCheckpoint);
+        SensorRollupCheckpoint dailyCoverageCheckpoint = loadOrInitializeDailyCoverageCheckpoint(sensor, hourlyCoverageCheckpoint);
 
         LocalDayBucket bucket = nextLocalDayBucket(dailyCoverageCheckpoint,timeZone);
         Instant requiredHourlyCoveredUntil = utcHourAtOrAfter(bucket.end());
@@ -128,43 +129,41 @@ public class DailySensorRollupBucketProcessor {
 
 
 
-    private SensorRollupCheckpoint loadOrInitializeDailyCoverageCheckpoint(Long sensorId, ZoneId timeZone, SensorRollupCheckpoint hourlyCoverageCheckpoint) {
+    private SensorRollupCheckpoint loadOrInitializeDailyCoverageCheckpoint(RollupSensorProjection sensor, SensorRollupCheckpoint hourlyCoverageCheckpoint) {
 
         return checkpointRepository.findBySensorIdAndStageForUpdate(
-                        sensorId,
+                        sensor.getId(),
                         RollupStage.HOURLY_TO_DAILY)
-                .orElseGet(() -> initializeDailyCoverageCheckpoint(
-                        sensorId,
-                        timeZone,
-                        hourlyCoverageCheckpoint));
+                .orElseGet(() -> initializeDailyCoverageCheckpoint(sensor,hourlyCoverageCheckpoint) );
+
     }
 
 
 
 
-    private SensorRollupCheckpoint initializeDailyCoverageCheckpoint(Long sensorId, ZoneId timeZone, SensorRollupCheckpoint hourlyCoverageCheckpoint) {
+    private SensorRollupCheckpoint initializeDailyCoverageCheckpoint(RollupSensorProjection sensor, SensorRollupCheckpoint hourlyCoverageCheckpoint) {
 
+        ZoneId timeZone = ZoneId.of(sensor.getTimezone());
 
-        Instant earliestRecordedAt = sensorReadingRepository.findEarliestRecordedAt(sensorId)
-                .orElseThrow(() -> new IllegalStateException("Hourly coverage checkpoint exists but no raw reading exists"));
+        Instant firstReadingAt = sensor.getFirstReadingAt();
 
-        Instant expectedHourlyCoverageStart = earliestRecordedAt.truncatedTo(ChronoUnit.HOURS);
+        Instant expectedHourlyCoverageStart = firstReadingAt.truncatedTo(ChronoUnit.HOURS);
 
         if (!expectedHourlyCoverageStart.equals(hourlyCoverageCheckpoint.getCoverageStartedAt())) {
-            throw new IllegalStateException("Hourly coverage checkpoint does not begin at the earliest recorded UTC hour");
+            throw new IllegalStateException("Hourly coverage checkpoint does not begin at the sensor's first recorded UTC hour");
         }
 
-        LocalDate firstReadingLocalDate = earliestRecordedAt.atZone(timeZone).toLocalDate();
+        LocalDate firstReadingLocalDate = firstReadingAt.atZone(timeZone).toLocalDate();
 
         Instant dailyCoverageStart = firstReadingLocalDate.atStartOfDay(timeZone).toInstant();
         Instant initializedAt = notBefore(Instant.now(),dailyCoverageStart);
         initializedAt = notBefore(initializedAt,hourlyCoverageCheckpoint.getUpdatedAt());
 
-        Sensor sensor = entityManager.getReference(Sensor.class, sensorId);
+        Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
 
         SensorRollupCheckpoint checkpoint =
                 SensorRollupCheckpoint.initialize(
-                        sensor,
+                        sensorReference,
                         RollupStage.HOURLY_TO_DAILY,
                         dailyCoverageStart,
                         initializedAt);
@@ -215,7 +214,7 @@ public class DailySensorRollupBucketProcessor {
             rawBoundarySampleCount = Math.addExact(rawBoundarySampleCount, trailingRawAggregate.getSourceSampleCount());
         }
 
-        SensorSummaryAggregate combinedAggregate = SensorSummaryAggregationSupport.combine(sensor.getType(), aggregateParts);
+        SensorSummaryAggregate combinedAggregate = SensorSummaryAggregator.combine(sensor.getType(), aggregateParts);
 
         return new DailyAggregateSource(combinedAggregate, hourlyAggregates.size(), rawBoundarySampleCount);
     }
@@ -265,7 +264,7 @@ public class DailySensorRollupBucketProcessor {
                         startInclusive,
                         endExclusive);
 
-        return SensorSummaryAggregationSupport.fromRawReadings(
+        return SensorSummaryAggregator.fromRawReadings(
                 sensor.getType(),
                 rawAggregate);
     }
