@@ -473,7 +473,7 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
 
         StatisticsNumericMetricsDTO numericMetrics = null;
         StatisticsMotionMetricsDTO motionMetrics = null;
-        long sourceSampleCount = 0;
+        Long sourceSampleCount = null;
 
         if (aggregate != null) {
             sourceSampleCount = aggregate.getSourceSampleCount();

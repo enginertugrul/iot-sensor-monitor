@@ -13,7 +13,7 @@ public record StatisticsSeriesPointDTO(
         LocalDate localDateEndExclusive,
         String timeZoneId,
         StatisticsPointStatus status,
-        long sourceSampleCount,
+        Long sourceSampleCount,
         StatisticsNumericMetricsDTO numericMetrics,
         StatisticsMotionMetricsDTO motionMetrics,
         Instant finalizedAt,

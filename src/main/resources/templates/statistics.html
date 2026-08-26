@@ -4,21 +4,36 @@
       th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title th:text="#{statistics.title}">
         Sensor Statistics | IoT Sensor Monitor
     </title>
-    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
-    <link rel="stylesheet" th:href="@{/css/base.css}">
-    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
-    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
-    <link rel="stylesheet" th:href="@{/css/pages/statistics.css}">
 
-    <script th:if="${selectedSensorId != null}"
+    <link rel="icon"
+          type="image/png"
+          th:href="@{/favicon.png}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/base.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/components/app-shell.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/components/forms.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/pages/statistics.css}">
+
+    <script th:if="${statisticsSeries != null}"
             defer
             th:src="@{/js/vendor/chart.umd.min.js}"></script>
+
     <script defer
             th:src="@{/js/components/auto-submit-select.js}"></script>
+
     <script defer
             th:src="@{/js/pages/statistics.js}"></script>
 </head>
@@ -27,22 +42,23 @@
 
 <header th:replace="~{fragments/app-shell :: authenticatedHeader('statistics', ${selectedSensorId})}"></header>
 
-<main id="main-content" class="app-main app-main--statistics" tabindex="-1">
+<main id="main-content"
+      class="app-main app-main--statistics"
+      tabindex="-1">
+
     <header class="statistics-page-header">
         <p class="statistics-eyebrow"
            th:text="#{statistics.eyebrow}">
             Monitoring insights
         </p>
 
-        <h1 id="statistics-page-title"
-            th:text="#{statistics.heading}">
+        <h1 th:text="#{statistics.heading}">
             Sensor Statistics
         </h1>
 
         <p class="statistics-page-header__description"
            th:text="#{statistics.description}">
-            Review hourly activity and seven-day trends for your registered
-            sensors.
+            Explore recent readings and retained summaries in one range-aware view.
         </p>
     </header>
 
@@ -55,93 +71,213 @@
          th:data-offline-message="#{statistics.connectionOffline}"
          th:data-restored-message="#{statistics.connectionRestored}"
          hidden>
+
         <span class="statistics-connection-status__indicator"
               aria-hidden="true"></span>
 
         <p id="statisticsConnectionMessage"
            th:text="#{statistics.connectionOffline}">
-            You are offline. Previously loaded statistics remain available,
-            but new data cannot be requested.
+            You are offline. Loaded statistics remain available.
         </p>
     </div>
 
     <section class="statistics-toolbar"
              aria-labelledby="statistics-controls-heading">
+
         <header class="statistics-toolbar__header">
             <p class="statistics-eyebrow"
                th:text="#{statistics.controlsEyebrow}">
-                Data source
+                Range explorer
             </p>
 
             <h2 id="statistics-controls-heading"
                 th:text="#{statistics.controlsHeading}">
-                Choose a sensor
+                Choose the data to inspect
             </h2>
 
             <p class="statistics-toolbar__description"
-               id="statistics-sensor-help"
+               id="statistics-controls-help"
                th:text="#{statistics.selectorHelp}">
-                Selecting a sensor loads its current hourly and seven-day
-                statistics.
+                Calendar ranges follow the selected sensor's timezone.
             </p>
         </header>
 
-        <form class="sensor-selector form-stack"
+        <form id="statisticsRangeForm"
+              class="statistics-range-form"
               th:action="@{/statistics}"
+              th:object="${statisticsQuery}"
               method="get">
-            <div class="form-field">
-                <label class="form-label"
-                       for="sensorId"
-                       th:text="#{statistics.sensor}">
-                    Sensor
-                </label>
 
-                <select class="form-control"
-                        id="sensorId"
-                        name="sensorId"
-                        aria-describedby="statistics-sensor-help"
-                        data-auto-submit-select
-                        th:disabled="${#lists.isEmpty(sensors)}">
-                    <option value=""
-                            th:selected="${selectedSensorId == null}"
-                            th:text="#{statistics.selectSensor}">
-                        Select sensor
-                    </option>
+            <div class="statistics-control-grid">
+                <div class="form-field statistics-control-grid__sensor">
+                    <label class="form-label"
+                           for="sensorId"
+                           th:text="#{statistics.sensor}">
+                        Sensor
+                    </label>
 
-                    <option th:each="sensor : ${sensors}"
-                            th:value="${sensor.id}"
-                            th:selected="${selectedSensorId != null
-                                and sensor.id == selectedSensorId}"
-                            th:text="${sensor.name
-                                + ' — '
-                                + #messages.msg(
-                                    'sensorType.'
-                                    + sensor.type.name()
-                                )
-                                + ' — '
-                                + sensor.homeLocation}">
-                        Main Sensor — Temperature sensor — Building A
-                    </option>
-                </select>
+                    <select class="form-control"
+                            id="sensorId"
+                            th:field="*{sensorId}"
+                            aria-describedby="statistics-controls-help"
+                            data-auto-submit-select
+                            data-statistics-network-control
+                            th:disabled="${#lists.isEmpty(sensors)}"
+                            th:attr="aria-invalid=${#fields.hasErrors('sensorId')}">
+
+                        <option value=""
+                                th:text="#{statistics.selectSensor}">
+                            Select sensor
+                        </option>
+
+                        <option th:each="sensor : ${sensors}"
+                                th:value="${sensor.id}"
+                                th:text="${sensor.name
+                                    + ' — '
+                                    + #messages.msg(
+                                        'sensorType.'
+                                        + sensor.type.name()
+                                    )
+                                    + ' — '
+                                    + sensor.homeLocation}">
+                            Main Sensor — Temperature sensor — Building A
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label"
+                           for="statisticsResolution"
+                           th:text="#{statistics.resolutionLabel}">
+                        Requested resolution
+                    </label>
+
+                    <select class="form-control"
+                            id="statisticsResolution"
+                            th:field="*{resolution}"
+                            th:disabled="${selectedSensor == null}"
+                            th:attr="aria-invalid=${#fields.hasErrors('resolution')}">
+
+                        <option th:each="resolutionOption : ${T(com.enginertugrul.iotsensormonitor.dto.statistics.StatisticsResolution).values()}"
+                                th:value="${resolutionOption}"
+                                th:text="${#messages.msg(
+                                    'statistics.resolution.'
+                                    + resolutionOption.name()
+                                )}">
+                            Auto
+                        </option>
+                    </select>
+
+                    <p class="form-help"
+                       th:text="#{statistics.resolutionHelp}">
+                        Auto chooses the finest uniform resolution that fits.
+                    </p>
+                </div>
             </div>
 
-            <noscript>
-                <div class="form-actions">
-                    <button class="form-button form-button--primary"
-                            type="submit"
-                            th:disabled="${#lists.isEmpty(sensors)}"
-                            th:text="#{statistics.apply}">
-                        Apply
-                    </button>
+            <th:block th:if="${statisticsQuery.preset == T(com.enginertugrul.iotsensormonitor.dto.statistics.StatisticsRangePreset).EXACT}">
+
+                <input type="radio"
+                       hidden
+                       th:field="*{preset}"
+                       th:value="${T(com.enginertugrul.iotsensormonitor.dto.statistics.StatisticsRangePreset).EXACT}">
+
+                <input type="hidden"
+                       th:field="*{startInclusive}">
+
+                <input type="hidden"
+                       th:field="*{endExclusive}">
+            </th:block>
+
+
+            <fieldset class="statistics-preset-fieldset"
+                      th:disabled="${selectedSensor == null}">
+
+                <legend class="statistics-preset-fieldset__legend"
+                        th:text="#{statistics.presetLegend}">
+                    Quick range
+                </legend>
+
+                <div class="statistics-preset-list">
+                    <div class="statistics-preset"
+                         th:each="presetOption : ${statisticsPresets}">
+
+                        <input class="statistics-preset__input"
+                               type="radio"
+                               th:field="*{preset}"
+                               th:value="${presetOption}"
+                               th:id="${'statisticsPreset-' + presetOption.name()}">
+
+                        <label class="statistics-preset__label"
+                               th:for="${'statisticsPreset-' + presetOption.name()}"
+                               th:text="${#messages.msg(
+                                   'statistics.preset.'
+                                   + presetOption.name()
+                               )}">
+                            Last 7 Days
+                        </label>
+                    </div>
                 </div>
-            </noscript>
+            </fieldset>
+
+            <div class="statistics-date-grid">
+                <div class="form-field">
+                    <label class="form-label"
+                           for="statisticsStartDate"
+                           th:text="#{statistics.startDate}">
+                        Start date
+                    </label>
+
+                    <input class="form-control"
+                           id="statisticsStartDate"
+                           type="date"
+                           th:field="*{startDate}"
+                           th:max="${statisticsToday}"
+                           th:disabled="${selectedSensor == null}"
+                           th:attr="aria-invalid=${#fields.hasErrors('startDate')}">
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label"
+                           for="statisticsEndDate"
+                           th:text="#{statistics.endDate}">
+                        End date
+                    </label>
+
+                    <input class="form-control"
+                           id="statisticsEndDate"
+                           type="date"
+                           th:field="*{endDate}"
+                           th:max="${statisticsToday}"
+                           th:disabled="${selectedSensor == null}"
+                           aria-describedby="statistics-end-date-help"
+                           th:attr="aria-invalid=${#fields.hasErrors('endDate')}">
+
+                    <p class="form-help"
+                       id="statistics-end-date-help"
+                       th:text="#{statistics.endDateHelp}">
+                        The end date is inclusive.
+                    </p>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="form-button form-button--primary"
+                        type="submit"
+                        data-statistics-network-control
+                        th:disabled="${#lists.isEmpty(sensors)}"
+                        th:text="#{statistics.applyRange}">
+                    Apply range
+                </button>
+            </div>
         </form>
     </section>
 
     <section class="statistics-page-state"
              aria-labelledby="statistics-no-sensors-heading"
-             th:if="${statisticsNoSensorSelected == true
+             th:if="${statisticsNoSensorSelected
                  and #lists.isEmpty(sensors)}">
+
         <span class="statistics-page-state__indicator"
               aria-hidden="true"></span>
 
@@ -151,7 +287,7 @@
         </h2>
 
         <p th:text="#{statistics.noSensorsHelp}">
-            Register a sensor before opening its statistics.
+            Register a sensor before exploring its statistics.
         </p>
 
         <a class="form-button form-button--primary"
@@ -163,25 +299,27 @@
 
     <section class="statistics-page-state"
              aria-labelledby="statistics-no-selection-heading"
-             th:if="${statisticsNoSensorSelected == true
+             th:if="${statisticsNoSensorSelected
                  and not #lists.isEmpty(sensors)}">
+
         <span class="statistics-page-state__indicator"
               aria-hidden="true"></span>
 
         <h2 id="statistics-no-selection-heading"
             th:text="#{statistics.noSensorSelectedHeading}">
-            Choose a sensor to view statistics
+            Choose a sensor
         </h2>
 
         <p th:text="#{statistics.noSensorSelected}">
-            Select a registered sensor above to display its statistics.
+            Select a registered sensor to display its statistics.
         </p>
     </section>
 
     <section class="statistics-page-state statistics-page-state--error"
              role="alert"
              aria-labelledby="statistics-sensor-error-heading"
-             th:if="${statisticsSensorNotFound == true}">
+             th:if="${statisticsSensorNotFound}">
+
         <span class="statistics-page-state__indicator"
               aria-hidden="true"></span>
 
@@ -201,330 +339,1033 @@
         </a>
     </section>
 
-    <section id="statisticsChartError"
-             class="statistics-page-state statistics-page-state--error"
+    <section class="statistics-page-state statistics-page-state--error"
              role="alert"
-             aria-labelledby="statistics-chart-error-heading"
-             th:if="${selectedSensorId != null}"
-             hidden>
+             aria-labelledby="statistics-query-error-heading"
+             th:if="${statisticsQueryInvalid}">
+
         <span class="statistics-page-state__indicator"
               aria-hidden="true"></span>
 
-        <h2 id="statistics-chart-error-heading"
-            th:text="#{statistics.chartUnavailableHeading}">
-            Charts unavailable
+        <h2 id="statistics-query-error-heading"
+            th:text="#{statistics.queryInvalidHeading}">
+            The requested range is invalid
         </h2>
 
-        <p th:text="#{statistics.chartUnavailable}">
-            The chart resources could not be initialized. Refresh the page
-            and try again.
+        <p th:text="#{statistics.queryInvalid}">
+            Check the dates and resolution, then request the range again.
         </p>
     </section>
 
-    <noscript th:if="${selectedSensorId != null}">
-        <section class="statistics-page-state"
-                 aria-labelledby="statistics-javascript-heading">
-            <span class="statistics-page-state__indicator"
-                  aria-hidden="true"></span>
+    <article id="statisticsResults"
+             class="statistics-results"
+             aria-labelledby="statistics-result-heading"
+             th:if="${statisticsSeries != null}"
+             th:attr="data-sensor-type=${statisticsSeries.sensor.type.name()}">
 
-            <h2 id="statistics-javascript-heading"
-                th:text="#{statistics.javascriptRequiredHeading}">
-                JavaScript is required for charts
-            </h2>
-
-            <p th:text="#{statistics.javascriptRequiredHelp}">
-                Enable JavaScript to view and navigate the statistics charts.
-            </p>
-        </section>
-    </noscript>
-
-    <div id="statisticsCharts"
-         class="statistics-chart-grid"
-         th:if="${selectedSensorId != null}"
-         hidden>
-        <section class="statistics-panel"
-                 aria-labelledby="hourlyChartTitle">
-            <header class="statistics-panel__header">
+        <header class="statistics-results__header">
+            <div>
                 <p class="statistics-eyebrow"
-                   th:text="#{statistics.hourlyEyebrow}">
-                    Hourly view
+                   th:text="#{statistics.resultEyebrow}">
+                    Selected period
                 </p>
 
-                <div class="date-nav-row">
-                    <button id="prevDayBtn"
-                            class="nav-arrow-button"
-                            type="button"
-                            aria-controls="hourlyChartRegion"
-                            th:aria-label="#{statistics.previousDay}"
-                            disabled>
-                        <span aria-hidden="true">&#8249;</span>
-                    </button>
-
-                    <h2 class="chart-title"
-                        id="hourlyChartTitle"
-                        th:text="${selectedSensorName
-                            + ' — '
-                            + #messages.msg(
-                                'statistics.todayHourly'
-                            )}">
-                        Sensor — Today's Hourly Statistics
-                    </h2>
-
-                    <button id="nextDayBtn"
-                            class="nav-arrow-button"
-                            type="button"
-                            aria-controls="hourlyChartRegion"
-                            th:aria-label="#{statistics.nextDay}"
-                            disabled>
-                        <span aria-hidden="true">&#8250;</span>
-                    </button>
-                </div>
-
-                <p class="statistics-panel__description"
-                   th:text="#{statistics.hourlyDescription}">
-                    Move between days to inspect when readings or detections
-                    were recorded.
-                </p>
-            </header>
-
-            <div id="hourlyRequestStatus"
-                 class="statistics-request-status"
-                 role="status"
-                 aria-live="polite"
-                 aria-atomic="true"
-                 data-state="loading"
-                 hidden>
-                <span class="statistics-request-status__indicator"
-                      aria-hidden="true"></span>
-
-                <p id="hourlyRequestMessage">
-                    Loading hourly statistics...
-                </p>
-
-                <button id="hourlyRetryButton"
-                        class="form-button form-button--primary"
-                        type="button"
-                        aria-controls="hourlyChartRegion"
-                        th:text="#{statistics.retry}"
-                        hidden>
-                    Retry
-                </button>
-            </div>
-
-            <div id="hourlyChartRegion"
-                 class="statistics-chart-region"
-                 aria-busy="false">
-                <div id="hourlyEmptyState"
-                     class="statistics-chart-empty"
-                     role="status"
-                     aria-live="polite"
-                     aria-atomic="true"
-                     hidden>
-                    <span class="statistics-chart-empty__indicator"
-                          aria-hidden="true"></span>
-
-                    <h3 th:text="#{statistics.noHourlyDataHeading}">
-                        No readings for this day
-                    </h3>
-
-                    <p th:text="#{statistics.noHourlyData}">
-                        No readings were recorded for this sensor on the
-                        selected day.
-                    </p>
-                </div>
-
-                <div id="hourlyChartCanvasWrapper"
-                     class="statistics-chart-wrapper">
-                    <canvas id="sensorHourlyChart"
-                            role="img"
-                            aria-details="hourlyDataDetails"
-                            th:aria-label="${#messages.msg(
-                                    'statistics.hourlyChartLabel'
-                                )
-                                + ': '
-                                + selectedSensorName}">
-                        <span th:text="#{statistics.chartFallback}">
-                            Your browser cannot display this statistics chart.
-                        </span>
-                    </canvas>
-                </div>
-
-                <details id="hourlyDataDetails"
-                         class="statistics-data"
-                         hidden>
-                    <summary id="hourlyDataSummary"
-                             class="statistics-data__summary"
-                             th:text="#{statistics.hourlyDataTableSummary}">
-                        View hourly data table
-                    </summary>
-
-                    <div class="statistics-data__scroll"
-                         role="region"
-                         tabindex="0"
-                         aria-labelledby="hourlyDataSummary">
-                        <table class="statistics-data__table">
-                            <caption id="hourlyDataCaption"
-                                     th:text="${selectedSensorName
-                                         + ' — '
-                                         + #messages.msg(
-                                             'statistics.todayHourly'
-                                         )
-                                         + ' — '
-                                         + #messages.msg(
-                                             'statistics.dataTableCaption'
-                                         )}">
-                                Sensor — Today's Hourly Statistics — Data table
-                            </caption>
-
-                            <thead>
-                            <tr>
-                                <th scope="col"
-                                    th:text="#{statistics.chart.hour}">
-                                    Hour
-                                </th>
-
-                                <th class="statistics-data__value"
-                                    scope="col"
-                                    th:text="${#messages.msg(
-                                            'statistics.axis.'
-                                            + selectedSensorType.name()
-                                        )
-                                        + (measurementUnitSymbol == ''
-                                            ? ''
-                                            : ' ('
-                                                + measurementUnitSymbol
-                                                + ')')}">
-                                    Value
-                                </th>
-                            </tr>
-                            </thead>
-
-                            <tbody id="hourlyDataTableBody"></tbody>
-                        </table>
-                    </div>
-                </details>
-
-            </div>
-        </section>
-
-        <section class="statistics-panel"
-                 aria-labelledby="weeklyChartTitle">
-            <header class="statistics-panel__header">
-                <p class="statistics-eyebrow"
-                   th:text="#{statistics.weeklyEyebrow}">
-                    Seven-day view
-                </p>
-
-                <h2 class="chart-title"
-                    id="weeklyChartTitle"
-                    th:text="${selectedSensorName
+                <h2 id="statistics-result-heading"
+                    th:text="${statisticsSeries.sensor.name
                         + ' — '
-                        + #messages.msg(
-                            'statistics.lastSevenDays'
-                        )}">
-                    Sensor — Last 7 Days
+                        + #messages.msg('statistics.resultHeading')}">
+                    Sensor — Range analysis
                 </h2>
 
-                <p class="statistics-panel__description"
-                   th:text="#{statistics.weeklyDescription}">
-                    Compare the selected sensor's daily results across the
-                    latest seven-day period.
+                <p class="statistics-results__description"
+                   th:text="#{statistics.resultDescription}">
+                    Storage resolution, display grouping, coverage and metrics
+                    are shown separately.
+                </p>
+            </div>
+
+            <dl class="statistics-metadata">
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.timezone}">
+                        Sensor timezone
+                    </dt>
+
+                    <dd>
+                        <code th:text="${statisticsSeries.sensor.timeZoneId}">
+                            Europe/Istanbul
+                        </code>
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.requestedRange}">
+                        Requested range
+                    </dt>
+
+                    <dd>
+                        <time data-statistics-instant
+                              th:datetime="${statisticsSeries.requestedStartInclusive}"
+                              th:text="${statisticsSeries.requestedStartInclusive}">
+                            Start
+                        </time>
+
+                        <span aria-hidden="true"> → </span>
+
+                        <time data-statistics-instant
+                              th:datetime="${statisticsSeries.requestedEndExclusive}"
+                              th:text="${statisticsSeries.requestedEndExclusive}">
+                            End
+                        </time>
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.requestedResolution}">
+                        Requested resolution
+                    </dt>
+
+                    <dd th:text="${#messages.msg(
+                        'statistics.resolution.'
+                        + statisticsSeries.requestedResolution.name()
+                    )}">
+                        Auto
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.resolvedResolution}">
+                        Resolved storage resolution
+                    </dt>
+
+                    <dd th:text="${#messages.msg(
+                        'statistics.resolution.'
+                        + statisticsSeries.resolvedResolution.name()
+                    )}">
+                        Daily
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.displayGranularity}">
+                        Display granularity
+                    </dt>
+
+                    <dd th:text="${#messages.msg(
+                        'statistics.granularity.'
+                        + statisticsSeries.displayGranularity.name()
+                    )}">
+                        Weekly
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.asOf}">
+                        Evaluated as of
+                    </dt>
+
+                    <dd>
+                        <time data-statistics-instant
+                              th:datetime="${statisticsSeries.asOf}"
+                              th:text="${statisticsSeries.asOf}">
+                            Evaluation time
+                        </time>
+                    </dd>
+                </div>
+
+                <div class="statistics-metadata__item">
+                    <dt th:text="#{statistics.pointBudget}">
+                        Chart point budget
+                    </dt>
+
+                    <dd data-statistics-number
+                        data-maximum-fraction-digits="0"
+                        th:data-statistics-number="${statisticsSeries.pointBudget}"
+                        th:text="${statisticsSeries.pointBudget}">
+                        400
+                    </dd>
+                </div>
+            </dl>
+        </header>
+
+        <section class="statistics-status-banner"
+                 aria-labelledby="statistics-range-status-heading"
+                 th:data-status="${statisticsSeries.status.name()}">
+
+            <div class="statistics-status-banner__indicator"
+                 aria-hidden="true"></div>
+
+            <div>
+                <h3 id="statistics-range-status-heading"
+                    th:text="${#messages.msg(
+                        'statistics.rangeStatus.'
+                        + statisticsSeries.status.name()
+                    )}">
+                    Complete
+                </h3>
+
+                <p th:text="${#messages.msg(
+                    'statistics.rangeStatusHelp.'
+                    + statisticsSeries.status.name()
+                )}">
+                    The requested range is fully represented.
+                </p>
+
+                <div class="statistics-condition-list"
+                     th:hidden="${statisticsSeries.fullyCovered}">
+
+                    <h4 th:text="#{statistics.conditionHeading}">
+                        Range conditions
+                    </h4>
+
+                    <ul>
+                        <li th:if="${statisticsSeries.conditions.containsExpiredIntervals}"
+                            th:text="#{statistics.condition.EXPIRED}">
+                            Part of the requested range has expired.
+                        </li>
+
+                        <li th:if="${statisticsSeries.conditions.containsRollupDelayedIntervals}"
+                            th:text="#{statistics.condition.ROLLUP_DELAY}">
+                            A summary rollup is behind its expected boundary.
+                        </li>
+
+                        <li th:if="${statisticsSeries.conditions.containsIncompleteIntervals}"
+                            th:text="#{statistics.condition.PARTIAL}">
+                            The range includes an open or future interval.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="statistics-section"
+                 aria-labelledby="statistics-metrics-heading">
+
+            <header class="statistics-section__header">
+                <h3 id="statistics-metrics-heading"
+                    th:text="#{statistics.metricsHeading}">
+                    Period metrics
+                </h3>
+
+                <p th:text="#{statistics.metricsDescription}">
+                    These metrics describe the complete requested period, not
+                    only the points visible in the chart.
                 </p>
             </header>
 
-            <div class="statistics-chart-region">
-                <div id="weeklyEmptyState"
-                     class="statistics-chart-empty"
-                     role="status"
-                     aria-live="polite"
-                     aria-atomic="true"
-                     hidden>
-                    <span class="statistics-chart-empty__indicator"
-                          aria-hidden="true"></span>
+            <div class="statistics-metric-grid"
+                 th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}">
 
-                    <h3 th:text="#{statistics.noWeeklyDataHeading}">
-                        No readings in this period
-                    </h3>
-
-                    <p th:text="#{statistics.noWeeklyData}">
-                        No readings were recorded for this sensor during the
-                        latest seven-day period.
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.average}">
+                        Average
                     </p>
-                </div>
 
-                <div id="weeklyChartCanvasWrapper"
-                     class="statistics-chart-wrapper">
-                    <canvas id="sensorWeeklyChart"
-                            role="img"
-                            aria-details="weeklyDataDetails"
-                            th:aria-label="${#messages.msg(
-                                    'statistics.weeklyChartLabel'
-                                )
-                                + ': '
-                                + selectedSensorName}">
-                        <span th:text="#{statistics.chartFallback}">
-                            Your browser cannot display this statistics chart.
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="2"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.average
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.average
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.metricUnavailable')
+                        : statisticsSeries.periodMetrics.numericMetrics == null
+                            ? #messages.msg('statistics.noSamples')
+                            : statisticsSeries.sensor.displayUnitSymbol}">
+                        Unit
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.minimum}">
+                        Minimum
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="2"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.minimum
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.minimum
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.metricUnavailable')
+                        : statisticsSeries.periodMetrics.numericMetrics == null
+                            ? #messages.msg('statistics.noSamples')
+                            : statisticsSeries.sensor.displayUnitSymbol}">
+                        Unit
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.maximum}">
+                        Maximum
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="2"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.maximum
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.numericMetrics != null
+                                ? statisticsSeries.periodMetrics.numericMetrics.maximum
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.metricUnavailable')
+                        : statisticsSeries.periodMetrics.numericMetrics == null
+                            ? #messages.msg('statistics.noSamples')
+                            : statisticsSeries.sensor.displayUnitSymbol}">
+                        Unit
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.sampleCount}">
+                        Sample count
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="0"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                ? statisticsSeries.periodMetrics.sourceSampleCount
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                ? statisticsSeries.periodMetrics.sourceSampleCount
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.sourceSamples')
+                        : #messages.msg('statistics.metricUnavailable')}">
+                        Source samples
+                    </small>
+                </article>
+            </div>
+
+            <div class="statistics-metric-grid"
+                 th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}">
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.totalSamples}">
+                        Total samples
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="0"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.totalSampleCount
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.totalSampleCount
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.metricUnavailable')
+                        : (statisticsSeries.periodMetrics.motionMetrics == null
+                            or statisticsSeries.periodMetrics.sourceSampleCount == 0)
+                            ? #messages.msg('statistics.noSamples')
+                            : #messages.msg('statistics.motionSamplingNote')}">
+                        Boolean polling samples
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.trueSamples}">
+                        Motion-present samples
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="0"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.trueSampleCount
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.trueSampleCount
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                                    ? #messages.msg('statistics.metricUnavailable')
+                                    : (statisticsSeries.periodMetrics.motionMetrics == null
+                                        or statisticsSeries.periodMetrics.sourceSampleCount == 0)
+                                        ? #messages.msg('statistics.noSamples')
+                                        : #messages.msg('statistics.motionSamplingNote')}">
+                        Boolean polling samples
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.falseSamples}">
+                        No-motion samples
+                    </p>
+
+                    <strong data-statistics-number
+                            data-maximum-fraction-digits="0"
+                            th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.falseSampleCount
+                                : null}"
+                            th:text="${statisticsSeries.periodMetrics.available
+                                and statisticsSeries.periodMetrics.motionMetrics != null
+                                ? statisticsSeries.periodMetrics.motionMetrics.falseSampleCount
+                                : '—'}">
+                        —
+                    </strong>
+
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                                    ? #messages.msg('statistics.metricUnavailable')
+                                    : (statisticsSeries.periodMetrics.motionMetrics == null
+                                        or statisticsSeries.periodMetrics.sourceSampleCount == 0)
+                                        ? #messages.msg('statistics.noSamples')
+                                        : #messages.msg('statistics.motionSamplingNote')}">
+                        Boolean polling samples
+                    </small>
+                </article>
+
+                <article class="statistics-metric-card">
+                    <p th:text="#{statistics.metric.truePercentage}">
+                        Motion percentage
+                    </p>
+
+                    <strong>
+                        <span data-statistics-number
+                              data-maximum-fraction-digits="1"
+                              th:data-statistics-number="${statisticsSeries.periodMetrics.available
+                                  and statisticsSeries.periodMetrics.motionMetrics != null
+                                  ? statisticsSeries.periodMetrics.motionMetrics.truePercentage
+                                  : null}"
+                              th:text="${statisticsSeries.periodMetrics.available
+                                  and statisticsSeries.periodMetrics.motionMetrics != null
+                                  and statisticsSeries.periodMetrics.motionMetrics.truePercentage != null
+                                  ? statisticsSeries.periodMetrics.motionMetrics.truePercentage
+                                  : '—'}">
+                            —
                         </span>
-                    </canvas>
-                </div>
 
-                <details id="weeklyDataDetails"
-                         class="statistics-data"
-                         hidden>
-                    <summary id="weeklyDataSummary"
-                             class="statistics-data__summary"
-                             th:text="#{statistics.weeklyDataTableSummary}">
-                        View seven-day data table
-                    </summary>
+                        <span th:if="${statisticsSeries.periodMetrics.available
+                            and statisticsSeries.periodMetrics.motionMetrics != null
+                            and statisticsSeries.periodMetrics.motionMetrics.truePercentage != null}">
+                            %
+                        </span>
+                    </strong>
 
-                    <div class="statistics-data__scroll"
-                         role="region"
-                         tabindex="0"
-                         aria-labelledby="weeklyDataSummary">
-                        <table class="statistics-data__table">
-                            <caption th:text="${selectedSensorName
-                                    + ' — '
-                                    + #messages.msg(
-                                        'statistics.lastSevenDays'
-                                    )
-                                    + ' — '
-                                    + #messages.msg(
-                                        'statistics.dataTableCaption'
-                                    )}">
-                                Sensor — Last 7 Days — Data table
-                            </caption>
-
-                            <thead>
-                            <tr>
-                                <th scope="col"
-                                    th:text="#{statistics.chart.date}">
-                                    Date
-                                </th>
-
-                                <th class="statistics-data__value"
-                                    scope="col"
-                                    th:text="${#messages.msg(
-                                            'statistics.axis.'
-                                            + selectedSensorType.name()
-                                        )
-                                        + (measurementUnitSymbol == ''
-                                            ? ''
-                                            : ' ('
-                                                + measurementUnitSymbol
-                                                + ')')}">
-                                    Value
-                                </th>
-                            </tr>
-                            </thead>
-
-                            <tbody id="weeklyDataTableBody"></tbody>
-                        </table>
-                    </div>
-                </details>
-
+                    <small th:text="${!statisticsSeries.periodMetrics.available
+                        ? #messages.msg('statistics.metricUnavailable')
+                        : statisticsSeries.periodMetrics.sourceSampleCount == 0
+                            ? #messages.msg('statistics.noSamples')
+                            : #messages.msg('statistics.motionSamplingNote')}">
+                        Boolean Polling samples
+                    </small>
+                </article>
             </div>
         </section>
-    </div>
+
+        <section class="statistics-section"
+                 aria-labelledby="statistics-coverage-heading">
+
+            <header class="statistics-section__header">
+                <h3 id="statistics-coverage-heading"
+                    th:text="#{statistics.coverageHeading}">
+                    Available coverage
+                </h3>
+
+                <p th:text="#{statistics.coverageDescription}">
+                    Coverage reflects retention and verified rollup progress at
+                    the evaluation time.
+                </p>
+            </header>
+
+            <div class="statistics-coverage-grid">
+                <article class="statistics-coverage-card"
+                         th:each="tier : ${statisticsCoverageTiers}">
+
+                    <header class="statistics-coverage-card__header">
+                        <h4 th:text="${#messages.msg(
+                            'statistics.resolution.'
+                            + tier.resolution.name()
+                        )}">
+                            Raw
+                        </h4>
+
+                        <span class="statistics-tier-badge"
+                              th:text="${tier.resolution.name()}">
+                            RAW
+                        </span>
+                    </header>
+
+                    <dl class="statistics-coverage-details">
+                        <div>
+                            <dt th:text="#{statistics.coverage.retentionFrom}">
+                                Retention window starts
+                            </dt>
+
+                            <dd>
+                                <time data-statistics-instant
+                                      th:datetime="${tier.retentionWindowFromInclusive}"
+                                      th:text="${tier.retentionWindowFromInclusive}">
+                                    Retention start
+                                </time>
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt th:text="#{statistics.coverage.represented}">
+                                Represented coverage
+                            </dt>
+
+                            <dd th:if="${tier.representedFromInclusive == null}"
+                                th:text="#{statistics.coverage.none}">
+                                No represented data
+                            </dd>
+
+                            <dd th:if="${tier.representedFromInclusive != null}">
+                                <time data-statistics-instant
+                                      th:datetime="${tier.representedFromInclusive}"
+                                      th:text="${tier.representedFromInclusive}">
+                                    Coverage start
+                                </time>
+
+                                <span aria-hidden="true"> → </span>
+
+                                <time data-statistics-instant
+                                      th:datetime="${tier.representedUntilExclusive}"
+                                      th:text="${tier.representedUntilExclusive}">
+                                    Coverage end
+                                </time>
+                            </dd>
+                        </div>
+
+                        <th:block th:if="${tier.rollupProgress != null}">
+                            <div>
+                                <dt th:text="#{statistics.coverage.verifiedFrom}">
+                                    Verified coverage starts
+                                </dt>
+
+                                <dd th:if="${tier.rollupProgress.verifiedFromInclusive == null}"
+                                    th:text="#{statistics.coverage.noVerified}">
+                                    No verified summary coverage yet
+                                </dd>
+
+                                <dd th:if="${tier.rollupProgress.verifiedFromInclusive != null}">
+                                    <time data-statistics-instant
+                                          th:datetime="${tier.rollupProgress.verifiedFromInclusive}"
+                                          th:text="${tier.rollupProgress.verifiedFromInclusive}">
+                                        Verified start
+                                    </time>
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt th:text="#{statistics.coverage.safeThrough}">
+                                    Safe through
+                                </dt>
+
+                                <dd th:if="${tier.rollupProgress.safeThroughExclusive == null}"
+                                    th:text="#{statistics.coverage.noVerified}">
+                                    No verified summary coverage yet
+                                </dd>
+
+                                <dd th:if="${tier.rollupProgress.safeThroughExclusive != null}">
+                                    <time data-statistics-instant
+                                          th:datetime="${tier.rollupProgress.safeThroughExclusive}"
+                                          th:text="${tier.rollupProgress.safeThroughExclusive}">
+                                        Safe-through boundary
+                                    </time>
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt th:text="#{statistics.coverage.dueThrough}">
+                                    Rollup due through
+                                </dt>
+
+                                <dd>
+                                    <time data-statistics-instant
+                                          th:datetime="${tier.rollupProgress.rollupDueUntilExclusive}"
+                                          th:text="${tier.rollupProgress.rollupDueUntilExclusive}">
+                                        Due boundary
+                                    </time>
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt th:text="#{statistics.coverage.lag}">
+                                    Rollup lag
+                                </dt>
+
+                                <dd>
+                                    <span data-statistics-duration
+                                          th:data-statistics-duration="${tier.rollupProgress.lagSeconds}"
+                                          th:text="#{statistics.duration.seconds(${tier.rollupProgress.lagSeconds})}">
+                                        0 seconds
+                                    </span>
+
+                                    <span class="statistics-rollup-state"
+                                          th:data-state="${tier.rollupProgress.delayed
+                                              ? 'delayed'
+                                              : 'current'}"
+                                          th:text="${tier.rollupProgress.delayed
+                                              ? #messages.msg('statistics.coverage.delayed')
+                                              : #messages.msg('statistics.coverage.current')}">
+                                        Current
+                                    </span>
+                                </dd>
+                            </div>
+                        </th:block>
+                    </dl>
+                </article>
+            </div>
+        </section>
+
+        <section class="statistics-section statistics-chart-section"
+                 aria-labelledby="statistics-chart-heading">
+
+            <header class="statistics-section__header">
+                <h3 id="statistics-chart-heading"
+                    th:text="#{statistics.chartHeading}">
+                    Range chart
+                </h3>
+
+                <p th:text="#{statistics.chartDescription}">
+                    The chart and table use the same server-selected dataset.
+                </p>
+            </header>
+
+            <div id="statisticsChartError"
+                 class="statistics-inline-state statistics-inline-state--error"
+                 role="alert"
+                 hidden>
+
+                <h4 th:text="#{statistics.chartUnavailableHeading}">
+                    Chart unavailable
+                </h4>
+
+                <p th:text="#{statistics.chartUnavailable}">
+                    The table below still contains the complete result.
+                </p>
+            </div>
+
+            <div id="statisticsChartEmpty"
+                 class="statistics-inline-state"
+                 role="status"
+                 hidden>
+
+                <h4 th:text="#{statistics.chartEmptyHeading}">
+                    No chartable samples
+                </h4>
+
+                <p th:text="#{statistics.chartEmpty}">
+                    Use the point statuses and coverage information to
+                    distinguish missing, delayed and expired data.
+                </p>
+            </div>
+
+            <div id="statisticsChartWrapper"
+                 class="statistics-chart-wrapper"
+                 hidden>
+
+                <canvas id="sensorRangeChart"
+                        role="img"
+                        aria-describedby="statistics-chart-instruction statistics-table-description"
+                        th:aria-label="${#messages.msg('statistics.chartAriaLabel')
+                            + ': '
+                            + statisticsSeries.sensor.name}">
+                    <span th:text="#{statistics.chartFallback}">
+                        Your browser cannot display this chart.
+                    </span>
+                </canvas>
+            </div>
+
+            <p id="statistics-chart-instruction"
+               class="statistics-chart-instruction"
+               th:text="#{statistics.chartInstruction}">
+                Use the table's detail actions to inspect a finer retained resolution.
+                When chartable samples exist, chart points provide the same actions.
+            </p>
+
+            <noscript>
+                <div class="statistics-inline-state">
+                    <h4 th:text="#{statistics.chartNoscriptHeading}">
+                        Chart enhancement unavailable
+                    </h4>
+
+                    <p th:text="#{statistics.chartNoscript}">
+                        JavaScript is disabled. The metrics, coverage and data
+                        table remain available.
+                    </p>
+                </div>
+            </noscript>
+        </section>
+
+        <section class="statistics-section"
+                 aria-labelledby="statistics-table-heading">
+
+            <header class="statistics-section__header">
+                <h3 id="statistics-table-heading"
+                    th:text="#{statistics.tableHeading}">
+                    Accessible data table
+                </h3>
+
+                <p id="statistics-table-description"
+                   th:text="#{statistics.tableDescription}">
+                    Periods use exact start and exclusive-end boundaries.
+                </p>
+            </header>
+
+            <div class="statistics-table-scroll"
+                 role="region"
+                 tabindex="0"
+                 aria-labelledby="statistics-table-heading">
+
+                <table class="statistics-table">
+                    <caption th:text="${statisticsSeries.sensor.name
+                        + ' — '
+                        + #messages.msg('statistics.tableCaption')}">
+                        Sensor — statistics range data
+                    </caption>
+
+                    <thead>
+                    <tr>
+                        <th scope="col"
+                            th:text="#{statistics.table.period}">
+                            Period [start, end)
+                        </th>
+
+                        <th scope="col"
+                            th:text="#{statistics.table.status}">
+                            Status
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:text="${statisticsSeries.sensor.type.name() == 'MOTION'
+                                ? #messages.msg('statistics.table.totalSamples')
+                                : #messages.msg('statistics.table.samples')}">
+                            Samples
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}"
+                            th:text="${#messages.msg('statistics.table.minimum')
+                                + ' ('
+                                + statisticsSeries.sensor.displayUnitSymbol
+                                + ')'}">
+                            Minimum
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}"
+                            th:text="${#messages.msg('statistics.table.average')
+                                + ' ('
+                                + statisticsSeries.sensor.displayUnitSymbol
+                                + ')'}">
+                            Average
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}"
+                            th:text="${#messages.msg('statistics.table.maximum')
+                                + ' ('
+                                + statisticsSeries.sensor.displayUnitSymbol
+                                + ')'}">
+                            Maximum
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}"
+                            th:text="#{statistics.table.trueSamples}">
+                            Motion-present
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}"
+                            th:text="#{statistics.table.falseSamples}">
+                            No motion
+                        </th>
+
+                        <th class="statistics-table__number"
+                            scope="col"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}"
+                            th:text="#{statistics.table.truePercentage}">
+                            Motion percentage
+                        </th>
+
+                        <th scope="col"
+                            th:text="#{statistics.table.detail}">
+                            Detail
+                        </th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="point,pointState : ${statisticsSeries.points}"
+                        th:with="dailyDetailRetained=${point.status.name() != 'EXPIRED'
+                         and point.bucketEnd != null
+                         and point.bucketEnd.isAfter(statisticsSeries.coverage.daily.retentionWindowFromInclusive)},
+                     hourlyDetailRetained=${point.status.name() != 'EXPIRED'
+                         and point.bucketEnd != null
+                         and point.bucketEnd.isAfter(statisticsSeries.coverage.hourly.retentionWindowFromInclusive)},
+                     rawDetailAvailable=${point.granularity.name() == 'HOURLY'
+                         and point.bucketEnd != null
+                         and point.sourceSampleCount != null
+                         and point.sourceSampleCount > 0
+                         and point.sourceSampleCount <= statisticsSeries.pointBudget
+                         and statisticsSeries.coverage.raw.representedFromInclusive != null
+                         and statisticsSeries.coverage.raw.representedFromInclusive.isBefore(point.bucketEnd)
+                         and !statisticsSeries.coverage.raw.representedUntilExclusive.isBefore(point.bucketEnd)}"
+                        th:attr="data-statistics-point-row='',
+             data-point-index=${pointState.index}">
+
+                        <th scope="row">
+                            <span class="statistics-period"
+                                  data-statistics-period
+                                  th:data-point-index="${pointState.index}">
+
+                                <time data-statistics-period-start
+                                      th:datetime="${point.recordedAt != null
+                                          ? point.recordedAt
+                                          : point.bucketStart}"
+                                      th:text="${point.recordedAt != null
+                                          ? point.recordedAt
+                                          : point.bucketStart}">
+                                    Period start
+                                </time>
+
+                                <th:block th:if="${point.bucketEnd != null}">
+                                    <span aria-hidden="true"> → </span>
+
+                                    <time data-statistics-period-end
+                                          th:datetime="${point.bucketEnd}"
+                                          th:text="${point.bucketEnd}">
+                                        Period end
+                                    </time>
+                                </th:block>
+                            </span>
+                        </th>
+
+                        <td>
+                            <span class="statistics-point-status"
+                                  th:data-status="${point.status.name()}"
+                                  th:text="${#messages.msg(
+                                      'statistics.pointStatus.'
+                                      + point.status.name()
+                                  )}">
+                                Complete
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            data-statistics-number
+                            data-maximum-fraction-digits="0"
+                            th:data-statistics-number="${point.sourceSampleCount}"
+                            th:text="${point.sourceSampleCount == null
+                                    ? '—'
+                                    : point.sourceSampleCount}">
+                            —
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="2"
+                                  th:data-statistics-number="${point.numericMetrics == null
+                                      ? null
+                                      : point.numericMetrics.minimum}"
+                                  th:text="${point.numericMetrics == null
+                                      ? '—'
+                                      : point.numericMetrics.minimum}">
+                                —
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="2"
+                                  th:data-statistics-number="${point.numericMetrics == null
+                                      ? null
+                                      : point.numericMetrics.average}"
+                                  th:text="${point.numericMetrics == null
+                                      ? '—'
+                                      : point.numericMetrics.average}">
+                                —
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() != 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="2"
+                                  th:data-statistics-number="${point.numericMetrics == null
+                                      ? null
+                                      : point.numericMetrics.maximum}"
+                                  th:text="${point.numericMetrics == null
+                                      ? '—'
+                                      : point.numericMetrics.maximum}">
+                                —
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="0"
+                                  th:data-statistics-number="${point.motionMetrics == null
+                                      ? null
+                                      : point.motionMetrics.trueSampleCount}"
+                                  th:text="${point.motionMetrics == null
+                                      ? '—'
+                                      : point.motionMetrics.trueSampleCount}">
+                                —
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="0"
+                                  th:data-statistics-number="${point.motionMetrics == null
+                                      ? null
+                                      : point.motionMetrics.falseSampleCount}"
+                                  th:text="${point.motionMetrics == null
+                                      ? '—'
+                                      : point.motionMetrics.falseSampleCount}">
+                                —
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__number"
+                            th:if="${statisticsSeries.sensor.type.name() == 'MOTION'}">
+
+                            <span data-statistics-number
+                                  data-maximum-fraction-digits="1"
+                                  th:data-statistics-number="${point.motionMetrics == null
+                                      ? null
+                                      : point.motionMetrics.truePercentage}"
+                                  th:text="${point.motionMetrics == null
+                                      or point.motionMetrics.truePercentage == null
+                                      ? '—'
+                                      : point.motionMetrics.truePercentage}">
+                                —
+                            </span>
+
+                            <span th:if="${point.motionMetrics != null
+                                and point.motionMetrics.truePercentage != null}">
+                                %
+                            </span>
+                        </td>
+
+                        <td class="statistics-table__action">
+                            <a data-statistics-drilldown
+                               th:if="${(point.granularity.name() == 'WEEKLY'
+                                   or point.granularity.name() == 'MONTHLY')
+                                   and dailyDetailRetained}"
+                                    th:href="@{/statistics(
+                                                       sensorId=${statisticsSeries.sensor.id},
+                                                       preset='EXACT',
+                                                       startInclusive=${point.bucketStart},
+                                                       endExclusive=${point.bucketEnd},
+                                                       resolution='DAILY')}"
+                               th:text="#{statistics.drilldown.daily}">
+                                View daily detail
+                            </a>
+
+                            <a data-statistics-drilldown
+                               th:if="${point.granularity.name() == 'DAILY' and hourlyDetailRetained}"
+                               th:href="@{/statistics(
+                                                   sensorId=${statisticsSeries.sensor.id},
+                                                   preset='EXACT',
+                                                   startInclusive=${point.bucketStart},
+                                                   endExclusive=${point.bucketEnd},
+                                                   resolution='HOURLY')}"
+                               th:text="#{statistics.drilldown.hourly}">
+                                View hourly detail
+                            </a>
+
+                            <span class="statistics-table__detail-note"
+                                  th:if="${((point.granularity.name() == 'WEEKLY'
+                                              or point.granularity.name() == 'MONTHLY')
+                                              and !dailyDetailRetained)
+                                              or (point.granularity.name() == 'DAILY'
+                                              and !hourlyDetailRetained)}"
+                                  th:text="#{statistics.drilldown.finerExpired}">
+                                Finer detail has expired for this period
+                            </span>
+
+                            <a data-statistics-drilldown
+                               th:if="${rawDetailAvailable}"
+                               th:href="@{/statistics(
+                                                   sensorId=${statisticsSeries.sensor.id},
+                                                   preset='EXACT',
+                                                   startInclusive=${point.bucketStart},
+                                                   endExclusive=${point.bucketEnd},
+                                                   resolution='RAW')}"
+                               th:text="#{statistics.drilldown.raw}">
+                                View raw detail
+                            </a>
+
+                            <span class="statistics-table__detail-note"
+                                  th:if="${point.granularity.name() == 'HOURLY' and !rawDetailAvailable}"
+                                  th:text="#{statistics.drilldown.rawUnavailable}">
+                                Raw detail unavailable
+                            </span>
+
+                            <span class="statistics-table__detail-note"
+                                  th:if="${point.granularity.name() == 'RAW'}"
+                                  th:text="#{statistics.drilldown.finest}">
+                                Finest retained detail
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(statisticsSeries.points)}">
+                        <td class="statistics-table__empty"
+                            colspan="7"
+                            th:text="#{statistics.table.noRows}">
+                            No point rows were returned for this range.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </article>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
@@ -532,52 +1373,37 @@
 <script id="statistics-page-data"
         type="text/plain"
         th:inline="javascript"
-        th:if="${selectedSensorId != null}">
+        th:if="${statisticsSeries != null}">
     {
-        "selectedSensorId": /*[[${selectedSensorId}]]*/ 1,
-        "selectedSensorName": /*[[${selectedSensorName}]]*/ "Sensor",
-        "sensorType": /*[[${selectedSensorType.name()}]]*/ "TEMPERATURE",
-        "measurementUnitSymbol": /*[[${measurementUnitSymbol}]]*/ "°C",
-        "weeklyData": /*[[${weeklyData}]]*/ [],
-        "hourlyData": /*[[${hourlyData}]]*/ [],
-        "today": /*[[${today}]]*/ "2026-07-14",
+        "locale": /*[[${#locale.toLanguageTag()}]]*/ "en",
+        "series": /*[[${statisticsSeries}]]*/ null,
         "i18n": {
-            "dailyDataset": {
-                "TEMPERATURE": /*[[#{statistics.dataset.daily.TEMPERATURE}]]*/ "Daily Average Temperature",
-                "HUMIDITY": /*[[#{statistics.dataset.daily.HUMIDITY}]]*/ "Daily Average Humidity",
-                "MOTION": /*[[#{statistics.dataset.daily.MOTION}]]*/ "Daily Motion Detections"
+            "chartAverage": /*[[#{statistics.chart.average}]]*/ "Average",
+            "chartRange": /*[[#{statistics.chart.range}]]*/ "Minimum–maximum range",
+            "chartTrueSamples": /*[[#{statistics.chart.trueSamples}]]*/ "Motion-present samples",
+            "chartFalseSamples": /*[[#{statistics.chart.falseSamples}]]*/ "No-motion samples",
+            "chartTruePercentage": /*[[#{statistics.chart.truePercentage}]]*/ "Motion percentage",
+            "chartAxis": {
+                "TEMPERATURE": /*[[#{statistics.chart.axis.TEMPERATURE}]]*/ "Temperature",
+                "HUMIDITY": /*[[#{statistics.chart.axis.HUMIDITY}]]*/ "Relative humidity",
+                "MOTION": /*[[#{statistics.chart.axis.MOTION}]]*/ "Motion samples"
             },
-            "hourlyDataset": {
-                "TEMPERATURE": /*[[#{statistics.dataset.hourly.TEMPERATURE}]]*/ "Hourly Average Temperature",
-                "HUMIDITY": /*[[#{statistics.dataset.hourly.HUMIDITY}]]*/ "Hourly Average Humidity",
-                "MOTION": /*[[#{statistics.dataset.hourly.MOTION}]]*/ "Hourly Motion Detections"
-            },
-            "axis": {
-                "TEMPERATURE": /*[[#{statistics.axis.TEMPERATURE}]]*/ "Temperature",
-                "HUMIDITY": /*[[#{statistics.axis.HUMIDITY}]]*/ "Relative Humidity",
-                "MOTION": /*[[#{statistics.axis.MOTION}]]*/ "Motion Detections"
-            },
-            "tooltipAverage": /*[[#{statistics.tooltipAverage}]]*/ "Average",
-            "tooltipDetections": /*[[#{statistics.tooltipDetections}]]*/ "Detections",
-            "noDataRecorded": /*[[#{statistics.noDataRecorded}]]*/ "No data recorded",
-            "todayHourly": /*[[#{statistics.todayHourly}]]*/ "Today's Hourly Statistics",
-            "hourlyStatistics": /*[[#{statistics.hourlyStatistics}]]*/ "Hourly Statistics",
-            "hourAxis": /*[[#{statistics.hourAxis}]]*/ "Hour of the Day",
-            "dataTableCaption": /*[[#{statistics.dataTableCaption}]]*/ "Data table",
-            "loadingHourly": /*[[#{statistics.loadingHourly}]]*/ "Loading hourly statistics...",
-            "hourlyLoaded": /*[[#{statistics.hourlyLoaded}]]*/ "Hourly statistics loaded.",
-            "hourlyLoadError": /*[[#{statistics.hourlyLoadError}]]*/ "Hourly statistics could not be loaded. The current view has not changed.",
-            "hourlyOffline": /*[[#{statistics.hourlyOffline}]]*/ "You are offline. Reconnect, then retry.",
-            "connectionRestoredRetry": /*[[#{statistics.connectionRestoredRetry}]]*/ "Connection restored. Retry to load the requested day.",
-            "days": [
-                /*[[#{statistics.day.sunday}]]*/ "Sunday",
-                /*[[#{statistics.day.monday}]]*/ "Monday",
-                /*[[#{statistics.day.tuesday}]]*/ "Tuesday",
-                /*[[#{statistics.day.wednesday}]]*/ "Wednesday",
-                /*[[#{statistics.day.thursday}]]*/ "Thursday",
-                /*[[#{statistics.day.friday}]]*/ "Friday",
-                /*[[#{statistics.day.saturday}]]*/ "Saturday"
-            ]
+            "chartAxisSamples": /*[[#{statistics.chart.axis.samples}]]*/ "Samples",
+            "chartAxisPercentage": /*[[#{statistics.chart.axis.percentage}]]*/ "Percentage",
+            "statusLabel": /*[[#{statistics.table.status}]]*/ "Status",
+            "samples": /*[[#{statistics.table.samples}]]*/ "Samples",
+            "endExclusive": /*[[#{statistics.endExclusive}]]*/ "end exclusive",
+            "durationSecond": /*[[#{statistics.duration.second}]]*/ "sec",
+            "durationMinute": /*[[#{statistics.duration.minute}]]*/ "min",
+            "durationHour": /*[[#{statistics.duration.hour}]]*/ "hr",
+            "durationDay": /*[[#{statistics.duration.day}]]*/ "day",
+            "pointStatus": {
+                "COMPLETE": /*[[#{statistics.pointStatus.COMPLETE}]]*/ "Complete",
+                "NO_SAMPLES": /*[[#{statistics.pointStatus.NO_SAMPLES}]]*/ "No samples",
+                "PARTIAL": /*[[#{statistics.pointStatus.PARTIAL}]]*/ "Partial",
+                "ROLLUP_DELAY": /*[[#{statistics.pointStatus.ROLLUP_DELAY}]]*/ "Rollup delayed",
+                "EXPIRED": /*[[#{statistics.pointStatus.EXPIRED}]]*/ "Expired"
+            }
         }
     }
 </script>
