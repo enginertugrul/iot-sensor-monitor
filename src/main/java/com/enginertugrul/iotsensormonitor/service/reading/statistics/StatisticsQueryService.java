@@ -1,5 +1,6 @@
 package com.enginertugrul.iotsensormonitor.service.reading.statistics;
 
+import com.enginertugrul.iotsensormonitor.dto.statistics.SensorStatisticsExportDTO;
 import com.enginertugrul.iotsensormonitor.dto.statistics.SensorStatisticsSeriesDTO;
 import com.enginertugrul.iotsensormonitor.dto.statistics.StatisticsResolution;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
@@ -14,6 +15,17 @@ public interface StatisticsQueryService {
             Instant startInclusive,
             Instant endExclusive,
             StatisticsResolution requestedResolution,
+            TemperatureUnit temperatureUnit
+    );
+
+
+
+    SensorStatisticsExportDTO getSummaryExport(
+            Long sensorId,
+            Long ownerId,
+            Instant startInclusive,
+            Instant endExclusive,
+            StatisticsResolution resolution,
             TemperatureUnit temperatureUnit
     );
 }

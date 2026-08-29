@@ -7,6 +7,7 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAg
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.InvalidStatisticsQueryException;
 import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.support.temperature.TemperatureUnitConverter;
@@ -57,28 +58,22 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
             TemperatureUnit temperatureUnit
     ) {
 
-        Sensor sensor = sensorRepository.findByIdAndOwnerId(sensorId,ownerId)
-                .orElseThrow(SensorNotFoundException::new);
 
-        Instant asOf = Instant.now();
 
-        StatisticsResolution requested = requestedResolution == null
-                ? StatisticsResolution.AUTO
-                : requestedResolution;
-
-        TemperatureUnit effectiveTemperatureUnit = temperatureUnit == null
-                ? TemperatureUnit.CELSIUS
-                : temperatureUnit;
-
-        StatisticsQueryWindow window = StatisticsQueryWindow.resolve(
+        StatisticsRequestContext request = resolveRequest(
+                sensorId,
+                ownerId,
                 startInclusive,
                 endExclusive,
-                asOf,
-                queryPolicy.getMaximumRange());
+                requestedResolution,
+                temperatureUnit);
 
-        ZoneId timeZone = ZoneId.of(sensor.getTimezone());
-
-        StatisticsAvailabilitySnapshot availability = availabilityResolver.resolve(sensor, window.asOf());
+        Sensor sensor = request.sensor();
+        StatisticsResolution requested = request.requestedResolution();
+        TemperatureUnit effectiveTemperatureUnit = request.temperatureUnit();
+        StatisticsQueryWindow window = request.window();
+        ZoneId timeZone = request.timeZone();
+        StatisticsAvailabilitySnapshot availability = request.availability();
 
         StatisticsMaterializedSeries materialized = seriesMaterializer.materialize(
                 sensor,
@@ -142,10 +137,142 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
                 rangeConditions,
                 fullyCovered,
                 queryPolicy.getChartPointBudget(),
+                toCsvExportAvailabilityDTO(materialized),
                 toCoverageDTO(availability),
                 periodMetrics,
                 points);
     }
+
+
+
+
+    @Override
+    @Transactional(readOnly = true,isolation = Isolation.REPEATABLE_READ)
+    public SensorStatisticsExportDTO getSummaryExport(
+            Long sensorId,
+            Long ownerId,
+            Instant startInclusive,
+            Instant endExclusive,
+            StatisticsResolution resolution,
+            TemperatureUnit temperatureUnit
+    ) {
+        StatisticsRequestContext request = resolveRequest(
+                sensorId,
+                ownerId,
+                startInclusive,
+                endExclusive,
+                resolution,
+                temperatureUnit);
+
+        StatisticsResolution requestedResolution = request.requestedResolution();
+
+        if (requestedResolution == StatisticsResolution.RAW) {
+            throw new InvalidStatisticsQueryException(
+                    "Raw-reading CSV export is not available");
+        }
+
+        StatisticsMaterializedExport materialized =
+                seriesMaterializer.materializeSummaryExport(
+                        request.sensor(),
+                        request.window(),
+                        request.timeZone(),
+                        requestedResolution,
+                        request.availability());
+
+        StatisticsResolution resolvedResolution =
+                materialized.resolvedResolution();
+
+        StatisticsDisplayGranularity granularity =
+                switch (resolvedResolution) {
+                    case HOURLY -> StatisticsDisplayGranularity.HOURLY;
+                    case DAILY -> StatisticsDisplayGranularity.DAILY;
+                    case AUTO,RAW -> throw new IllegalStateException(
+                            "Summary export resolved to a non-summary resolution");
+                };
+
+        List<StatisticsSeriesPointDTO> rows =
+                materialized.rows().stream()
+                        .map(point -> toPointDTO(
+                                request.sensor().getType(),
+                                point,
+                                granularity,
+                                request.temperatureUnit()))
+                        .toList();
+
+        StatisticsQueryWindow window = request.window();
+
+        return new SensorStatisticsExportDTO(
+                toSensorDTO(request.sensor(),request.temperatureUnit()),
+                window.evaluated().startInclusive(),
+                window.evaluated().endExclusive(),
+                resolvedResolution,
+                rows);
+    }
+
+    private StatisticsRequestContext resolveRequest(
+            Long sensorId,
+            Long ownerId,
+            Instant startInclusive,
+            Instant endExclusive,
+            StatisticsResolution requestedResolution,
+            TemperatureUnit temperatureUnit
+    ) {
+        Sensor sensor = sensorRepository.findByIdAndOwnerId(sensorId,ownerId)
+                .orElseThrow(SensorNotFoundException::new);
+
+        Instant asOf = Instant.now();
+
+        StatisticsResolution effectiveResolution =
+                requestedResolution == null
+                        ? StatisticsResolution.AUTO
+                        : requestedResolution;
+
+        TemperatureUnit effectiveTemperatureUnit =
+                temperatureUnit == null
+                        ? TemperatureUnit.CELSIUS
+                        : temperatureUnit;
+
+        StatisticsQueryWindow window = StatisticsQueryWindow.resolve(
+                startInclusive,
+                endExclusive,
+                asOf,
+                queryPolicy.getMaximumRange());
+
+        ZoneId timeZone = ZoneId.of(sensor.getTimezone());
+
+        StatisticsAvailabilitySnapshot availability =
+                availabilityResolver.resolve(sensor,window.asOf());
+
+        return new StatisticsRequestContext(
+                sensor,
+                effectiveResolution,
+                effectiveTemperatureUnit,
+                window,
+                timeZone,
+                availability);
+    }
+
+
+
+
+    private StatisticsCsvExportAvailabilityDTO toCsvExportAvailabilityDTO(StatisticsMaterializedSeries materialized) {
+
+        StatisticsResolution resolution = materialized.resolvedResolution();
+
+        boolean summaryResolution = resolution == StatisticsResolution.HOURLY || resolution == StatisticsResolution.DAILY;
+
+        int rowCount = summaryResolution
+                        ? materialized.sourcePoints().size()
+                        : 0;
+
+        int rowLimit = queryPolicy.getCsvExportRowLimit();
+
+        return new StatisticsCsvExportAvailabilityDTO(
+                summaryResolution && rowCount <= rowLimit,
+                rowCount,
+                rowLimit);
+    }
+
 
 
 
@@ -580,6 +707,18 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
     private boolean containsStatus(List<? extends StatisticsDataPoint> points, StatisticsPointStatus status) {
 
         return points.stream().anyMatch(point -> point.status() == status);
+    }
+
+
+
+    private record StatisticsRequestContext(
+            Sensor sensor,
+            StatisticsResolution requestedResolution,
+            TemperatureUnit temperatureUnit,
+            StatisticsQueryWindow window,
+            ZoneId timeZone,
+            StatisticsAvailabilitySnapshot availability
+    ) {
     }
 
 }

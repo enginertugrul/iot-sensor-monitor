@@ -53,6 +53,22 @@ public class StatisticsResolutionPolicy {
 
 
 
+    public boolean fitsCsvExportRowLimit(long rowCount) {
+        return rowCount <= queryPolicy.getCsvExportRowLimit();
+    }
+
+    public void requireCsvExportRowLimit(StatisticsResolution resolution,long rowCount) {
+        if (!fitsCsvExportRowLimit(rowCount)) {
+            throw new InvalidStatisticsQueryException(
+                    "The requested " + resolution
+                            + " CSV export would contain " + rowCount
+                            + " rows, exceeding the configured limit of "
+                            + queryPolicy.getCsvExportRowLimit());
+        }
+    }
+
+
+
     public StatisticsDisplayGranularity resolveDisplayGranularity(
             StatisticsResolution resolution,
             LocalDate firstLocalDate,

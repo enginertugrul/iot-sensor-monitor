@@ -69,6 +69,106 @@ public class StatisticsSeriesMaterializer {
 
 
 
+
+
+    StatisticsMaterializedExport materializeSummaryExport(
+            Sensor sensor,
+            StatisticsQueryWindow window,
+            ZoneId timeZone,
+            StatisticsResolution resolution,
+            StatisticsAvailabilitySnapshot availability
+    ) {
+        return switch (resolution) {
+            case AUTO -> materializeSummaryExportAutomatically(
+                    sensor,
+                    window,
+                    timeZone,
+                    availability);
+            case HOURLY,DAILY -> materializeSummaryExportAtResolution(
+                    sensor,
+                    window,
+                    timeZone,
+                    resolution,
+                    availability);
+            case RAW -> throw new IllegalStateException("RAW export must be rejected by the query service");
+        };
+    }
+
+    private StatisticsMaterializedExport materializeSummaryExportAutomatically(
+            Sensor sensor,
+            StatisticsQueryWindow window,
+            ZoneId timeZone,
+            StatisticsAvailabilitySnapshot availability
+    ) {
+        long hourlyRowCount = countHourlyBuckets(window.evaluated());
+
+        if (resolutionPolicy.fitsCsvExportRowLimit(hourlyRowCount)) {
+            List<StatisticsDataPoint> hourlyRows =
+                    buildHourlyPoints(sensor,window,availability);
+
+            requireExpectedExportRowCount(hourlyRows,hourlyRowCount);
+
+            boolean hourlyTierCoversRange =
+                    !containsStatus(hourlyRows,StatisticsPointStatus.EXPIRED)
+                            && !containsStatus(hourlyRows,StatisticsPointStatus.ROLLUP_DELAY);
+
+            if (hourlyTierCoversRange) {
+                return new StatisticsMaterializedExport(
+                        StatisticsResolution.HOURLY,
+                        hourlyRows);
+            }
+        }
+
+        return materializeSummaryExportAtResolution(
+                sensor,
+                window,
+                timeZone,
+                StatisticsResolution.DAILY,
+                availability);
+    }
+
+    private StatisticsMaterializedExport materializeSummaryExportAtResolution(
+            Sensor sensor,
+            StatisticsQueryWindow window,
+            ZoneId timeZone,
+            StatisticsResolution resolution,
+            StatisticsAvailabilitySnapshot availability
+    ) {
+        long expectedRowCount = switch (resolution) {
+            case HOURLY -> countHourlyBuckets(window.evaluated());
+            case DAILY -> countDailyBuckets(window,timeZone);
+            case AUTO,RAW -> throw new IllegalStateException(
+                    "Summary export requires HOURLY or DAILY resolution");
+        };
+
+        resolutionPolicy.requireCsvExportRowLimit(resolution,expectedRowCount);
+
+        List<StatisticsDataPoint> rows = switch (resolution) {
+            case HOURLY -> buildHourlyPoints(sensor,window,availability);
+            case DAILY -> buildDailyPoints(sensor,window,timeZone,availability);
+            case AUTO,RAW -> throw new IllegalStateException(
+                    "Summary export requires HOURLY or DAILY resolution");
+        };
+
+        requireExpectedExportRowCount(rows,expectedRowCount);
+
+        return new StatisticsMaterializedExport(resolution,rows);
+    }
+
+    private void requireExpectedExportRowCount(
+            List<StatisticsDataPoint> rows,
+            long expectedRowCount
+    ) {
+        if (rows.size() != expectedRowCount) {
+            throw new IllegalStateException(
+                    "Materialized summary export row count differs from its projected row count");
+        }
+    }
+
+
+
+
+
     private StatisticsMaterializedSeries materializeAutomatically(
             Sensor sensor,
             StatisticsQueryWindow window,
@@ -853,6 +953,16 @@ public class StatisticsSeriesMaterializer {
         Instant finalBucketEnd = ceilToHour(evaluatedRange.endExclusive());
 
         return Duration.between(firstBucketStart,finalBucketEnd).toHours();
+    }
+
+
+
+
+    private long countDailyBuckets(StatisticsQueryWindow window, ZoneId timeZone) {
+        LocalDate firstDate = window.firstLocalDate(timeZone);
+        LocalDate lastDate = window.lastLocalDate(timeZone);
+
+        return ChronoUnit.DAYS.between(firstDate,lastDate) + 1;
     }
 
 

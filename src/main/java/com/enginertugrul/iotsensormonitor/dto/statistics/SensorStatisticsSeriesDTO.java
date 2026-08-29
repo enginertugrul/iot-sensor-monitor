@@ -18,6 +18,7 @@ public record SensorStatisticsSeriesDTO(
         StatisticsRangeConditionsDTO conditions,
         boolean fullyCovered,
         int pointBudget,
+        StatisticsCsvExportAvailabilityDTO csvExport,
         StatisticsCoverageDTO coverage,
         StatisticsPeriodMetricsDTO periodMetrics,
         List<StatisticsSeriesPointDTO> points
@@ -35,12 +36,11 @@ public record SensorStatisticsSeriesDTO(
         Objects.requireNonNull(displayGranularity,"displayGranularity must not be null");
         Objects.requireNonNull(status,"status must not be null");
         Objects.requireNonNull(conditions,"conditions must not be null");
+        Objects.requireNonNull(csvExport,"csvExport must not be null");
         Objects.requireNonNull(coverage,"coverage must not be null");
         Objects.requireNonNull(periodMetrics,"periodMetrics must not be null");
 
-
         if (fullyCovered != conditions.fullyCovered()) {
-
             throw new IllegalArgumentException("fullyCovered must agree with the range conditions");
         }
 

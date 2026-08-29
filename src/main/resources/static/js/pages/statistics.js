@@ -8,9 +8,7 @@
     let connectionStatusTimer = null;
     let connectionWasOffline = navigator.onLine === false;
 
-    const networkControls = rangeForm
-        ? Array.from(rangeForm.querySelectorAll('[data-statistics-network-control]'))
-        : [];
+    const networkControls = Array.from(document.querySelectorAll('[data-statistics-network-control]'));
 
     const initialNetworkDisabled = new WeakMap(
         networkControls.map(control => [control,control.disabled])
@@ -54,8 +52,10 @@
     window.addEventListener('offline',() => updateConnectionStatus());
     window.addEventListener('online',() => updateConnectionStatus(true));
 
-    rangeForm?.addEventListener('submit',event => {
-        if (navigator.onLine !== false) {
+    document.addEventListener('submit',event => {
+        if (!(event.target instanceof HTMLFormElement)
+            || !event.target.matches('[data-statistics-network-form]')
+            || navigator.onLine !== false) {
             return;
         }
 

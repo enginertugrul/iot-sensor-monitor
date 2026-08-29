@@ -110,3 +110,15 @@ record StatisticsMaterializedSeries(
         sourcePoints = List.copyOf(Objects.requireNonNull(sourcePoints,"sourcePoints must not be null"));
     }
 }
+
+
+
+record StatisticsMaterializedExport(
+        StatisticsResolution resolvedResolution,
+        List<StatisticsDataPoint> rows
+) {
+
+    StatisticsMaterializedExport {
+        rows = List.copyOf(rows);
+    }
+}

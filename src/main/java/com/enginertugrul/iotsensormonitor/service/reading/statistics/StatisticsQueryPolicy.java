@@ -12,15 +12,18 @@ import java.util.Objects;
 public class StatisticsQueryPolicy {
 
     private final int chartPointBudget;
+    private final int csvExportRowLimit;
     private final Duration autoRawMaximumRange;
     private final Duration maximumRange;
 
     public StatisticsQueryPolicy(
             @Value("${app.sensor-data.statistics.chart-point-budget:400}") int chartPointBudget,
+            @Value("${app.sensor-data.statistics.csv-export-row-limit:2500}") int csvExportRowLimit,
             @Value("${app.sensor-data.statistics.auto-raw-maximum-range:PT1H}") Duration autoRawMaximumRange,
             @Value("${app.sensor-data.statistics.maximum-range:P1095D}") Duration maximumRange
     ) {
         this.chartPointBudget = requireInRange(chartPointBudget,1,10_000,"chartPointBudget");
+        this.csvExportRowLimit = requireInRange(csvExportRowLimit,1,10_000,"csvExportRowLimit");
         this.autoRawMaximumRange = requirePositive(autoRawMaximumRange,"autoRawMaximumRange");
         this.maximumRange = requirePositive(maximumRange,"maximumRange");
 

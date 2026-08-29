@@ -106,7 +106,8 @@
               class="statistics-range-form"
               th:action="@{/statistics}"
               th:object="${statisticsQuery}"
-              method="get">
+              method="get"
+              data-statistics-network-form>
 
             <div class="statistics-control-grid">
                 <div class="form-field statistics-control-grid__sensor">
@@ -485,6 +486,71 @@
                     </dd>
                 </div>
             </dl>
+
+            <section class="statistics-export"
+                     aria-labelledby="statistics-export-heading"
+                     th:with="csvExport=${statisticsSeries.csvExport},
+                      summaryResolution=${statisticsSeries.resolvedResolution.name() != 'RAW'},
+                      exportResolutionLabel=${#messages.msg(
+                          'statistics.resolution.'
+                          + statisticsSeries.resolvedResolution.name()
+                  )}">
+
+                <div class="statistics-export__copy">
+                    <h3 id="statistics-export-heading"
+                        th:text="#{statistics.exportHeading}">
+                        CSV export
+                    </h3>
+
+                    <p id="statistics-export-help"
+                       th:text="${csvExport.available
+               ? #messages.msg(
+                   'statistics.exportHelp',
+                   exportResolutionLabel
+               )
+               : summaryResolution
+                   ? #messages.msg(
+                       'statistics.exportLimitExceeded',
+                       csvExport.rowCount,
+                       csvExport.rowLimit
+                   )
+                   : #messages.msg(
+                       'statistics.exportRawUnavailable'
+                   )}">
+                        Download the applied range as hourly or daily intervals.
+                    </p>
+                </div>
+
+                <form class="statistics-export__form"
+                      th:action="@{/api/sensors/{sensorId}/statistics/export.csv(
+              sensorId=${statisticsSeries.sensor.id}
+          )}"
+                      method="get"
+                      data-statistics-network-form>
+
+                    <input type="hidden"
+                           name="startInclusive"
+                           th:value="${statisticsSeries.evaluatedStartInclusive}">
+
+                    <input type="hidden"
+                           name="endExclusive"
+                           th:value="${statisticsSeries.evaluatedEndExclusive}">
+
+                    <input type="hidden"
+                           name="resolution"
+                           th:value="${statisticsSeries.resolvedResolution.name()}">
+
+                    <button class="form-button form-button--secondary"
+                            type="submit"
+                            aria-describedby="statistics-export-help"
+                            data-statistics-network-control
+                            th:disabled="${!csvExport.available}"
+                            th:text="#{statistics.exportAction}">
+                        Download CSV
+                    </button>
+                </form>
+            </section>
+
         </header>
 
         <section class="statistics-status-banner"
