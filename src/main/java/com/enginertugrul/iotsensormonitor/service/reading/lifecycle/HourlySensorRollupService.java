@@ -268,14 +268,14 @@ public class HourlySensorRollupService {
 
     private static Instant requireUtcHourBoundary(Instant value) {
 
-        Instant requiredValue = Objects.requireNonNull(value, "eligibleCoveredUntil must not be null");
+        Objects.requireNonNull(value, "eligibleCoveredUntil must not be null");
 
-        if (!requiredValue.equals(requiredValue.truncatedTo(ChronoUnit.HOURS))) {
+        if (!value.equals(value.truncatedTo(ChronoUnit.HOURS))) {
 
             throw new IllegalArgumentException("eligibleCoveredUntil must be aligned to a UTC hour");
         }
 
-        return requiredValue;
+        return value;
     }
 
 

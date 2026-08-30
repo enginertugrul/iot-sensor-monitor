@@ -72,8 +72,8 @@ public class SensorDataLifecyclePolicy {
         }
 
         if (this.dailyRollupGrace.compareTo(Duration.ofDays(1)) >= 0) {
-            throw new IllegalArgumentException(
-                    "dailyRollupGrace must be shorter than one day");
+
+            throw new IllegalArgumentException("dailyRollupGrace must be shorter than one day");
         }
     }
 
@@ -82,15 +82,13 @@ public class SensorDataLifecyclePolicy {
 
 
     private static Duration requirePositive(Duration value,String fieldName) {
-        Duration requiredValue = Objects.requireNonNull(
-                value,
-                fieldName + " must not be null");
+        Objects.requireNonNull(value, fieldName + " must not be null");
 
-        if (requiredValue.isZero() || requiredValue.isNegative()) {
+        if (value.isZero() || value.isNegative()) {
             throw new IllegalArgumentException(fieldName + " must be positive");
         }
 
-        return requiredValue;
+        return value;
     }
 
 

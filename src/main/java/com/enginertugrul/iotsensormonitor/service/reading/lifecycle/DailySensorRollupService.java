@@ -48,17 +48,17 @@ public class DailySensorRollupService {
 
     public DailyRollupRunResult rollUpClosedLocalDays(Instant eligibleBucketEnd) {
 
-        Instant requiredEligibleBucketEnd = Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
+        Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
 
         List<RollupSensorProjection> sensors = sensorRepository.findSensorsForRollup();
 
         RollupRunState run = new RollupRunState(lifecyclePolicy.getMaximumBucketsPerRun());
 
-        catchUpClosedLocalDays(sensors, requiredEligibleBucketEnd, run);
+        catchUpClosedLocalDays(sensors, eligibleBucketEnd, run);
 
         run.bounded = run.isBudgetExhausted() && run.hasUnfinishedCatchUp(sensors);
 
-        refreshTrailingCoveredDays(sensors, requiredEligibleBucketEnd, run);
+        refreshTrailingCoveredDays(sensors, eligibleBucketEnd, run);
 
         Instant oldestCoveredUntil =
                 checkpointRepository.findOldestCoveredUntilByStage(

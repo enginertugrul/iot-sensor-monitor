@@ -24,7 +24,7 @@ record StatisticsRollupProgress(
 
     StatisticsRollupProgress {
 
-        verifiedCoverage = Objects.requireNonNull(verifiedCoverage, "verifiedCoverage must not be null");
+        Objects.requireNonNull(verifiedCoverage, "verifiedCoverage must not be null");
 
         Objects.requireNonNull(rollupDueUntilExclusive, "rollupDueUntilExclusive must not be null");
 
@@ -60,8 +60,8 @@ record StatisticsTierAvailability(
         Objects.requireNonNull(resolution,"resolution must not be null");
         Objects.requireNonNull(retention,"retention must not be null");
 
-        representedCoverage = Objects.requireNonNull(representedCoverage, "representedCoverage must not be null");
-        rollupProgress = Objects.requireNonNull(rollupProgress, "rollupProgress must not be null");
+        Objects.requireNonNull(representedCoverage, "representedCoverage must not be null");
+        Objects.requireNonNull(rollupProgress, "rollupProgress must not be null");
 
         if (resolution == StatisticsResolution.AUTO) {
             throw new IllegalArgumentException("AUTO is not a storage tier");

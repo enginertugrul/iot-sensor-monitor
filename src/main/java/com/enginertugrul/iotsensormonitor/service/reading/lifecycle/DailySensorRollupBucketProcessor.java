@@ -55,12 +55,11 @@ public class DailySensorRollupBucketProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DailyRollupBucketResult advanceNextClosedDay(RollupSensorProjection sensor, Instant eligibleBucketEnd) {
 
-        RollupSensorProjection requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
-        Long sensorId = requiredSensor.getId();
-        Instant requiredEligibleBucketEnd = Objects.requireNonNull(eligibleBucketEnd,"eligibleBucketEnd must not be null");
+        Objects.requireNonNull(sensor,"sensor must not be null");
+        Objects.requireNonNull(eligibleBucketEnd,"eligibleBucketEnd must not be null");
 
-
-        ZoneId timeZone = ZoneId.of(requiredSensor.getTimezone());
+        Long sensorId = sensor.getId();
+        ZoneId timeZone = ZoneId.of(sensor.getTimezone());
 
         Optional<SensorRollupCheckpoint> hourlyCoverageCheckpointCandidate = checkpointRepository.findBySensorIdAndStageForUpdate(sensorId, RollupStage.RAW_TO_HOURLY);
 
@@ -75,7 +74,7 @@ public class DailySensorRollupBucketProcessor {
         LocalDayBucket bucket = nextLocalDayBucket(dailyCoverageCheckpoint,timeZone);
         Instant requiredHourlyCoveredUntil = utcHourAtOrAfter(bucket.end());
 
-        if (bucket.end().isAfter(requiredEligibleBucketEnd)) {
+        if (bucket.end().isAfter(eligibleBucketEnd)) {
             return upToDateResult(
                     sensorId,
                     timeZone,
@@ -100,7 +99,7 @@ public class DailySensorRollupBucketProcessor {
         attemptedAt = notBefore(attemptedAt,bucket.end());
         dailyCoverageCheckpoint.recordAttempt(bucket.start(),attemptedAt);
 
-        DailyAggregateSource source = aggregateDailySource(requiredSensor, bucket, hourlyCoverageCheckpoint);
+        DailyAggregateSource source = aggregateDailySource(sensor, bucket, hourlyCoverageCheckpoint);
 
         Instant completedAt = notBefore(Instant.now(),attemptedAt);
 
@@ -133,16 +132,14 @@ public class DailySensorRollupBucketProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DailyRollupBucketResult refreshCoveredDay(RollupSensorProjection sensor, LocalDate localDate, Instant eligibleBucketEnd) {
 
-        RollupSensorProjection requiredSensor = Objects.requireNonNull(sensor, "sensor must not be null");
+        Objects.requireNonNull(sensor, "sensor must not be null");
+        Objects.requireNonNull(localDate, "localDate must not be null");
+        Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
 
-        LocalDate requiredLocalDate = Objects.requireNonNull(localDate, "localDate must not be null");
+        Long sensorId = sensor.getId();
+        ZoneId timeZone = ZoneId.of(sensor.getTimezone());
 
-        Instant requiredEligibleBucketEnd = Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
-
-        Long sensorId = requiredSensor.getId();
-        ZoneId timeZone = ZoneId.of(requiredSensor.getTimezone());
-
-        LocalDayBucket bucket = localDayBucket(requiredLocalDate, timeZone);
+        LocalDayBucket bucket = localDayBucket(localDate, timeZone);
 
         Instant requiredHourlyCoveredUntil = utcHourAtOrAfter(bucket.end());
 
@@ -180,12 +177,9 @@ public class DailySensorRollupBucketProcessor {
         SensorRollupCheckpoint dailyCheckpoint = dailyCandidate.get();
 
         boolean dailyBucketIsRefreshable =
-                !bucket.start().isBefore(
-                        dailyCheckpoint.getCoverageStartedAt())
-                        && !bucket.end().isAfter(
-                        dailyCheckpoint.getCoveredUntil())
-                        && !bucket.end().isAfter(
-                        requiredEligibleBucketEnd);
+                !bucket.start().isBefore(dailyCheckpoint.getCoverageStartedAt())
+                        && !bucket.end().isAfter(dailyCheckpoint.getCoveredUntil())
+                        && !bucket.end().isAfter(eligibleBucketEnd);
 
         if (!dailyBucketIsRefreshable) {
             return refreshResult(
@@ -220,14 +214,11 @@ public class DailySensorRollupBucketProcessor {
                                         "Checkpoint covers a daily bucket "
                                                 + "with no summary row"));
 
-        DailyAggregateSource source = aggregateDailySource(requiredSensor, bucket, hourlyCheckpoint);
+        DailyAggregateSource source = aggregateDailySource(sensor, bucket, hourlyCheckpoint);
 
         Instant refreshedAt = notBefore(Instant.now(), bucket.end());
-
         refreshedAt = notBefore(refreshedAt, hourlyCheckpoint.getUpdatedAt());
-
         refreshedAt = notBefore(refreshedAt, dailyCheckpoint.getUpdatedAt());
-
         refreshedAt = notBefore(refreshedAt, summary.getRefreshedAt());
 
         summary.refresh(source.aggregate(), refreshedAt);

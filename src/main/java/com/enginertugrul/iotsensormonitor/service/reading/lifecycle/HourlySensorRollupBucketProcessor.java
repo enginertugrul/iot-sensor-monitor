@@ -47,9 +47,10 @@ public class HourlySensorRollupBucketProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public HourlyRollupBucketResult advanceNextClosedHour(RollupSensorProjection sensor, Instant eligibleCoveredUntil) {
 
-        RollupSensorProjection requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
+        Objects.requireNonNull(sensor,"sensor must not be null");
         Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil, "eligibleCoveredUntil");
-        Long sensorId = requiredSensor.getId();
+
+        Long sensorId = sensor.getId();
 
 
         SensorRollupCheckpoint checkpoint = loadOrInitializeCheckpoint(sensor);
@@ -78,7 +79,7 @@ public class HourlySensorRollupBucketProcessor {
                         bucketStart,
                         bucketEnd);
 
-        SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(requiredSensor.getType(), rawAggregate);
+        SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
 
 
         Instant completedAt = notBefore(Instant.now(),attemptedAt);
@@ -112,8 +113,8 @@ public class HourlySensorRollupBucketProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public HourlyRollupBucketResult refreshCoveredHour(RollupSensorProjection sensor, Instant bucketStart, Instant eligibleCoveredUntil) {
 
-        RollupSensorProjection requiredSensor = Objects.requireNonNull(sensor, "sensor must not be null");
-        Long sensorId = requiredSensor.getId();
+        Objects.requireNonNull(sensor, "sensor must not be null");
+        Long sensorId = sensor.getId();
 
 
         Instant requiredBucketStart = requireUtcHourBoundary(bucketStart, "bucketStart");
@@ -167,7 +168,7 @@ public class HourlySensorRollupBucketProcessor {
                         bucketEnd);
 
         SensorSummaryAggregate aggregate =
-                SensorSummaryAggregator.fromRawReadings(requiredSensor.getType(), rawAggregate);
+                SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
 
 
         Instant refreshedAt = notBefore(Instant.now(),bucketEnd);

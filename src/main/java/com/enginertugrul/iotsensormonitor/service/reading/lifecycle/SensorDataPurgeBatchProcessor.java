@@ -44,34 +44,34 @@ public class SensorDataPurgeBatchProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SensorDataPurgeBatchResult purgeRawReadings(Long sensorId, Instant retentionBoundaryExclusive, int batchSize) {
 
-        long requiredSensorId = requireSensorId(sensorId);
+        requireSensorId(sensorId);
         Instant requiredRetentionBoundary = requireUtcHourBoundary(retentionBoundaryExclusive,"retentionBoundaryExclusive");
-        int requiredBatchSize = requireBatchSize(batchSize);
+        requireBatchSize(batchSize);
 
-        if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(requiredSensorId,requiredRetentionBoundary)) {
-            return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,false);
+        if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(sensorId,requiredRetentionBoundary)) {
+            return SensorDataPurgeBatchResult.noExpiredRows(sensorId,false);
         }
 
         Optional<SensorRollupCheckpoint> hourlyCheckpoint =
-                checkpointRepository.findBySensorIdAndStage(requiredSensorId,RollupStage.RAW_TO_HOURLY);
+                checkpointRepository.findBySensorIdAndStage(sensorId,RollupStage.RAW_TO_HOURLY);
 
         Optional<SensorRollupCheckpoint> dailyCheckpoint =
-                checkpointRepository.findBySensorIdAndStage(requiredSensorId,RollupStage.HOURLY_TO_DAILY);
+                checkpointRepository.findBySensorIdAndStage(sensorId,RollupStage.HOURLY_TO_DAILY);
 
         SensorDataPurgeBatchResult.CoverageBlocker coverageBlocker =
                 determineRawCoverageBlocker(hourlyCheckpoint,dailyCheckpoint,requiredRetentionBoundary);
 
         if (hourlyCheckpoint.isEmpty() || dailyCheckpoint.isEmpty()) {
-            return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,false,coverageBlocker);
+            return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,false,coverageBlocker);
         }
 
-        if (!sensorReadingRepository.existsEligibleForRetentionPurge(requiredSensorId,requiredRetentionBoundary)) {
-            if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(requiredSensorId,requiredRetentionBoundary)) {
-                return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,false);
+        if (!sensorReadingRepository.existsEligibleForRetentionPurge(sensorId,requiredRetentionBoundary)) {
+            if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(sensorId,requiredRetentionBoundary)) {
+                return SensorDataPurgeBatchResult.noExpiredRows(sensorId,false);
             }
 
             if (coverageBlocker != SensorDataPurgeBatchResult.CoverageBlocker.NONE) {
-                return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,false,coverageBlocker);
+                return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,false,coverageBlocker);
             }
 
             throw new IllegalStateException("Expired raw readings exist inside verified rollup coverage but none are eligible for deletion");
@@ -79,14 +79,14 @@ public class SensorDataPurgeBatchProcessor {
 
         int rowsDeleted = requireValidDeletedRowCount(
                 sensorReadingRepository.deleteOldestEligibleRetentionBatch(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary,
-                        requiredBatchSize),
-                requiredBatchSize);
+                        batchSize),
+                batchSize);
 
         boolean moreEligibleRows =
                 sensorReadingRepository.existsEligibleForRetentionPurge(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary);
 
         if (rowsDeleted > 0) {
@@ -95,26 +95,26 @@ public class SensorDataPurgeBatchProcessor {
                             moreEligibleRows,
                             coverageBlocker,
                             sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(
-                                    requiredSensorId,
+                                    sensorId,
                                     requiredRetentionBoundary));
 
             return SensorDataPurgeBatchResult.deleted(
-                    requiredSensorId,
+                    sensorId,
                     rowsDeleted,
                     moreEligibleRows,
                     remainingCoverageBlocker);
         }
 
         if (moreEligibleRows) {
-            return SensorDataPurgeBatchResult.deferredByConcurrentWork(requiredSensorId);
+            return SensorDataPurgeBatchResult.deferredByConcurrentWork(sensorId);
         }
 
-        if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(requiredSensorId,requiredRetentionBoundary)) {
-            return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,true);
+        if (!sensorReadingRepository.existsBySensorIdAndRecordedAtBefore(sensorId,requiredRetentionBoundary)) {
+            return SensorDataPurgeBatchResult.noExpiredRows(sensorId,true);
         }
 
         if (coverageBlocker != SensorDataPurgeBatchResult.CoverageBlocker.NONE) {
-            return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,true,coverageBlocker);
+            return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,true,coverageBlocker);
         }
 
         throw new IllegalStateException("Raw deletion returned no rows although expired readings remain inside verified coverage");
@@ -128,31 +128,31 @@ public class SensorDataPurgeBatchProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SensorDataPurgeBatchResult purgeHourlySummaries(Long sensorId, Instant retentionBoundaryInclusive, int batchSize) {
 
-        long requiredSensorId = requireSensorId(sensorId);
+        requireSensorId(sensorId);
         Instant requiredRetentionBoundary = requireUtcHourBoundary(retentionBoundaryInclusive,"retentionBoundaryInclusive");
-        int requiredBatchSize = requireBatchSize(batchSize);
+        requireBatchSize(batchSize);
 
-        if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(requiredSensorId,requiredRetentionBoundary)) {
-            return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,false);
+        if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(sensorId,requiredRetentionBoundary)) {
+            return SensorDataPurgeBatchResult.noExpiredRows(sensorId,false);
         }
 
         Optional<SensorRollupCheckpoint> dailyCheckpoint =
-                checkpointRepository.findBySensorIdAndStage(requiredSensorId,RollupStage.HOURLY_TO_DAILY);
+                checkpointRepository.findBySensorIdAndStage(sensorId,RollupStage.HOURLY_TO_DAILY);
 
         SensorDataPurgeBatchResult.CoverageBlocker coverageBlocker =
                 determineHourlyCoverageBlocker(dailyCheckpoint,requiredRetentionBoundary);
 
         if (dailyCheckpoint.isEmpty()) {
-            return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,false,coverageBlocker);
+            return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,false,coverageBlocker);
         }
 
-        if (!hourlySensorSummaryRepository.existsEligibleForRetentionPurge(requiredSensorId,requiredRetentionBoundary)) {
-            if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(requiredSensorId,requiredRetentionBoundary)) {
-                return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,false);
+        if (!hourlySensorSummaryRepository.existsEligibleForRetentionPurge(sensorId,requiredRetentionBoundary)) {
+            if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(sensorId,requiredRetentionBoundary)) {
+                return SensorDataPurgeBatchResult.noExpiredRows(sensorId,false);
             }
 
             if (coverageBlocker != SensorDataPurgeBatchResult.CoverageBlocker.NONE) {
-                return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,false,coverageBlocker);
+                return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,false,coverageBlocker);
             }
 
             throw new IllegalStateException("Expired hourly summaries exist inside verified daily coverage but none are eligible for deletion");
@@ -160,14 +160,14 @@ public class SensorDataPurgeBatchProcessor {
 
         int rowsDeleted = requireValidDeletedRowCount(
                 hourlySensorSummaryRepository.deleteOldestEligibleRetentionBatch(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary,
-                        requiredBatchSize),
-                requiredBatchSize);
+                        batchSize),
+                batchSize);
 
         boolean moreEligibleRows =
                 hourlySensorSummaryRepository.existsEligibleForRetentionPurge(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary);
 
         if (rowsDeleted > 0) {
@@ -176,26 +176,26 @@ public class SensorDataPurgeBatchProcessor {
                             moreEligibleRows,
                             coverageBlocker,
                             hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(
-                                    requiredSensorId,
+                                    sensorId,
                                     requiredRetentionBoundary));
 
             return SensorDataPurgeBatchResult.deleted(
-                    requiredSensorId,
+                    sensorId,
                     rowsDeleted,
                     moreEligibleRows,
                     remainingCoverageBlocker);
         }
 
         if (moreEligibleRows) {
-            return SensorDataPurgeBatchResult.deferredByConcurrentWork(requiredSensorId);
+            return SensorDataPurgeBatchResult.deferredByConcurrentWork(sensorId);
         }
 
-        if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(requiredSensorId,requiredRetentionBoundary)) {
-            return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,true);
+        if (!hourlySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(sensorId,requiredRetentionBoundary)) {
+            return SensorDataPurgeBatchResult.noExpiredRows(sensorId,true);
         }
 
         if (coverageBlocker != SensorDataPurgeBatchResult.CoverageBlocker.NONE) {
-            return SensorDataPurgeBatchResult.waitingForCoverage(requiredSensorId,true,coverageBlocker);
+            return SensorDataPurgeBatchResult.waitingForCoverage(sensorId,true,coverageBlocker);
         }
 
         throw new IllegalStateException("Hourly deletion returned no rows although expired summaries remain inside verified coverage");
@@ -209,39 +209,39 @@ public class SensorDataPurgeBatchProcessor {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SensorDataPurgeBatchResult purgeDailySummaries(Long sensorId, Instant retentionBoundaryInclusive, int batchSize) {
 
-        long requiredSensorId = requireSensorId(sensorId);
+        requireSensorId(sensorId);
         Instant requiredRetentionBoundary = Objects.requireNonNull(retentionBoundaryInclusive,"retentionBoundaryInclusive must not be null");
-        int requiredBatchSize = requireBatchSize(batchSize);
+        requireBatchSize(batchSize);
 
-        if (!dailySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(requiredSensorId,requiredRetentionBoundary)) {
-            return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,false);
+        if (!dailySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(sensorId,requiredRetentionBoundary)) {
+            return SensorDataPurgeBatchResult.noExpiredRows(sensorId,false);
         }
 
         int rowsDeleted = requireValidDeletedRowCount(
                 dailySensorSummaryRepository.deleteOldestRetentionBatch(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary,
-                        requiredBatchSize),
-                requiredBatchSize);
+                        batchSize),
+                batchSize);
 
         boolean moreEligibleRows =
                 dailySensorSummaryRepository.existsBySensorIdAndBucketEndLessThanEqual(
-                        requiredSensorId,
+                        sensorId,
                         requiredRetentionBoundary);
 
         if (rowsDeleted > 0) {
             return SensorDataPurgeBatchResult.deleted(
-                    requiredSensorId,
+                    sensorId,
                     rowsDeleted,
                     moreEligibleRows,
                     SensorDataPurgeBatchResult.CoverageBlocker.NONE);
         }
 
         if (moreEligibleRows) {
-            return SensorDataPurgeBatchResult.deferredByConcurrentWork(requiredSensorId);
+            return SensorDataPurgeBatchResult.deferredByConcurrentWork(sensorId);
         }
 
-        return SensorDataPurgeBatchResult.noExpiredRows(requiredSensorId,true);
+        return SensorDataPurgeBatchResult.noExpiredRows(sensorId,true);
     }
 
 
@@ -323,14 +323,12 @@ public class SensorDataPurgeBatchProcessor {
 
 
 
-    private static long requireSensorId(Long sensorId) {
-        Long requiredSensorId = Objects.requireNonNull(sensorId,"sensorId must not be null");
+    private static void requireSensorId(Long sensorId) {
+        Objects.requireNonNull(sensorId,"sensorId must not be null");
 
-        if (requiredSensorId <= 0) {
+        if (sensorId <= 0) {
             throw new IllegalArgumentException("sensorId must be positive");
         }
-
-        return requiredSensorId;
     }
 
 
@@ -338,13 +336,13 @@ public class SensorDataPurgeBatchProcessor {
 
 
     private static Instant requireUtcHourBoundary(Instant value, String fieldName) {
-        Instant requiredValue = Objects.requireNonNull(value,fieldName + " must not be null");
+        Objects.requireNonNull(value,fieldName + " must not be null");
 
-        if (!requiredValue.equals(requiredValue.truncatedTo(ChronoUnit.HOURS))) {
+        if (!value.equals(value.truncatedTo(ChronoUnit.HOURS))) {
             throw new IllegalArgumentException(fieldName + " must be aligned to a UTC hour");
         }
 
-        return requiredValue;
+        return value;
     }
 
 
@@ -358,12 +356,10 @@ public class SensorDataPurgeBatchProcessor {
 
 
 
-    private static int requireBatchSize(int batchSize) {
+    private static void requireBatchSize(int batchSize) {
         if (batchSize < 1 || batchSize > MAXIMUM_BATCH_SIZE) {
             throw new IllegalArgumentException("batchSize must be between 1 and " + MAXIMUM_BATCH_SIZE);
         }
-
-        return batchSize;
     }
 
 

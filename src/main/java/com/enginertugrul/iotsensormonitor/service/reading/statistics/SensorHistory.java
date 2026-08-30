@@ -12,7 +12,7 @@ record SensorHistory(Instant sensorCreatedAt, Optional<Instant> firstReadingAt) 
 
     SensorHistory {
         Objects.requireNonNull(sensorCreatedAt,"sensorCreatedAt must not be null");
-        firstReadingAt = Objects.requireNonNull(firstReadingAt,"firstReadingAt must not be null");
+        Objects.requireNonNull(firstReadingAt,"firstReadingAt must not be null");
 
         firstReadingAt.ifPresent(firstReading -> {
             if (firstReading.isBefore(sensorCreatedAt)) {

@@ -42,41 +42,42 @@ public class SensorDataRetentionService {
 
 
     public SensorDataRetentionRunResult purgeExpiredData(Instant currentTime) {
-        Instant requiredCurrentTime = Objects.requireNonNull(currentTime,"currentTime must not be null");
+
+        Objects.requireNonNull(currentTime,"currentTime must not be null");
 
         List<Long> sensorIds = sensorRepository.findSensorIdsWithReadingHistory();
 
-        Instant rawRetentionBoundary = requiredCurrentTime
+        Instant rawRetentionBoundary = currentTime
                 .minus(lifecyclePolicy.getRawRetention())
                 .truncatedTo(ChronoUnit.HOURS);
 
-        Instant hourlyRetentionBoundary = requiredCurrentTime
+        Instant hourlyRetentionBoundary = currentTime
                 .minus(lifecyclePolicy.getHourlyRetention())
                 .truncatedTo(ChronoUnit.HOURS);
 
         Instant dailyRetentionBoundary =
-                requiredCurrentTime.minus(lifecyclePolicy.getDailyRetention());
+                currentTime.minus(lifecyclePolicy.getDailyRetention());
 
         int batchSize = lifecyclePolicy.getDeleteBatchSize();
 
         SensorDataPurgeTierResult rawResult = purgeTier(
                 Tier.RAW_READINGS,
                 sensorIds,
-                requiredCurrentTime,
+                currentTime,
                 rawRetentionBoundary,
                 sensorId -> batchProcessor.purgeRawReadings(sensorId,rawRetentionBoundary,batchSize));
 
         SensorDataPurgeTierResult hourlyResult = purgeTier(
                 Tier.HOURLY_SUMMARIES,
                 sensorIds,
-                requiredCurrentTime,
+                currentTime,
                 hourlyRetentionBoundary,
                 sensorId -> batchProcessor.purgeHourlySummaries(sensorId,hourlyRetentionBoundary,batchSize));
 
         SensorDataPurgeTierResult dailyResult = purgeTier(
                 Tier.DAILY_SUMMARIES,
                 sensorIds,
-                requiredCurrentTime,
+                currentTime,
                 dailyRetentionBoundary,
                 sensorId -> batchProcessor.purgeDailySummaries(sensorId,dailyRetentionBoundary,batchSize));
 
