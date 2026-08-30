@@ -104,7 +104,7 @@ public class DailySensorRollupBucketProcessor {
 
         Instant completedAt = notBefore(Instant.now(),attemptedAt);
 
-        completedAt = saveOrRefreshDailySummary(
+        completedAt = upsertDailySummaryDuringAdvance(
                 sensorId,
                 timeZone,
                 bucket,
@@ -125,6 +125,184 @@ public class DailySensorRollupBucketProcessor {
                 hourlyCoverageCheckpoint,
                 source);
     }
+
+
+
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public DailyRollupBucketResult refreshCoveredDay(RollupSensorProjection sensor, LocalDate localDate, Instant eligibleBucketEnd) {
+
+        RollupSensorProjection requiredSensor = Objects.requireNonNull(sensor, "sensor must not be null");
+
+        LocalDate requiredLocalDate = Objects.requireNonNull(localDate, "localDate must not be null");
+
+        Instant requiredEligibleBucketEnd = Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
+
+        Long sensorId = requiredSensor.getId();
+        ZoneId timeZone = ZoneId.of(requiredSensor.getTimezone());
+
+        LocalDayBucket bucket = localDayBucket(requiredLocalDate, timeZone);
+
+        Instant requiredHourlyCoveredUntil = utcHourAtOrAfter(bucket.end());
+
+
+        Optional<SensorRollupCheckpoint> hourlyCandidate = checkpointRepository.findBySensorIdAndStageForUpdate(sensorId, RollupStage.RAW_TO_HOURLY);
+
+        if (hourlyCandidate.isEmpty()) {
+            return refreshResult(
+                    DailyRollupBucketResult.Status.NOT_COVERED,
+                    sensorId,
+                    timeZone,
+                    bucket,
+                    null,
+                    requiredHourlyCoveredUntil,
+                    null,
+                    null);
+        }
+
+        SensorRollupCheckpoint hourlyCheckpoint = hourlyCandidate.get();
+
+        Optional<SensorRollupCheckpoint> dailyCandidate = checkpointRepository.findBySensorIdAndStageForUpdate(sensorId, RollupStage.HOURLY_TO_DAILY);
+
+        if (dailyCandidate.isEmpty()) {
+            return refreshResult(
+                    DailyRollupBucketResult.Status.NOT_COVERED,
+                    sensorId,
+                    timeZone,
+                    bucket,
+                    null,
+                    requiredHourlyCoveredUntil,
+                    hourlyCheckpoint,
+                    null);
+        }
+
+        SensorRollupCheckpoint dailyCheckpoint = dailyCandidate.get();
+
+        boolean dailyBucketIsRefreshable =
+                !bucket.start().isBefore(
+                        dailyCheckpoint.getCoverageStartedAt())
+                        && !bucket.end().isAfter(
+                        dailyCheckpoint.getCoveredUntil())
+                        && !bucket.end().isAfter(
+                        requiredEligibleBucketEnd);
+
+        if (!dailyBucketIsRefreshable) {
+            return refreshResult(
+                    DailyRollupBucketResult.Status.NOT_COVERED,
+                    sensorId,
+                    timeZone,
+                    bucket,
+                    dailyCheckpoint,
+                    requiredHourlyCoveredUntil,
+                    hourlyCheckpoint,
+                    null);
+        }
+
+        if (hourlyCheckpoint.getCoveredUntil().isBefore(requiredHourlyCoveredUntil)) {
+
+            return waitingForHourlyCoverageResult(
+                    sensorId,
+                    timeZone,
+                    bucket,
+                    dailyCheckpoint,
+                    requiredHourlyCoveredUntil,
+                    hourlyCheckpoint);
+        }
+
+        DailySensorSummary summary =
+                dailySensorSummaryRepository
+                        .findBySensorIdAndBucketStart(
+                                sensorId,
+                                bucket.start())
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Checkpoint covers a daily bucket "
+                                                + "with no summary row"));
+
+        DailyAggregateSource source = aggregateDailySource(requiredSensor, bucket, hourlyCheckpoint);
+
+        Instant refreshedAt = notBefore(Instant.now(), bucket.end());
+
+        refreshedAt = notBefore(refreshedAt, hourlyCheckpoint.getUpdatedAt());
+
+        refreshedAt = notBefore(refreshedAt, dailyCheckpoint.getUpdatedAt());
+
+        refreshedAt = notBefore(refreshedAt, summary.getRefreshedAt());
+
+        summary.refresh(source.aggregate(), refreshedAt);
+        dailySensorSummaryRepository.saveAndFlush(summary);
+
+
+        return refreshResult(
+                DailyRollupBucketResult.Status.REFRESHED,
+                sensorId,
+                timeZone,
+                bucket,
+                dailyCheckpoint,
+                requiredHourlyCoveredUntil,
+                hourlyCheckpoint,
+                source);
+    }
+
+
+
+
+
+    private static DailyRollupBucketResult refreshResult(
+            DailyRollupBucketResult.Status status,
+            Long sensorId,
+            ZoneId timeZone,
+            LocalDayBucket bucket,
+            SensorRollupCheckpoint dailyCheckpoint,
+            Instant requiredHourlyCoveredUntil,
+            SensorRollupCheckpoint hourlyCheckpoint,
+            DailyAggregateSource source
+    ) {
+        return new DailyRollupBucketResult(
+                status,
+                sensorId,
+                bucket.localDate(),
+                timeZone.getId(),
+                bucket.start(),
+                bucket.end(),
+                dailyCheckpoint == null
+                        ? null
+                        : dailyCheckpoint.getCoverageStartedAt(),
+                dailyCheckpoint == null
+                        ? null
+                        : dailyCheckpoint.getCoveredUntil(),
+                requiredHourlyCoveredUntil,
+                hourlyCheckpoint == null
+                        ? null
+                        : hourlyCheckpoint.getCoveredUntil(),
+                source == null
+                        ? 0
+                        : source.aggregate().getSourceSampleCount(),
+                source == null
+                        ? 0
+                        : source.hourlySummaryRows(),
+                source == null
+                        ? 0
+                        : source.rawBoundarySampleCount());
+    }
+
+
+
+
+    private static LocalDayBucket localDayBucket(LocalDate localDate, ZoneId timeZone) {
+
+        return new LocalDayBucket(
+                localDate,
+                localDate.atStartOfDay(timeZone).toInstant(),
+                localDate.plusDays(1)
+                        .atStartOfDay(timeZone)
+                        .toInstant());
+    }
+
+
+
+
 
 
 
@@ -277,7 +455,7 @@ public class DailySensorRollupBucketProcessor {
 
 
 
-    private Instant saveOrRefreshDailySummary(
+    private Instant upsertDailySummaryDuringAdvance(
             Long sensorId,
             ZoneId timeZone,
             LocalDayBucket bucket,
@@ -321,21 +499,17 @@ public class DailySensorRollupBucketProcessor {
 
     private static LocalDayBucket nextLocalDayBucket(SensorRollupCheckpoint dailyCoverageCheckpoint, ZoneId timeZone) {
 
-        Instant bucketStart = dailyCoverageCheckpoint.getCoveredUntil();
+        Instant coveredUntil = dailyCoverageCheckpoint.getCoveredUntil();
 
-        LocalDate nextUncoveredLocalDate = bucketStart.atZone(timeZone).toLocalDate();
+        LocalDate nextUncoveredLocalDate = coveredUntil.atZone(timeZone).toLocalDate();
 
-        Instant expectedBucketStart = nextUncoveredLocalDate.atStartOfDay(timeZone).toInstant();
+        LocalDayBucket bucket = localDayBucket(nextUncoveredLocalDate, timeZone);
 
-        if (!bucketStart.equals(expectedBucketStart)) {
+        if (!coveredUntil.equals(bucket.start())) {
             throw new IllegalStateException("Daily coverage checkpoint is not aligned to the sensor-local day");
         }
 
-        Instant bucketEnd = nextUncoveredLocalDate.plusDays(1)
-                        .atStartOfDay(timeZone)
-                        .toInstant();
-
-        return new LocalDayBucket(nextUncoveredLocalDate, bucketStart, bucketEnd);
+        return bucket;
     }
 
 

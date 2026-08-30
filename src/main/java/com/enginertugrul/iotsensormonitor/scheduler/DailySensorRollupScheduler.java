@@ -10,9 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
-
-
-
+import java.time.temporal.ChronoUnit;
 
 
 @Component
@@ -37,6 +35,8 @@ public class DailySensorRollupScheduler {
 
         Instant eligibleBucketEnd = startedAt.minus(lifecyclePolicy.getDailyRollupGrace());
 
+        Instant hourlyEligibleCoveredUntil = startedAt.minus(lifecyclePolicy.getHourlyRollupGrace()).truncatedTo(ChronoUnit.HOURS);
+
         logger.info(
                 "Daily sensor rollup started eligibleBucketEnd={} maximumBucketsPerRun={}",
                 eligibleBucketEnd,
@@ -44,16 +44,17 @@ public class DailySensorRollupScheduler {
 
         try {
 
-            DailyRollupRunResult result = dailySensorRollupService.rollUpClosedLocalDays(eligibleBucketEnd);
+            DailyRollupRunResult result = dailySensorRollupService.rollUpClosedLocalDays(eligibleBucketEnd, hourlyEligibleCoveredUntil);
 
             Instant completedAt = Instant.now();
 
             logger.info(
-                    "Daily sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} sourceRowsSummarized={} hourlySummaryRowsConsumed={} rawBoundaryRowsSummarized={} waitingSensors={} failedSensors={} bounded={} eligibleBucketEnd={} oldestCoveredUntil={} maximumRollupLag={} duration={}",
+                    "Daily sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} refreshedBuckets={} sourceRowsSummarized={} hourlySummaryRowsConsumed={} rawBoundaryRowsSummarized={} waitingSensors={} failedSensors={} bounded={} eligibleBucketEnd={} oldestCoveredUntil={} maximumRollupLag={} duration={}",
                     result.status(),
                     result.sensorCount(),
                     result.attemptedBuckets(),
                     result.advancedBuckets(),
+                    result.refreshedBuckets(),
                     result.sourceRowsSummarized(),
                     result.hourlySummaryRowsConsumed(),
                     result.rawBoundaryRowsSummarized(),

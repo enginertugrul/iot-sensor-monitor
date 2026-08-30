@@ -20,10 +20,11 @@ public record DailyRollupBucketResult(
 ) {
 
     public enum Status {
-
         ADVANCED,
+        REFRESHED,
         UP_TO_DATE,
         WAITING_FOR_HOURLY,
+        NOT_COVERED
     }
 
 }

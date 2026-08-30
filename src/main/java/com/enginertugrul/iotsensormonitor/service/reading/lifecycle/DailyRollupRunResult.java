@@ -8,6 +8,7 @@ public record DailyRollupRunResult(
         int sensorCount,
         int attemptedBuckets,
         int advancedBuckets,
+        int refreshedBuckets,
         long sourceRowsSummarized,
         long hourlySummaryRowsConsumed,
         long rawBoundaryRowsSummarized,
@@ -17,14 +18,11 @@ public record DailyRollupRunResult(
         Duration maximumRollupLag,
         Instant oldestCoveredUntil
 ) {
-
     public enum Status {
-
         NO_WORK,
         SUCCEEDED,
         BOUNDED,
         WAITING_FOR_HOURLY,
         PARTIAL_FAILURE
     }
-
 }

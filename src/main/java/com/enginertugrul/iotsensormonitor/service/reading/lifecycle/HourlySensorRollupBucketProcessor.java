@@ -84,7 +84,7 @@ public class HourlySensorRollupBucketProcessor {
         Instant completedAt = notBefore(Instant.now(),attemptedAt);
 
 
-        completedAt = saveOrRefreshHourlySummary(
+        completedAt = upsertHourlySummaryDuringAdvance(
                 sensorId,
                 bucketStart,
                 aggregate,
@@ -247,7 +247,7 @@ public class HourlySensorRollupBucketProcessor {
 
 
 
-    private Instant saveOrRefreshHourlySummary(Long sensorId, Instant bucketStart, SensorSummaryAggregate aggregate, Instant completedAt) {
+    private Instant upsertHourlySummaryDuringAdvance(Long sensorId, Instant bucketStart, SensorSummaryAggregate aggregate, Instant completedAt) {
 
         Optional<HourlySensorSummary> existingSummary = hourlySensorSummaryRepository.findBySensorIdAndBucketStart(sensorId, bucketStart);
 
