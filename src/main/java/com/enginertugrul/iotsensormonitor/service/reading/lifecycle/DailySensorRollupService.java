@@ -26,7 +26,7 @@ import java.util.Set;
 @Service
 public class DailySensorRollupService {
 
-
+    private static final int TRAILING_COVERED_DAYS_TO_REFRESH = 2;
     private final Logger logger = LoggerFactory.getLogger(DailySensorRollupService.class);
 
     private final SensorRepository sensorRepository;
@@ -46,11 +46,9 @@ public class DailySensorRollupService {
 
 
 
-    public DailyRollupRunResult rollUpClosedLocalDays(Instant eligibleBucketEnd, Instant hourlyEligibleCoveredUntil) {
+    public DailyRollupRunResult rollUpClosedLocalDays(Instant eligibleBucketEnd) {
 
         Instant requiredEligibleBucketEnd = Objects.requireNonNull(eligibleBucketEnd, "eligibleBucketEnd must not be null");
-
-        Instant requiredHourlyEligibleCoveredUntil = Objects.requireNonNull(hourlyEligibleCoveredUntil, "hourlyEligibleCoveredUntil must not be null");
 
         List<RollupSensorProjection> sensors = sensorRepository.findSensorsForRollup();
 
@@ -60,11 +58,7 @@ public class DailySensorRollupService {
 
         run.bounded = run.isBudgetExhausted() && run.hasUnfinishedCatchUp(sensors);
 
-        refreshRecentlyCoveredLocalDays(
-                sensors,
-                requiredEligibleBucketEnd,
-                requiredHourlyEligibleCoveredUntil,
-                run);
+        refreshTrailingCoveredDays(sensors, requiredEligibleBucketEnd, run);
 
         Instant oldestCoveredUntil =
                 checkpointRepository.findOldestCoveredUntilByStage(
@@ -162,45 +156,40 @@ public class DailySensorRollupService {
 
 
 
-    private void refreshRecentlyCoveredLocalDays(
+    private void refreshTrailingCoveredDays(
             List<RollupSensorProjection> sensors,
             Instant eligibleBucketEnd,
-            Instant hourlyEligibleCoveredUntil,
             RollupRunState run
     ) {
 
-        Instant refreshThreshold =
-                hourlyEligibleCoveredUntil
-                        .minus(lifecyclePolicy.getHourlyRollupTrailingWindow())
-                        .minus(lifecyclePolicy.getDailyRollupInterval());
+        for (
+                int dayOffset = 0;
+                dayOffset < TRAILING_COVERED_DAYS_TO_REFRESH;
+                dayOffset++
+        ) {
 
-        for (RollupSensorProjection sensor : sensors) {
-            ZoneId timeZone =
-                    ZoneId.of(sensor.getTimezone());
+            for (RollupSensorProjection sensor : sensors) {
 
-            LocalDate newestCandidate = hourlyEligibleCoveredUntil.atZone(timeZone).toLocalDate();
+                Long sensorId = sensor.getId();
+                ZoneId timeZone = ZoneId.of(sensor.getTimezone());
 
-            LocalDate oldestCandidate = refreshThreshold.atZone(timeZone).toLocalDate();
+                LocalDate newestCoveredLocalDate = run.latestCoveredLocalDate(sensorId, timeZone);
 
-            for (
-                    LocalDate localDate = newestCandidate;
-                    !localDate.isBefore(oldestCandidate);
-                    localDate = localDate.minusDays(1)
-            ) {
+                if (newestCoveredLocalDate == null) {
+                    continue;
+                }
+
+                LocalDate localDate = newestCoveredLocalDate.minusDays(dayOffset);
 
                 Instant bucketStart = localDate.atStartOfDay(timeZone).toInstant();
 
-                Instant bucketEnd = localDate.plusDays(1)
-                                .atStartOfDay(timeZone)
-                                .toInstant();
+                Instant bucketEnd = localDate.plusDays(1).atStartOfDay(timeZone).toInstant();
 
                 if (!run.isRefreshCandidate(
-                        sensor.getId(),
+                        sensorId,
                         localDate,
                         bucketStart,
                         bucketEnd,
-                        refreshThreshold,
-                        hourlyEligibleCoveredUntil,
                         eligibleBucketEnd)) {
 
                     continue;
@@ -213,37 +202,78 @@ public class DailySensorRollupService {
 
                 run.recordRefreshAttempt();
 
-                try {
-                    DailyRollupBucketResult result = bucketProcessor.refreshCoveredDay(sensor, localDate, eligibleBucketEnd);
-
-                    switch (result.status()) {
-
-                        case REFRESHED ->
-                                run.recordRefreshed(result);
-
-                        case NOT_COVERED, WAITING_FOR_HOURLY ->
-                                logger.debug(
-                                        "Daily refresh skipped "
-                                                + "sensorId={} localDate={} reason={}",
-                                        sensor.getId(),
-                                        localDate,
-                                        result.status());
-
-                        case ADVANCED, UP_TO_DATE ->
-                                throw new IllegalStateException("Unexpected daily refresh result " + result.status());
-                    }
-
-                } catch (RuntimeException exception) {
-                    run.recordRefreshFailure(sensor.getId());
-
-                    logger.error(
-                            "Daily rollup refresh failed "
-                                    + "sensorId={} localDate={}",
-                            sensor.getId(),
-                            localDate,
-                            exception);
-                }
+                refreshOneCoveredDay(
+                        sensor,
+                        localDate,
+                        bucketStart,
+                        bucketEnd,
+                        eligibleBucketEnd,
+                        run);
             }
+        }
+    }
+
+
+
+
+
+    private void refreshOneCoveredDay(
+            RollupSensorProjection sensor,
+            LocalDate localDate,
+            Instant bucketStart,
+            Instant bucketEnd,
+            Instant eligibleBucketEnd,
+            RollupRunState run
+    ) {
+        Long sensorId = sensor.getId();
+
+        try {
+
+            DailyRollupBucketResult result = bucketProcessor.refreshCoveredDay(sensor, localDate, eligibleBucketEnd);
+
+            switch (result.status()) {
+
+                case REFRESHED ->
+                        run.recordRefreshed(result);
+
+                case NOT_COVERED ->
+                        logger.debug(
+                                "Daily refresh skipped "
+                                        + "sensorId={} localDate={} reason={}",
+                                sensorId,
+                                localDate,
+                                result.status());
+
+                case WAITING_FOR_HOURLY -> {
+                    run.recordWaiting(sensorId,result,eligibleBucketEnd);
+
+                    logger.debug(
+                            "Daily refresh waiting "
+                                    + "sensorId={} localDate={} "
+                                    + "requiredHourlyCoveredUntil={} "
+                                    + "hourlyCoveredUntil={}",
+                            sensorId,
+                            localDate,
+                            result.requiredHourlyCoveredUntil(),
+                            result.hourlyCoveredUntil());
+                }
+
+                case ADVANCED, UP_TO_DATE ->
+                        throw new IllegalStateException("Unexpected daily refresh result " + result.status());
+            }
+
+        } catch (RuntimeException exception) {
+            run.recordRefreshFailure(sensorId);
+
+            logger.error(
+                    "Daily rollup refresh failed "
+                            + "sensorId={} localDate={} "
+                            + "bucketStart={} bucketEnd={}",
+                    sensorId,
+                    localDate,
+                    bucketStart,
+                    bucketEnd,
+                    exception);
         }
     }
 
@@ -459,19 +489,37 @@ public class DailySensorRollupService {
 
 
 
+        private LocalDate latestCoveredLocalDate(Long sensorId, ZoneId timeZone) {
+
+            DailyRollupBucketResult progress = latestProgress.get(sensorId);
+
+            if (progress == null
+                    || progress.coverageStartedAt() == null
+                    || progress.coveredUntil() == null
+                    || !progress.coverageStartedAt().isBefore(progress.coveredUntil())) {
+
+                return null;
+            }
+
+            LocalDate nextUncoveredLocalDate = progress.coveredUntil().atZone(timeZone).toLocalDate();
+
+            return nextUncoveredLocalDate.minusDays(1);
+        }
+
+
+
+
         private boolean isRefreshCandidate(
                 Long sensorId,
                 LocalDate localDate,
                 Instant bucketStart,
                 Instant bucketEnd,
-                Instant refreshThreshold,
-                Instant hourlyEligibleCoveredUntil,
                 Instant eligibleBucketEnd
         ) {
-
             if (!caughtUpSensors.contains(sensorId)
                     || waitingSensors.contains(sensorId)
                     || failedSensors.contains(sensorId)) {
+
                 return false;
             }
 
@@ -480,17 +528,12 @@ public class DailySensorRollupService {
             return progress != null
                     && progress.coverageStartedAt() != null
                     && progress.coveredUntil() != null
-                    && !bucketStart.isBefore(
-                    progress.coverageStartedAt())
-                    && !bucketEnd.isAfter(
-                    progress.coveredUntil())
+                    && !bucketStart.isBefore(progress.coverageStartedAt())
+                    && !bucketEnd.isAfter(progress.coveredUntil())
                     && !bucketEnd.isAfter(eligibleBucketEnd)
-                    && bucketEnd.isAfter(refreshThreshold)
-                    && bucketStart.isBefore(
-                    hourlyEligibleCoveredUntil)
-                    && !advancedThisRun.contains(
-                    new SensorDay(sensorId, localDate));
+                    && !advancedThisRun.contains(new SensorDay(sensorId, localDate));
         }
+
 
 
 

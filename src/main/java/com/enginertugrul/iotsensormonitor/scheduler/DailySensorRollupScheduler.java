@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 
 @Component
@@ -35,8 +34,6 @@ public class DailySensorRollupScheduler {
 
         Instant eligibleBucketEnd = startedAt.minus(lifecyclePolicy.getDailyRollupGrace());
 
-        Instant hourlyEligibleCoveredUntil = startedAt.minus(lifecyclePolicy.getHourlyRollupGrace()).truncatedTo(ChronoUnit.HOURS);
-
         logger.info(
                 "Daily sensor rollup started eligibleBucketEnd={} maximumBucketsPerRun={}",
                 eligibleBucketEnd,
@@ -44,7 +41,7 @@ public class DailySensorRollupScheduler {
 
         try {
 
-            DailyRollupRunResult result = dailySensorRollupService.rollUpClosedLocalDays(eligibleBucketEnd, hourlyEligibleCoveredUntil);
+            DailyRollupRunResult result = dailySensorRollupService.rollUpClosedLocalDays(eligibleBucketEnd);
 
             Instant completedAt = Instant.now();
 
