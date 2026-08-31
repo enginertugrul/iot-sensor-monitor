@@ -6,6 +6,7 @@ import com.enginertugrul.iotsensormonitor.dto.sensor.SensorUpdateForm;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.exception.DuplicateSensorNameException;
+import com.enginertugrul.iotsensormonitor.exception.SensorTimezoneLockedException;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.sensor.SensorService;
 import com.enginertugrul.iotsensormonitor.support.timezone.TimezoneCatalog;
@@ -130,8 +131,12 @@ public class SensorController {
 
         try {
             sensorService.updateSensor(sensorId, ownerId, form);
-        }catch (DuplicateSensorNameException ex) {
+        } catch (DuplicateSensorNameException ex) {
             bindingResult.rejectValue("name", "sensors.nameDuplicate");
+            addEditPageData(model, sensorId, ownerId);
+            return "sensor-edit";
+        } catch (SensorTimezoneLockedException ex) {
+            bindingResult.rejectValue("timezone", "sensors.timezoneLocked");
             addEditPageData(model, sensorId, ownerId);
             return "sensor-edit";
         }
@@ -199,6 +204,9 @@ public class SensorController {
         model.addAttribute("sensorId", sensor.getId());
         model.addAttribute("sensorName", sensor.getName());
         model.addAttribute("sensorType", sensor.getType());
+        model.addAttribute("sensorTimezoneLocked",sensor.hasRecordedReadings());
+        model.addAttribute("sensorTimezone",sensor.getTimezone());
+        model.addAttribute("sensorTimezoneDisplayName",timezoneCatalog.toDisplayName(sensor.getTimezone()));
         model.addAttribute("timezoneOptions",timezoneCatalog.getTimezoneOptions() );
     }
 

@@ -129,7 +129,7 @@ public class SensorServiceImpl implements SensorService {
 
         SensorUpdateForm requiredForm = Objects.requireNonNull(sensorUpdateForm,"sensorUpdateForm must not be null");
 
-        Sensor sensor = getOwnedSensor(sensorId, ownerId);
+        Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
 
 
         if(sensorRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(ownerId, requiredForm.getName(), sensorId) ) {
@@ -175,6 +175,13 @@ public class SensorServiceImpl implements SensorService {
 
     private Sensor getOwnedSensor(Long sensorId, Long ownerId) {
         return sensorRepository.findByIdAndOwnerId(sensorId, ownerId)
+                .orElseThrow(SensorNotFoundException::new);
+    }
+
+
+
+    private Sensor getOwnedSensorForUpdate(Long sensorId,Long ownerId) {
+        return sensorRepository.findByIdAndOwnerIdForUpdate(sensorId,ownerId)
                 .orElseThrow(SensorNotFoundException::new);
     }
 

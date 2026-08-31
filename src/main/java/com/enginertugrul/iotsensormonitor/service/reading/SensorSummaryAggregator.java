@@ -1,0 +1,144 @@
+package com.enginertugrul.iotsensormonitor.service.reading;
+
+import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
+import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
+import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
+import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
+import com.enginertugrul.iotsensormonitor.repository.RawSensorReadingAggregateProjection;
+
+import java.math.BigDecimal;
+
+
+
+public final class SensorSummaryAggregator {
+
+
+    private SensorSummaryAggregator() {
+    }
+
+
+    public static SensorSummaryAggregate empty(SensorType sensorType) {
+
+        return switch (sensorType) {
+
+            case TEMPERATURE, HUMIDITY ->
+                    SensorSummaryAggregate.emptyNumeric(SensorMeasurementPolicy.requireCanonicalUnit(sensorType));
+
+            case MOTION -> SensorSummaryAggregate.emptyMotion();
+        };
+
+    }
+
+
+    public static SensorSummaryAggregate fromReading(SensorType sensorType,SensorReading reading) {
+
+        return switch (sensorType) {
+            case TEMPERATURE, HUMIDITY -> {
+                MeasurementUnit canonicalUnit = SensorMeasurementPolicy.requireCanonicalUnit(sensorType);
+                double value = reading.getNumericValue();
+                yield SensorSummaryAggregate.numeric(1,canonicalUnit,BigDecimal.valueOf(value),value,value);
+            }
+            case MOTION -> SensorSummaryAggregate.motion(1,reading.getBooleanValue() ? 1 : 0);
+        };
+    }
+
+
+
+
+    public static SensorSummaryAggregate fromRawReadings(
+            SensorType sensorType,
+            RawSensorReadingAggregateProjection rawAggregate
+    ) {
+        return switch (sensorType) {
+            case TEMPERATURE, HUMIDITY -> SensorSummaryAggregate.numeric(
+                    rawAggregate.getSourceSampleCount(),
+                    SensorMeasurementPolicy.requireCanonicalUnit(sensorType),
+                    rawAggregate.getNumericSum(),
+                    rawAggregate.getNumericMinimum(),
+                    rawAggregate.getNumericMaximum());
+            case MOTION -> SensorSummaryAggregate.motion(
+                    rawAggregate.getSourceSampleCount(),
+                    rawAggregate.getTrueSampleCount());
+        };
+    }
+
+
+
+
+    public static SensorSummaryAggregate combine(
+            SensorType sensorType,
+            Iterable<SensorSummaryAggregate> aggregates
+    ) {
+
+        return switch (sensorType) {
+            case TEMPERATURE, HUMIDITY -> combineNumeric(sensorType,aggregates);
+            case MOTION -> combineMotion(aggregates);
+        };
+    }
+
+
+
+
+
+    private static SensorSummaryAggregate combineNumeric(
+            SensorType sensorType,
+            Iterable<SensorSummaryAggregate> aggregates
+    ) {
+
+        MeasurementUnit canonicalUnit = SensorMeasurementPolicy.requireCanonicalUnit(sensorType);
+        long sourceSampleCount = 0;
+        BigDecimal numericSum = BigDecimal.ZERO;
+        Double numericMinimum = null;
+        Double numericMaximum = null;
+
+        for (SensorSummaryAggregate aggregate : aggregates) {
+            if (aggregate.getUnit() != canonicalUnit) {
+                throw new IllegalStateException("Cannot combine aggregates with incompatible measurement units");
+            }
+
+            sourceSampleCount = Math.addExact(sourceSampleCount,aggregate.getSourceSampleCount());
+
+            if (aggregate.getSourceSampleCount() == 0) {
+                continue;
+            }
+
+            numericSum = numericSum.add(aggregate.getNumericSum());
+            numericMinimum = numericMinimum == null
+                    ? aggregate.getNumericMinimum()
+                    : Math.min(numericMinimum,aggregate.getNumericMinimum());
+            numericMaximum = numericMaximum == null
+                    ? aggregate.getNumericMaximum()
+                    : Math.max(numericMaximum,aggregate.getNumericMaximum());
+        }
+
+        if (sourceSampleCount == 0) {
+            return SensorSummaryAggregate.emptyNumeric(canonicalUnit);
+        }
+
+        return SensorSummaryAggregate.numeric(
+                sourceSampleCount,
+                canonicalUnit,
+                numericSum,
+                numericMinimum,
+                numericMaximum);
+    }
+
+
+
+    private static SensorSummaryAggregate combineMotion(Iterable<SensorSummaryAggregate> aggregates) {
+        long sourceSampleCount = 0;
+        long trueSampleCount = 0;
+
+        for (SensorSummaryAggregate aggregate : aggregates) {
+            if (!aggregate.isMotion()) {
+                throw new IllegalStateException("Cannot combine numeric and motion summary aggregates");
+            }
+
+            sourceSampleCount = Math.addExact(sourceSampleCount,aggregate.getSourceSampleCount());
+            trueSampleCount = Math.addExact(trueSampleCount,aggregate.getTrueSampleCount());
+        }
+
+        return SensorSummaryAggregate.motion(sourceSampleCount,trueSampleCount);
+    }
+}
