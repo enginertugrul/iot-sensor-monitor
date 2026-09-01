@@ -29,11 +29,10 @@ public class HumidityReadingIngestionService {
     }
 
     @Transactional
-    public void ingest(String sensorToken, double humidityPercentage) {
+    public void ingest(String sensorToken, double humidityPercentage, Instant recordedAt) {
 
         Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken,SensorType.HUMIDITY);
 
-        Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {

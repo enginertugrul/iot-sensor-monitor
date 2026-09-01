@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-
+import java.time.Instant;
 
 
 public record HumidityReadingRequest(
@@ -20,6 +20,9 @@ public record HumidityReadingRequest(
         @IsFiniteDouble
         @DecimalMin(value = "0.0", message = "humidityPercentage must be at least 0")
         @DecimalMax(value = "100.0", message = "humidityPercentage must not exceed 100")
-        Double humidityPercentage
+        Double humidityPercentage,
+
+        @NotNull
+        Instant recordedAt
 ) {
 }

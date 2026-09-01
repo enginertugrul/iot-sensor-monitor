@@ -29,12 +29,13 @@ public class MotionReadingIngestionService {
         this.alertEvaluationService = alertEvaluationService;
     }
 
+
+
     @Transactional
-    public void ingest(String sensorToken, boolean motionDetected) {
+    public void ingest(String sensorToken, boolean motionDetected, Instant recordedAt) {
 
         Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken, SensorType.MOTION);
 
-        Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {
