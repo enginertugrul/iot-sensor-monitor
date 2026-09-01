@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.enginertugrul</groupId>
-    <artifactId>arduino-pretender</artifactId>
+    <artifactId>mcu-simulator</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -31,7 +31,7 @@
                     <archive>
                         <manifest>
                             <mainClass>
-                                com.enginertugrul.arduinopretender.ArduinoPretender
+                                com.enginertugrul.mcusimulator.McuSimulator
                             </mainClass>
                         </manifest>
                     </archive>
