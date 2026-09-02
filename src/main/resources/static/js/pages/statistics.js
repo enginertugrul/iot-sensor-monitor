@@ -484,6 +484,34 @@
 
     const labels = series.points.map(formatPointLabel);
 
+    function clearChartInteraction(chart) {
+        const tooltip = chart.tooltip;
+        const needsClear = chart.getActiveElements().length > 0
+            || (tooltip?.getActiveElements().length ?? 0) > 0
+            || (tooltip?.opacity ?? 0) > 0;
+
+        chart.canvas.style.cursor = 'default';
+
+        if (!needsClear) {
+            return false;
+        }
+
+        chart.setActiveElements([]);
+        tooltip?.setActiveElements([],{x: 0,y: 0});
+
+        return true;
+    }
+
+    const chartAreaExitPlugin = {
+        id: 'statisticsChartAreaExit',
+
+        beforeEvent(chart,args) {
+            if (!args.inChartArea && clearChartInteraction(chart)) {
+                args.changed = true;
+            }
+        }
+    };
+
     const tooltip = {
         backgroundColor: 'rgba(17, 24, 39, 0.96)',
         titleColor: colors.text,
@@ -492,6 +520,7 @@
         borderWidth: 1,
         padding: 12,
         boxPadding: 4,
+        animations: false,
 
         callbacks: {
             title(items) {
@@ -551,6 +580,12 @@
             responsive: true,
             maintainAspectRatio: false,
             animation: reducedMotion ? false : {duration: 300},
+
+            transitions: {
+                active: {
+                    animation: {duration: 0}
+                }
+            },
 
             interaction: {
                 mode: 'index',
@@ -866,11 +901,27 @@
             ? motionChartConfiguration()
             : numericChartConfiguration();
 
-        new ChartLibrary(chartCanvas.getContext('2d'),configuration);
+        configuration.plugins = [chartAreaExitPlugin];
 
         chartError.hidden = true;
         chartEmpty.hidden = true;
         chartWrapper.hidden = false;
+
+        const chart = new ChartLibrary(chartCanvas.getContext('2d'),configuration);
+        const clearInteraction = () => {
+            if (clearChartInteraction(chart)) {
+                chart.update('none');
+            }
+        };
+
+        chartCanvas.addEventListener('pointerleave',clearInteraction);
+        chartCanvas.addEventListener('pointercancel',clearInteraction);
+        window.addEventListener('blur',clearInteraction);
+        document.addEventListener('visibilitychange',() => {
+            if (document.hidden) {
+                clearInteraction();
+            }
+        });
     } catch (error) {
         showChartError(error);
     }
