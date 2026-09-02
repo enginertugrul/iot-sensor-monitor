@@ -184,10 +184,15 @@
                        th:value="${T(com.enginertugrul.iotsensormonitor.dto.statistics.StatisticsRangePreset).EXACT}">
 
                 <input type="hidden"
-                       th:field="*{startInclusive}">
+                       id="startInclusive"
+                       name="startInclusive"
+                       th:value="${statisticsQuery.startInclusive}">
 
                 <input type="hidden"
-                       th:field="*{endExclusive}">
+                       id="endExclusive"
+                       name="endExclusive"
+                       th:value="${statisticsQuery.endExclusive}">
+
             </th:block>
 
 
