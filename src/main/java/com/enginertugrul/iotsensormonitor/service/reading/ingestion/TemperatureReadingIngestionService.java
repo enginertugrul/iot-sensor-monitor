@@ -34,11 +34,10 @@ public class TemperatureReadingIngestionService {
 
 
     @Transactional
-    public void ingest(String sensorToken, double celsiusValue) {
+    public void ingest(String sensorToken, double celsiusValue, Instant recordedAt) {
 
         Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken, SensorType.TEMPERATURE);
 
-        Instant recordedAt = Instant.now();
         SensorReading reading;
 
         try {

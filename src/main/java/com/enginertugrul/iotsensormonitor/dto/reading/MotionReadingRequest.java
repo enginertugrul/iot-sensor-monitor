@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-
+import java.time.Instant;
 
 
 public record MotionReadingRequest(
@@ -14,6 +14,9 @@ public record MotionReadingRequest(
         String sensorToken,
 
         @NotNull
-        Boolean motionDetected
+        Boolean motionDetected,
+
+        @NotNull
+        Instant recordedAt
 ) {
 }

@@ -38,11 +38,11 @@ public class SensorIngestionController {
 
 
 
-    @PostMapping(path = {"/readings", "/readings/temperature"}, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @PostMapping(path = {"/readings/temperature"}, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Void> receiveTemperature(
             @Valid @ModelAttribute TemperatureReadingRequest request) {
 
-        temperatureService.ingest(request.sensorToken(), request.celsiusValue());
+        temperatureService.ingest(request.sensorToken(), request.celsiusValue(), request.recordedAt());
 
         return ResponseEntity.ok().build();
     }
@@ -55,7 +55,7 @@ public class SensorIngestionController {
     public ResponseEntity<Void> receiveHumidity(
             @Valid @ModelAttribute HumidityReadingRequest request) {
 
-        humidityService.ingest(request.sensorToken(),request.humidityPercentage());
+        humidityService.ingest(request.sensorToken(),request.humidityPercentage(), request.recordedAt());
 
         return ResponseEntity.ok().build();
     }
@@ -69,7 +69,7 @@ public class SensorIngestionController {
             @Valid @ModelAttribute MotionReadingRequest request
     ) {
 
-        motionService.ingest(request.sensorToken(), request.motionDetected());
+        motionService.ingest(request.sensorToken(), request.motionDetected(), request.recordedAt());
 
         return ResponseEntity.ok().build();
     }
