@@ -12,7 +12,7 @@ public record AlertRuleListItemDTO(
         Long id,
         Long sensorId,
         String sensorName,
-        String sensorHomeLocation,
+        String sensorInstallationLocation,
         SensorType sensorType,
         AlertRuleType ruleType,
         ComparisonOperator comparisonOperator,

@@ -60,7 +60,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
         return new SensorReadingViewDTO(
                 sensor.getType(),
-                sensor.getHomeLocation(),
+                sensor.getInstallationLocation(),
                 toDisplayValue(sensor.getType(), reading.getNumericValue(), temperatureUnit),
                 reading.getBooleanValue(),
                 getDisplayUnitSymbol(sensor.getType(), temperatureUnit),

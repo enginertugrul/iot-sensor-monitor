@@ -166,7 +166,7 @@ public class SensorController {
         model.addAttribute("sensorType",sensor.getType());
         model.addAttribute("sensorCity",sensor.getCity());
         model.addAttribute("sensorDistrict",sensor.getDistrict());
-        model.addAttribute("sensorHomeLocation",sensor.getHomeLocation());
+        model.addAttribute("sensorInstallationLocation",sensor.getInstallationLocation());
 
         return "sensor-delete";
     }

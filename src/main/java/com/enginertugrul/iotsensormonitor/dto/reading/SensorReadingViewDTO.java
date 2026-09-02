@@ -9,7 +9,7 @@ import java.time.ZonedDateTime;
 
 public record SensorReadingViewDTO(
         SensorType sensorType,
-        String location,
+        String installationLocation,
         Double numericValue,
         Boolean booleanValue,
         String unitSymbol,

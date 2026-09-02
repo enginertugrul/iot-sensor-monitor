@@ -287,34 +287,34 @@
 
                 <div class="form-field">
                     <label class="form-label"
-                           for="homeLocation"
-                           th:text="#{sensors.homeLocation}">
+                           for="installationLocation"
+                           th:text="#{sensors.installationLocation}">
                         Installation Location
                     </label>
 
                     <input class="form-control"
-                           id="homeLocation"
+                           id="installationLocation"
                            type="text"
                            maxlength="100"
-                           th:field="*{homeLocation}"
-                           th:placeholder="#{sensors.placeholder.homeLocation}"
+                           th:field="*{installationLocation}"
+                           th:placeholder="#{sensors.placeholder.installationLocation}"
                            th:errorclass="form-control--invalid"
-                           th:aria-invalid="${#fields.hasErrors('homeLocation')}"
-                           th:aria-describedby="${#fields.hasErrors('homeLocation')
-                               ? 'home-location-help home-location-error'
-                               : 'home-location-help'}"
+                           th:aria-invalid="${#fields.hasErrors('installationLocation')}"
+                           th:aria-describedby="${#fields.hasErrors('installationLocation')
+                               ? 'installation-location-help installation-location-error'
+                               : 'installation-location-help'}"
                            required>
 
                     <p class="form-help"
-                       id="home-location-help"
+                       id="installation-location-help"
                        th:text="#{sensors.locationHelp}">
                         Use a precise label such as building, floor, aisle, or room.
                     </p>
 
                     <div class="form-feedback form-feedback--error"
-                         id="home-location-error"
-                         th:if="${#fields.hasErrors('homeLocation')}"
-                         th:errors="*{homeLocation}">
+                         id="installation-location-error"
+                         th:if="${#fields.hasErrors('installationLocation')}"
+                         th:errors="*{installationLocation}">
                         Installation location error
                     </div>
                 </div>
@@ -418,7 +418,7 @@
                     </th>
 
                     <th scope="col"
-                        th:text="#{sensors.homeLocationShort}">
+                        th:text="#{sensors.installationLocationShort}">
                         Installation Location
                     </th>
 
@@ -464,7 +464,7 @@
                         </small>
                     </td>
 
-                    <td th:text="${sensor.homeLocation}">
+                    <td th:text="${sensor.installationLocation}">
                         Building A - Floor 2
                     </td>
 

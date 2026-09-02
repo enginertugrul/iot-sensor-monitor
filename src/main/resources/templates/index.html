@@ -134,7 +134,7 @@
                                     + sensor.type.name()
                                 )
                                 + ' — '
-                                + sensor.homeLocation}">
+                                + sensor.installationLocation}">
                         Living Room Sensor — Temperature sensor — Living Room
                     </option>
                 </select>
@@ -229,7 +229,7 @@
                 <tbody>
                 <tr th:each="recentRecord : ${recentRecords}">
                     <td class="reading-location"
-                        th:text="${recentRecord.location}">
+                        th:text="${recentRecord.installationLocation}">
                         Location
                     </td>
 

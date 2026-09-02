@@ -59,7 +59,7 @@ public class SensorServiceImpl implements SensorService {
                 requestedName,
                 sensorForm.getCity(),
                 sensorForm.getDistrict(),
-                sensorForm.getHomeLocation(),
+                sensorForm.getInstallationLocation(),
                 sensorForm.getTimezone()
         );
 
@@ -113,7 +113,7 @@ public class SensorServiceImpl implements SensorService {
         form.setName(sensor.getName());
         form.setCity(sensor.getCity());
         form.setDistrict(sensor.getDistrict());
-        form.setHomeLocation(sensor.getHomeLocation());
+        form.setInstallationLocation(sensor.getInstallationLocation());
         form.setTimezone(sensor.getTimezone());
 
         return form;
@@ -140,7 +140,7 @@ public class SensorServiceImpl implements SensorService {
                 requiredForm.getName(),
                 requiredForm.getCity(),
                 requiredForm.getDistrict(),
-                requiredForm.getHomeLocation(),
+                requiredForm.getInstallationLocation(),
                 requiredForm.getTimezone()
         );
     }
@@ -197,7 +197,7 @@ public class SensorServiceImpl implements SensorService {
                 sensor.getType(),
                 sensor.getCity(),
                 sensor.getDistrict(),
-                sensor.getHomeLocation(),
+                sensor.getInstallationLocation(),
                 sensor.getTimezone(),
                 sensor.isActive()
         );

@@ -55,14 +55,14 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
 
 
 
-    public record SensorSnapshot(long id, SensorType type, String name, String homeLocation, String city,
+    public record SensorSnapshot(long id, SensorType type, String name, String installationLocation, String city,
                                  String district) {
 
         public SensorSnapshot{
 
             Objects.requireNonNull(type, "type must not be null");
             Objects.requireNonNull(name, "name must not be null");
-            Objects.requireNonNull(homeLocation, "homeLocation must not be null");
+            Objects.requireNonNull(installationLocation, "installationLocation must not be null");
             Objects.requireNonNull(city, "city must not be null");
             Objects.requireNonNull(district, "district must not be null");
         }

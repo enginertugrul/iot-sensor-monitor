@@ -103,7 +103,7 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
         return messageSource.getMessage("email.alert." + sensorMessageSegment(context.sensor().type()) + ".body",
                 new Object[]{
                         context.sensor().name(),
-                        context.sensor().homeLocation(),
+                        context.sensor().installationLocation(),
                         context.sensor().city(),
                         context.sensor().district(),
                         comparison,
@@ -149,7 +149,7 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
                 "email.alert.motion.body",
                 new Object[]{
                         context.sensor().name(),
-                        context.sensor().homeLocation(),
+                        context.sensor().installationLocation(),
                         context.sensor().city(),
                         context.sensor().district(),
                         eventDescription,
