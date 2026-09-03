@@ -1,6 +1,7 @@
 package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -102,13 +103,13 @@ public abstract class SensorSummary {
 
 
     public boolean isNumeric() {
-        return unit != null;
+        return sensor.getReadingValueKind() == ReadingValueKind.NUMERIC;
     }
 
 
 
-    public boolean isMotion() {
-        return unit == null;
+    public boolean isBoolean() {
+        return sensor.getReadingValueKind() == ReadingValueKind.BOOLEAN;
     }
 
 
@@ -116,6 +117,7 @@ public abstract class SensorSummary {
     public SensorSummaryAggregate toAggregate() {
 
         return SensorSummaryAggregate.restore(
+                sensor.getReadingValueKind(),
                 sourceSampleCount,
                 unit,
                 numericSum,
@@ -143,8 +145,8 @@ public abstract class SensorSummary {
 
 
     public long getFalseSampleCount() {
-        if (!isMotion()) {
-            throw new IllegalStateException("False sample count is only available for motion summaries");
+        if (!isBoolean()) {
+            throw new IllegalStateException("False sample count is only available for boolean summaries");
         }
 
         return sourceSampleCount - trueSampleCount;
@@ -179,6 +181,7 @@ public abstract class SensorSummary {
 
 
     private void applyAggregate(SensorSummaryAggregate aggregate) {
+        aggregate.requireCompatibleWith(sensor.getType());
         this.sourceSampleCount = aggregate.getSourceSampleCount();
         this.unit = aggregate.getUnit();
         this.numericSum = aggregate.getNumericSum();
@@ -186,4 +189,5 @@ public abstract class SensorSummary {
         this.numericMaximum = aggregate.getNumericMaximum();
         this.trueSampleCount = aggregate.getTrueSampleCount();
     }
+
 }

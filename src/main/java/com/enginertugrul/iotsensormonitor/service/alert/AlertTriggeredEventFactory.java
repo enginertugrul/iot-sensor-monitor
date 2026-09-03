@@ -43,7 +43,7 @@ public class AlertTriggeredEventFactory {
     private AlertTriggeredEvent.SensorSnapshot sensorSnapshot(Sensor sensor) {
 
         return new  AlertTriggeredEvent.SensorSnapshot(sensor.getId(), sensor.getType(),
-                sensor.getName(),sensor.getHomeLocation(),
+                sensor.getName(),sensor.getInstallationLocation(),
                 sensor.getCity(),sensor.getDistrict());
     }
 

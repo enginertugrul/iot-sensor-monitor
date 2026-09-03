@@ -187,18 +187,22 @@
                                             'sensorType.' + sensor.type.name()
                                         )
                                         + ' - '
-                                        + sensor.homeLocation}">
+                                        + sensor.installationLocation
+                                        + (sensor.active
+                                            ? ''
+                                            : ' - ' + #messages.msg('sensors.status.inactive'))}">
                                 Temperature Sensor - Building A
                             </option>
+
                         </select>
 
                         <p class="form-help"
                            id="numeric-sensor-help"
                            th:text="#{alertRules.numericSensorHelp}">
-                            Temperature and humidity sensors are available for
-                            numeric rules.
+                            Temperature and humidity sensors are available for numeric rules.
+                            Inactive sensors may still be selected, but their rules cannot trigger
+                            until the sensor is activated.
                         </p>
-
                         <div class="form-feedback form-feedback--error"
                              id="numeric-sensor-error"
                              th:if="${#fields.hasErrors('sensorId')}"
@@ -410,15 +414,20 @@
                                             'sensorType.' + sensor.type.name()
                                         )
                                         + ' - '
-                                        + sensor.homeLocation}">
+                                        + sensor.installationLocation
+                                        + (sensor.active
+                                            ? ''
+                                            : ' - ' + #messages.msg('sensors.status.inactive'))}">
                                 Motion Sensor - North Entrance
                             </option>
+
                         </select>
 
                         <p class="form-help"
                            id="motion-sensor-help"
                            th:text="#{alertRules.motionSensorHelp}">
-                            Motion sensors are available for event rules.
+                            Motion sensors are available for event rules. Inactive sensors may still
+                            be selected, but their rules cannot trigger until the sensor is activated.
                         </p>
 
                         <div class="form-feedback form-feedback--error"
@@ -427,6 +436,7 @@
                              th:errors="*{sensorId}">
                             Sensor error
                         </div>
+
                     </div>
 
                     <dl class="alert-rule-event">
@@ -572,9 +582,17 @@
                                        'sensorType.' + rule.sensorType.name()
                                    )
                                    + ' - '
-                                   + rule.sensorHomeLocation}">
+                                   + rule.sensorInstallationLocation}">
                             Temperature sensor - Building A
                         </small>
+
+                        <small class="alert-rule-sensor-inactive"
+                               th:if="${!rule.sensorActive}"
+                               th:text="#{alertRules.sensorInactiveNotice}">
+                            Sensor inactive. This rule remains configured, but new readings are
+                            blocked until the sensor is activated.
+                        </small>
+
                     </td>
 
                     <td th:text="${#messages.msg(

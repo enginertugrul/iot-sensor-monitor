@@ -70,9 +70,11 @@ public class StatisticsAggregationPolicy {
             SensorSummaryAggregate aggregate,
             TemperatureUnit temperatureUnit
     ) {
-        if (!SensorMeasurementPolicy.supportsNumericMeasurements(sensorType) || !aggregate.isNumeric()) {
-            throw new IllegalArgumentException("Numeric metrics require a numeric sensor and aggregate");
+        if (!SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)) {
+            throw new IllegalArgumentException("Numeric metrics require a numeric sensor");
         }
+
+        aggregate.requireCompatibleWith(sensorType);
 
         if (aggregate.getSourceSampleCount() == 0) {
             return null;
@@ -114,8 +116,8 @@ public class StatisticsAggregationPolicy {
 
 
     public StatisticsMotionMetricsDTO toMotionMetrics(SensorSummaryAggregate aggregate) {
-        if (!aggregate.isMotion()) {
-            throw new IllegalArgumentException("Motion metrics require a motion aggregate");
+        if (!aggregate.isBoolean()) {
+            throw new IllegalArgumentException("Motion metrics require a boolean aggregate");
         }
 
         long totalSampleCount = aggregate.getSourceSampleCount();
@@ -134,4 +136,5 @@ public class StatisticsAggregationPolicy {
                 falseSampleCount,
                 truePercentage);
     }
+
 }

@@ -11,7 +11,7 @@ public record SensorListItemDTO(
         SensorType type,
         String city,
         String district,
-        String homeLocation,
+        String installationLocation,
         String timezone,
         boolean active
 ) {

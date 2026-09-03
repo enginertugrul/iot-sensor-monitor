@@ -30,7 +30,7 @@ public class SensorForm {
 
     @NotBlank
     @Size(max = 100)
-    private String homeLocation;
+    private String installationLocation;
 
     @NotBlank
     @Size(max = 64)

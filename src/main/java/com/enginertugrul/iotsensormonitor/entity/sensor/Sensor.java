@@ -43,8 +43,8 @@ public class Sensor {
     @Column(name = "district", nullable = false, length = 100)
     private String district;
 
-    @Column(name = "home_location", nullable = false, length = 100)
-    private String homeLocation;
+    @Column(name = "installation_location", nullable = false, length = 100)
+    private String installationLocation;
 
     @Column(name = "time_zone_id", nullable = false, length = 64)
     private String timezone;
@@ -74,7 +74,7 @@ public class Sensor {
             String name,
             String city,
             String district,
-            String homeLocation,
+            String installationLocation,
             String timezone
     ) {
         this.owner = Objects.requireNonNull(owner, "owner must not be null");
@@ -82,7 +82,7 @@ public class Sensor {
         this.name = DomainChecks.requireText(name, "name");
         this.city = DomainChecks.requireText(city, "city");
         this.district = DomainChecks.requireText(district, "district");
-        this.homeLocation = DomainChecks.requireText(homeLocation, "homeLocation");
+        this.installationLocation = DomainChecks.requireText(installationLocation, "installationLocation");
         this.timezone = normalizeTimezone(timezone);
 
         Instant now = Instant.now();
@@ -98,7 +98,7 @@ public class Sensor {
             String name,
             String city,
             String district,
-            String homeLocation,
+            String installationLocation,
             String timezone
     ) {
 
@@ -111,26 +111,29 @@ public class Sensor {
         this.name = DomainChecks.requireText(name, "name");
         this.city = DomainChecks.requireText(city, "city");
         this.district = DomainChecks.requireText(district, "district");
-        this.homeLocation = DomainChecks.requireText(homeLocation, "homeLocation");
+        this.installationLocation = DomainChecks.requireText(installationLocation, "installationLocation");
         this.timezone = normalizedTimezone;
         this.updatedAt = Instant.now();
     }
 
 
-
-
-
-    public void deactivate() {
-        this.active = false;
-        this.updatedAt = Instant.now();
+    public ReadingValueKind getReadingValueKind() {
+        return type.getReadingValueKind();
     }
 
 
-
+    public void deactivate() {
+        if (active) {
+            this.active = false;
+            this.updatedAt = Instant.now();
+        }
+    }
 
     public void activate() {
-        this.active = true;
-        this.updatedAt = Instant.now();
+        if (!active) {
+            this.active = true;
+            this.updatedAt = Instant.now();
+        }
     }
 
 

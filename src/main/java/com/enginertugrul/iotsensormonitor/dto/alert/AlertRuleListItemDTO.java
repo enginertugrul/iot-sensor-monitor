@@ -6,14 +6,13 @@ import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 
 
-
-
 public record AlertRuleListItemDTO(
         Long id,
         Long sensorId,
         String sensorName,
-        String sensorHomeLocation,
+        String sensorInstallationLocation,
         SensorType sensorType,
+        boolean sensorActive,
         AlertRuleType ruleType,
         ComparisonOperator comparisonOperator,
         AlertEventType eventType,

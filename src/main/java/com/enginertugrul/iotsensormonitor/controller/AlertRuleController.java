@@ -8,6 +8,7 @@ import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.alert.AlertRuleService;
 import com.enginertugrul.iotsensormonitor.service.sensor.SensorService;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 
 
@@ -82,7 +82,7 @@ public class AlertRuleController {
 
         try {
             alertRuleService.createNumericThresholdRule(ownerId, form, preferredTemperatureUnit);
-        } catch (IllegalArgumentException | NoSuchElementException e) {
+        } catch (IllegalArgumentException | SensorNotFoundException e) {
             bindingResult.reject("alertRules.invalid");
             addPageData(model,ownerId);
             return "alert-rules";
@@ -115,7 +115,7 @@ public class AlertRuleController {
         try {
             alertRuleService.createMotionDetectedRule(ownerId, form);
 
-        }catch (IllegalArgumentException | NoSuchElementException e){
+        }catch (IllegalArgumentException | SensorNotFoundException e){
 
             bindingResult.reject("alertRules.invalid");
             addPageData(model,ownerId);

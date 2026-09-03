@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{sensors.deactivateTitle}">
+        Deactivate Sensor | IoT Sensor Monitor
+    </title>
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/app-shell.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/sensors.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/app-shell :: authenticatedHeader('sensors', ${null})}"></header>
+
+<main id="main-content"
+      class="app-main app-main--sensors"
+      tabindex="-1">
+    <header class="sensors-page-header">
+        <div class="sensors-page-header__content">
+            <p class="sensors-eyebrow"
+               th:text="#{sensors.deactivateEyebrow}">
+                Ingestion control
+            </p>
+
+            <h1 th:text="#{sensors.deactivateHeading}">
+                Deactivate Sensor
+            </h1>
+
+            <p class="sensors-page-header__description"
+               th:text="#{sensors.deactivateDescription}">
+                Review what changes while this sensor is inactive.
+            </p>
+        </div>
+    </header>
+
+    <section class="sensors-panel sensor-deactivation-panel"
+             aria-labelledby="sensor-deactivation-heading"
+             aria-describedby="sensor-deactivation-warning sensor-deactivation-alert-note">
+        <header class="sensor-deactivation-panel__header">
+            <h2 id="sensor-deactivation-heading"
+                th:text="${sensorName}">
+                North Entrance Sensor
+            </h2>
+
+            <p class="sensor-deactivation-panel__warning"
+               id="sensor-deactivation-warning"
+               th:text="#{sensors.deactivateWarning}">
+                Deactivating this sensor blocks new readings until you activate
+                it again. Existing readings, statistics, and alert rules are
+                preserved.
+            </p>
+        </header>
+
+        <dl class="sensor-deactivation-summary">
+            <div class="sensor-deactivation-summary__item">
+                <dt th:text="#{sensors.type}">
+                    Sensor Type
+                </dt>
+
+                <dd th:text="${#messages.msg(
+                    'sensorType.' + sensorType.name()
+                )}">
+                    Temperature sensor
+                </dd>
+            </div>
+
+            <div class="sensor-deactivation-summary__item">
+                <dt th:text="#{sensors.site}">
+                    Region
+                </dt>
+
+                <dd>
+                    <span th:text="${sensorCity}">
+                        Istanbul
+                    </span>
+
+                    <span th:text="${sensorDistrict}">
+                        Kadikoy
+                    </span>
+                </dd>
+            </div>
+
+            <div class="sensor-deactivation-summary__item">
+                <dt th:text="#{sensors.installationLocation}">
+                    Installation Location
+                </dt>
+
+                <dd th:text="${sensorInstallationLocation}">
+                    Building A - Floor 2
+                </dd>
+            </div>
+        </dl>
+
+        <p class="sensor-deactivation-panel__note"
+           id="sensor-deactivation-alert-note"
+           th:text="#{sensors.deactivateAlertRulesNote}">
+            Enabled alert rules remain configured but cannot trigger without
+            new readings from this sensor.
+        </p>
+
+        <div class="sensor-deactivation-actions">
+            <a class="form-button form-button--secondary"
+               th:href="@{/user/sensors}"
+               th:text="#{sensors.cancel}">
+                Cancel
+            </a>
+
+            <form class="sensor-deactivation-form"
+                  th:action="@{/user/sensors/{sensorId}/deactivate(sensorId=${sensorId})}"
+                  method="post"
+                  aria-describedby="sensor-deactivation-warning sensor-deactivation-alert-note">
+                <input type="hidden"
+                       th:name="${_csrf.parameterName}"
+                       th:value="${_csrf.token}">
+
+                <button class="form-button sensor-deactivation-button"
+                        type="submit"
+                        th:text="#{sensors.confirmDeactivate}">
+                    Yes, deactivate sensor
+                </button>
+            </form>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/app-shell :: footer}"></footer>
+
+</body>
+</html>
