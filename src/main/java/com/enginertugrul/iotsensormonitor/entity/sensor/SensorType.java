@@ -5,13 +5,16 @@ import lombok.Getter;
 @Getter
 public enum SensorType {
 
-    TEMPERATURE("Temperature sensor"),
-    HUMIDITY("Humidity sensor"),
-    MOTION("Motion sensor");
+    TEMPERATURE("Temperature sensor",ReadingValueKind.NUMERIC),
+    HUMIDITY("Humidity sensor",ReadingValueKind.NUMERIC),
+    MOTION("Motion sensor",ReadingValueKind.BOOLEAN);
 
     private final String displayName;
+    private final ReadingValueKind readingValueKind;
 
-    SensorType(String displayName) {
+    SensorType(String displayName,ReadingValueKind readingValueKind) {
         this.displayName = displayName;
+        this.readingValueKind = readingValueKind;
     }
+
 }

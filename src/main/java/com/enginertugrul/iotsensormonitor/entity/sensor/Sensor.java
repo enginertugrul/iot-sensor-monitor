@@ -117,7 +117,9 @@ public class Sensor {
     }
 
 
-
+    public ReadingValueKind getReadingValueKind() {
+        return type.getReadingValueKind();
+    }
 
 
     public void deactivate() {

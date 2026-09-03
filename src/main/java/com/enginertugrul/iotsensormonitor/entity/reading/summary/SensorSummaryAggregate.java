@@ -1,7 +1,10 @@
 package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
+import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
+import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -10,6 +13,7 @@ import java.util.Objects;
 @Getter
 public final class SensorSummaryAggregate {
 
+    private final ReadingValueKind readingValueKind;
     private final long sourceSampleCount;
     private final MeasurementUnit unit;
     private final BigDecimal numericSum;
@@ -17,7 +21,9 @@ public final class SensorSummaryAggregate {
     private final Double numericMaximum;
     private final Long trueSampleCount;
 
-    private SensorSummaryAggregate(long sourceSampleCount, MeasurementUnit unit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum, Long trueSampleCount) {
+    private SensorSummaryAggregate(ReadingValueKind readingValueKind, long sourceSampleCount, MeasurementUnit unit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum, Long trueSampleCount) {
+
+        this.readingValueKind = Objects.requireNonNull(readingValueKind,"readingValueKind must not be null");
         this.sourceSampleCount = sourceSampleCount;
         this.unit = unit;
         this.numericSum = numericSum;
@@ -36,10 +42,10 @@ public final class SensorSummaryAggregate {
 
 
 
-    public static SensorSummaryAggregate numeric(long sourceSampleCount, MeasurementUnit canonicalUnit ,BigDecimal numericSum, Double numericMinimum, Double numericMaximum) {
-
+    public static SensorSummaryAggregate numeric(long sourceSampleCount, MeasurementUnit canonicalUnit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum) {
 
         SensorSummaryAggregate aggregate = new SensorSummaryAggregate(
+                ReadingValueKind.NUMERIC,
                 sourceSampleCount,
                 canonicalUnit,
                 numericSum,
@@ -55,15 +61,16 @@ public final class SensorSummaryAggregate {
 
 
 
-    public static SensorSummaryAggregate emptyMotion() {
-        return motion(0,0);
+    public static SensorSummaryAggregate emptyBoolean() {
+        return booleanSamples(0,0);
     }
 
 
 
 
-    public static SensorSummaryAggregate motion(long sourceSampleCount, long trueSampleCount) {
+    public static SensorSummaryAggregate booleanSamples(long sourceSampleCount, long trueSampleCount) {
         SensorSummaryAggregate aggregate = new SensorSummaryAggregate(
+                ReadingValueKind.BOOLEAN,
                 sourceSampleCount,
                 null,
                 null,
@@ -78,9 +85,11 @@ public final class SensorSummaryAggregate {
 
 
 
-    static SensorSummaryAggregate restore(long sourceSampleCount, MeasurementUnit unit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum, Long trueSampleCount) {
+
+    static SensorSummaryAggregate restore(ReadingValueKind readingValueKind, long sourceSampleCount, MeasurementUnit unit, BigDecimal numericSum, Double numericMinimum, Double numericMaximum, Long trueSampleCount) {
 
         return new SensorSummaryAggregate(
+                readingValueKind,
                 sourceSampleCount,
                 unit,
                 numericSum,
@@ -92,43 +101,55 @@ public final class SensorSummaryAggregate {
 
 
 
-
-
-
     public boolean isNumeric() {
-        return unit != null;
+        return readingValueKind == ReadingValueKind.NUMERIC;
     }
 
 
 
 
-    public boolean isMotion() {
-        return unit == null;
+    public boolean isBoolean() {
+        return readingValueKind == ReadingValueKind.BOOLEAN;
     }
 
 
+
+
+    public void requireCompatibleWith(SensorType sensorType) {
+
+        Objects.requireNonNull(sensorType,"sensorType must not be null");
+
+        if (readingValueKind != sensorType.getReadingValueKind()) {
+            throw new IllegalArgumentException("Summary aggregate value kind does not match sensor type " + sensorType);
+        }
+
+        if (isNumeric() && unit != SensorMeasurementPolicy.requireCanonicalUnit(sensorType)) {
+            throw new IllegalArgumentException("Summary aggregate unit does not match sensor type " + sensorType);
+        }
+    }
 
 
 
 
     private void validateShape() {
+
         if (sourceSampleCount < 0) {
             throw new IllegalArgumentException("sourceSampleCount must not be negative");
         }
 
-        if (unit == null) {
-            validateMotionShape();
-            return;
+        switch (readingValueKind) {
+            case NUMERIC -> validateNumericShape();
+            case BOOLEAN -> validateBooleanShape();
         }
-
-        validateNumericShape();
     }
 
 
 
 
-
     private void validateNumericShape() {
+
+        Objects.requireNonNull(unit,"unit must not be null for numeric summaries");
+
         if (trueSampleCount != null) {
             throw new IllegalArgumentException("Numeric summaries must not contain trueSampleCount");
         }
@@ -153,18 +174,19 @@ public final class SensorSummaryAggregate {
 
 
 
+    private void validateBooleanShape() {
 
-    private void validateMotionShape() {
-        if (numericSum != null || numericMinimum != null || numericMaximum != null) {
-            throw new IllegalArgumentException("Motion summaries must not contain numeric aggregate values");
+        if (unit != null || numericSum != null || numericMinimum != null || numericMaximum != null) {
+            throw new IllegalArgumentException("Boolean summaries must not contain numeric aggregate values or a measurement unit");
         }
 
         if (trueSampleCount == null) {
-            throw new IllegalArgumentException("Motion summaries must contain trueSampleCount");
+            throw new IllegalArgumentException("Boolean summaries must contain trueSampleCount");
         }
 
         if (trueSampleCount < 0 || trueSampleCount > sourceSampleCount) {
             throw new IllegalArgumentException("trueSampleCount must be between zero and sourceSampleCount");
         }
     }
+
 }

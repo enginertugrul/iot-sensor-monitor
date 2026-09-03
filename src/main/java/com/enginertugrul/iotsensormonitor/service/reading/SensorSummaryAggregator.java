@@ -20,12 +20,13 @@ public final class SensorSummaryAggregator {
 
     public static SensorSummaryAggregate empty(SensorType sensorType) {
 
-        return switch (sensorType) {
+        return switch (sensorType.getReadingValueKind()) {
 
-            case TEMPERATURE, HUMIDITY ->
+            case NUMERIC ->
                     SensorSummaryAggregate.emptyNumeric(SensorMeasurementPolicy.requireCanonicalUnit(sensorType));
 
-            case MOTION -> SensorSummaryAggregate.emptyMotion();
+            case BOOLEAN ->
+                    SensorSummaryAggregate.emptyBoolean();
         };
 
     }
@@ -33,13 +34,14 @@ public final class SensorSummaryAggregator {
 
     public static SensorSummaryAggregate fromReading(SensorType sensorType,SensorReading reading) {
 
-        return switch (sensorType) {
-            case TEMPERATURE, HUMIDITY -> {
+        return switch (sensorType.getReadingValueKind()) {
+            case NUMERIC -> {
                 MeasurementUnit canonicalUnit = SensorMeasurementPolicy.requireCanonicalUnit(sensorType);
                 double value = reading.getNumericValue();
                 yield SensorSummaryAggregate.numeric(1,canonicalUnit,BigDecimal.valueOf(value),value,value);
             }
-            case MOTION -> SensorSummaryAggregate.motion(1,reading.getBooleanValue() ? 1 : 0);
+
+            case BOOLEAN -> SensorSummaryAggregate.booleanSamples(1,reading.getBooleanValue() ? 1 : 0);
         };
     }
 
@@ -50,14 +52,16 @@ public final class SensorSummaryAggregator {
             SensorType sensorType,
             RawSensorReadingAggregateProjection rawAggregate
     ) {
-        return switch (sensorType) {
-            case TEMPERATURE, HUMIDITY -> SensorSummaryAggregate.numeric(
+
+        return switch (sensorType.getReadingValueKind()) {
+            case NUMERIC -> SensorSummaryAggregate.numeric(
                     rawAggregate.getSourceSampleCount(),
                     SensorMeasurementPolicy.requireCanonicalUnit(sensorType),
                     rawAggregate.getNumericSum(),
                     rawAggregate.getNumericMinimum(),
                     rawAggregate.getNumericMaximum());
-            case MOTION -> SensorSummaryAggregate.motion(
+
+            case BOOLEAN -> SensorSummaryAggregate.booleanSamples(
                     rawAggregate.getSourceSampleCount(),
                     rawAggregate.getTrueSampleCount());
         };
@@ -71,12 +75,11 @@ public final class SensorSummaryAggregator {
             Iterable<SensorSummaryAggregate> aggregates
     ) {
 
-        return switch (sensorType) {
-            case TEMPERATURE, HUMIDITY -> combineNumeric(sensorType,aggregates);
-            case MOTION -> combineMotion(aggregates);
+        return switch (sensorType.getReadingValueKind()) {
+            case NUMERIC -> combineNumeric(sensorType,aggregates);
+            case BOOLEAN -> combineBoolean(sensorType,aggregates);
         };
     }
-
 
 
 
@@ -93,10 +96,7 @@ public final class SensorSummaryAggregator {
         Double numericMaximum = null;
 
         for (SensorSummaryAggregate aggregate : aggregates) {
-            if (aggregate.getUnit() != canonicalUnit) {
-                throw new IllegalStateException("Cannot combine aggregates with incompatible measurement units");
-            }
-
+            aggregate.requireCompatibleWith(sensorType);
             sourceSampleCount = Math.addExact(sourceSampleCount,aggregate.getSourceSampleCount());
 
             if (aggregate.getSourceSampleCount() == 0) {
@@ -126,19 +126,21 @@ public final class SensorSummaryAggregator {
 
 
 
-    private static SensorSummaryAggregate combineMotion(Iterable<SensorSummaryAggregate> aggregates) {
+    private static SensorSummaryAggregate combineBoolean(
+            SensorType sensorType,
+            Iterable<SensorSummaryAggregate> aggregates
+    ) {
+
         long sourceSampleCount = 0;
         long trueSampleCount = 0;
 
         for (SensorSummaryAggregate aggregate : aggregates) {
-            if (!aggregate.isMotion()) {
-                throw new IllegalStateException("Cannot combine numeric and motion summary aggregates");
-            }
-
+            aggregate.requireCompatibleWith(sensorType);
             sourceSampleCount = Math.addExact(sourceSampleCount,aggregate.getSourceSampleCount());
             trueSampleCount = Math.addExact(trueSampleCount,aggregate.getTrueSampleCount());
         }
 
-        return SensorSummaryAggregate.motion(sourceSampleCount,trueSampleCount);
+        return SensorSummaryAggregate.booleanSamples(sourceSampleCount,trueSampleCount);
     }
+
 }

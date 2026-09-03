@@ -2,6 +2,7 @@ package com.enginertugrul.iotsensormonitor.entity.measurement;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
 import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 
 import java.util.Map;
@@ -31,7 +32,8 @@ public final class SensorMeasurementPolicy {
 
     public static boolean supportsNumericMeasurements(SensorType sensorType) {
 
-        return NUMERIC_SPECIFICATIONS.containsKey(Objects.requireNonNull(sensorType,"sensorType must not be null"));
+        return Objects.requireNonNull(sensorType,"sensorType must not be null")
+                .getReadingValueKind() == ReadingValueKind.NUMERIC;
     }
 
 
