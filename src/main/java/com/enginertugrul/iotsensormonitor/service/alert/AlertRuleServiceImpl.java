@@ -153,6 +153,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
                 sensor.getName(),
                 sensor.getInstallationLocation(),
                 sensor.getType(),
+                sensor.isActive(),
                 rule.getRuleType(),
                 rule.getComparisonOperator(),
                 rule.getEventType(),

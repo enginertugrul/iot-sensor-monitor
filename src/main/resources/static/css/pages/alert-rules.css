@@ -263,6 +263,15 @@
     display: block;
 }
 
+.app-main--alert-rules .alert-rule-sensor-inactive {
+    display: block;
+    max-width: 18rem;
+    margin-top: var(--space-2);
+    color: var(--color-warning-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
 .app-main--alert-rules .alert-rule-sensor-name {
     margin-bottom: var(--space-1);
     color: var(--color-text);

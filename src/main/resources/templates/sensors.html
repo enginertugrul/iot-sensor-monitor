@@ -118,7 +118,10 @@
 
 
     <div class="sensors-notices"
-         th:if="${sensorUpdated == true or sensorDeleted == true}">
+         th:if="${sensorUpdated == true
+         or sensorDeleted == true
+         or sensorActivated == true
+         or sensorDeactivated == true}">
         <p class="form-status form-status--success"
            role="status"
            aria-live="polite"
@@ -132,12 +135,29 @@
            role="status"
            aria-live="polite"
            aria-atomic="true"
+           th:if="${sensorActivated == true}"
+           th:text="#{sensors.activated}">
+            Sensor activated. It can accept new readings again.
+        </p>
+
+        <p class="form-status form-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
+           th:if="${sensorDeactivated == true}"
+           th:text="#{sensors.deactivated}">
+            Sensor deactivated. New readings are now blocked.
+        </p>
+
+        <p class="form-status form-status--success"
+           role="status"
+           aria-live="polite"
+           aria-atomic="true"
            th:if="${sensorDeleted == true}"
            th:text="#{sensors.deleted}">
             Sensor and all related data deleted successfully.
         </p>
     </div>
-
 
     <section class="sensors-panel"
              aria-labelledby="add-sensor-heading">
@@ -476,6 +496,7 @@
                     </td>
 
                     <td>
+                        <div class="sensor-status-details">
                             <span class="sensor-status"
                                   th:classappend="${sensor.active
                                       ? ' sensor-status--active'
@@ -485,6 +506,13 @@
                                       : #messages.msg('sensors.status.inactive')}">
                                 Active
                             </span>
+
+                            <small class="sensor-status-note"
+                                   th:if="${!sensor.active}"
+                                   th:text="#{sensors.status.inactiveHelp}">
+                                New readings are blocked until this sensor is activated.
+                            </small>
+                        </div>
                     </td>
 
                     <td>
@@ -518,6 +546,34 @@
                                     + sensor.name}"
                                th:text="#{sensors.edit}">
                                 Edit
+                            </a>
+
+                            <form class="sensor-action-form"
+                                  th:if="${!sensor.active}"
+                                  th:action="@{/user/sensors/{sensorId}/activate(sensorId=${sensor.id})}"
+                                  method="post">
+                                <input type="hidden"
+                                       th:name="${_csrf.parameterName}"
+                                       th:value="${_csrf.token}">
+
+                                <button class="form-button form-button--secondary sensor-action-button"
+                                        type="submit"
+                                        th:aria-label="${#messages.msg('sensors.activate')
+                                            + ': '
+                                            + sensor.name}"
+                                        th:text="#{sensors.activate}">
+                                    Activate
+                                </button>
+                            </form>
+
+                            <a class="sensor-action-link"
+                               th:if="${sensor.active}"
+                               th:href="@{/user/sensors/{sensorId}/deactivate(sensorId=${sensor.id})}"
+                               th:aria-label="${#messages.msg('sensors.deactivate')
+                                   + ': '
+                                   + sensor.name}"
+                               th:text="#{sensors.deactivate}">
+                                Deactivate
                             </a>
 
                             <a class="sensor-action-link sensor-action-link--danger"

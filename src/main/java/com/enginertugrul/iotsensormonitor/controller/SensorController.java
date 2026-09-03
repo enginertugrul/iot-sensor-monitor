@@ -149,6 +149,57 @@ public class SensorController {
 
 
 
+    @PostMapping("/{sensorId}/activate")
+    public String activateSensor(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            RedirectAttributes redirectAttributes) {
+
+        sensorService.activateSensor(sensorId,authenticatedUser.getAppUserId());
+
+        redirectAttributes.addFlashAttribute("sensorActivated",true);
+
+        return "redirect:/user/sensors";
+    }
+
+
+
+    @GetMapping("/{sensorId}/deactivate")
+    public String getSensorDeactivatePage(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            Model model) {
+
+        Long ownerId = authenticatedUser.getAppUserId();
+        Sensor sensor = sensorService.getSensorForUser(sensorId,ownerId);
+
+        model.addAttribute("sensorId",sensor.getId());
+        model.addAttribute("sensorName",sensor.getName());
+        model.addAttribute("sensorType",sensor.getType());
+        model.addAttribute("sensorCity",sensor.getCity());
+        model.addAttribute("sensorDistrict",sensor.getDistrict());
+        model.addAttribute("sensorInstallationLocation",sensor.getInstallationLocation());
+
+        return "sensor-deactivate";
+    }
+
+
+
+    @PostMapping("/{sensorId}/deactivate")
+    public String deactivateSensor(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @PathVariable Long sensorId,
+            RedirectAttributes redirectAttributes) {
+
+        sensorService.deactivateSensor(sensorId,authenticatedUser.getAppUserId());
+
+        redirectAttributes.addFlashAttribute("sensorDeactivated",true);
+
+        return "redirect:/user/sensors";
+    }
+
+
+
 
 
 

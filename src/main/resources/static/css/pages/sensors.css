@@ -313,11 +313,36 @@
     color: var(--color-warning-text);
 }
 
+.app-main--sensors .sensor-status-details {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+}
+
+.app-main--sensors .sensor-status-note {
+    display: block;
+    max-width: 16rem;
+    color: var(--color-warning-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
 .app-main--sensors .sensor-actions {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--space-2);
+}
+
+.app-main--sensors .sensor-action-form {
+    margin: 0;
+}
+
+.app-main--sensors .sensor-action-button {
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    padding: var(--space-2) var(--space-3);
+    white-space: nowrap;
 }
 
 .app-main--sensors .sensor-action-link {
@@ -449,6 +474,43 @@
     color: var(--color-danger);
 }
 
+.app-main--sensors .sensor-deactivation-panel {
+    border-color: var(--color-warning);
+}
+
+.app-main--sensors .sensor-deactivation-panel__header h2 {
+    margin: 0 0 var(--space-3);
+}
+
+.app-main--sensors .sensor-deactivation-panel__warning {
+    max-width: 48rem;
+    margin: 0;
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
+}
+
+.app-main--sensors .sensor-deactivation-panel__note {
+    max-width: 48rem;
+    margin: var(--space-5) 0 0;
+    border-left: var(--space-1) solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-warning-surface);
+    color: var(--color-warning-text);
+    padding: var(--space-4);
+}
+
+.app-main--sensors .sensor-deactivation-button {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-surface);
+    color: var(--color-warning-text);
+}
+
+.app-main--sensors .sensor-deactivation-button:hover:not(:disabled) {
+    border-color: var(--color-warning);
+    background-color: rgba(245, 158, 11, 0.32);
+    color: var(--color-warning-text);
+}
+
 .app-main--sensors .sensor-delete-panel {
     border: 1px solid var(--color-danger);
     border-radius: var(--radius-lg);
@@ -507,14 +569,16 @@
     font-weight: var(--font-weight-semibold);
 }
 
-.app-main--sensors .sensor-delete-summary {
+.app-main--sensors .sensor-delete-summary,
+.app-main--sensors .sensor-deactivation-summary {
     display: grid;
     margin: var(--space-6) 0 0;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-4);
 }
 
-.app-main--sensors .sensor-delete-summary__item {
+.app-main--sensors .sensor-delete-summary__item,
+.app-main--sensors .sensor-deactivation-summary__item {
     min-width: 0;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -522,7 +586,8 @@
     padding: var(--space-4);
 }
 
-.app-main--sensors .sensor-delete-summary__item dt {
+.app-main--sensors .sensor-delete-summary__item dt,
+.app-main--sensors .sensor-deactivation-summary__item dt {
     margin-bottom: var(--space-2);
     color: var(--color-text-muted);
     font-size: var(--font-size-xs);
@@ -531,22 +596,26 @@
     text-transform: uppercase;
 }
 
-.app-main--sensors .sensor-delete-summary__item dd {
+.app-main--sensors .sensor-delete-summary__item dd,
+.app-main--sensors .sensor-deactivation-summary__item dd {
     margin: 0;
     color: var(--color-text);
     overflow-wrap: anywhere;
 }
 
-.app-main--sensors .sensor-delete-summary__item dd span {
+.app-main--sensors .sensor-delete-summary__item dd span,
+.app-main--sensors .sensor-deactivation-summary__item dd span {
     display: block;
 }
 
-.app-main--sensors .sensor-delete-summary__item dd span + span {
+.app-main--sensors .sensor-delete-summary__item dd span + span,
+.app-main--sensors .sensor-deactivation-summary__item dd span + span {
     margin-top: var(--space-1);
     color: var(--color-text-muted);
 }
 
-.app-main--sensors .sensor-delete-actions {
+.app-main--sensors .sensor-delete-actions,
+.app-main--sensors .sensor-deactivation-actions {
     display: flex;
     margin-top: var(--space-6);
     align-items: center;
@@ -555,7 +624,8 @@
     gap: var(--space-3);
 }
 
-.app-main--sensors .sensor-delete-form {
+.app-main--sensors .sensor-delete-form,
+.app-main--sensors .sensor-deactivation-form {
     margin: 0;
 }
 
@@ -601,7 +671,8 @@
         padding: var(--space-3) var(--space-4);
     }
 
-    .app-main--sensors .sensor-delete-summary {
+    .app-main--sensors .sensor-delete-summary,
+    .app-main--sensors .sensor-deactivation-summary {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -638,16 +709,19 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .app-main--sensors .sensor-delete-actions {
+    .app-main--sensors .sensor-delete-actions,
+    .app-main--sensors .sensor-deactivation-actions {
         align-items: stretch;
         flex-direction: column;
     }
 
-    .app-main--sensors .sensor-delete-form {
+    .app-main--sensors .sensor-delete-form,
+    .app-main--sensors .sensor-deactivation-form {
         width: 100%;
     }
 
-    .app-main--sensors .sensor-delete-actions .form-button {
+    .app-main--sensors .sensor-delete-actions .form-button,
+    .app-main--sensors .sensor-deactivation-actions .form-button {
         width: 100%;
     }
 
