@@ -12,6 +12,8 @@ import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.repository.AppUserRepository;
 import com.enginertugrul.iotsensormonitor.security.ingestion.GeneratedSensorIngestionToken;
 import com.enginertugrul.iotsensormonitor.security.ingestion.SensorIngestionTokenGenerator;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,10 @@ import java.util.Objects;
 
 @Service
 public class SensorServiceImpl implements SensorService {
+
+
+    private static final String SENSOR_OWNER_NAME_UNIQUE_INDEX = "uk_sensors_owner_name_lower";
+
 
     private final SensorRepository sensorRepository;
     private final AppUserRepository appUserRepository;
@@ -66,7 +72,16 @@ public class SensorServiceImpl implements SensorService {
         GeneratedSensorIngestionToken generatedToken = sensorIngestionTokenGenerator.generate();
         sensor.assignIngestionTokenHash(generatedToken.tokenHash());
 
-        Sensor savedSensor = sensorRepository.save(sensor);
+        Sensor savedSensor;
+
+
+        try {
+            savedSensor = sensorRepository.saveAndFlush(sensor);
+        } catch (DataIntegrityViolationException e) {
+            throw translateSensorPersistenceException(e);
+        }
+
+
 
         return new CreatedSensorDTO(savedSensor.getId() ,
                 savedSensor.getName(),
@@ -94,8 +109,7 @@ public class SensorServiceImpl implements SensorService {
     @Override
     @Transactional(readOnly = true)
     public Sensor getSensorForUser(Long sensorId, Long ownerId) {
-        return sensorRepository.findByIdAndOwnerId(sensorId, ownerId)
-                .orElseThrow(() -> new NoSuchElementException("Sensor not found"));
+        return getOwnedSensor(sensorId,ownerId);
     }
 
 
@@ -125,24 +139,32 @@ public class SensorServiceImpl implements SensorService {
 
     @Override
     @Transactional
-    public void updateSensor(Long sensorId, Long ownerId, SensorUpdateForm sensorUpdateForm) {
+    public void updateSensor(Long sensorId, Long ownerId, SensorUpdateForm form) {
 
-        SensorUpdateForm requiredForm = Objects.requireNonNull(sensorUpdateForm,"sensorUpdateForm must not be null");
+        Objects.requireNonNull(form,"form must not be null");
 
         Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
+        String requestedName = form.getName().trim();
 
-
-        if(sensorRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(ownerId, requiredForm.getName(), sensorId) ) {
+        if(sensorRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(ownerId, form.getName(), sensorId) ) {
             throw new DuplicateSensorNameException();
         }
 
         sensor.updateDetails(
-                requiredForm.getName(),
-                requiredForm.getCity(),
-                requiredForm.getDistrict(),
-                requiredForm.getInstallationLocation(),
-                requiredForm.getTimezone()
+                requestedName,
+                form.getCity(),
+                form.getDistrict(),
+                form.getInstallationLocation(),
+                form.getTimezone()
         );
+
+        try {
+            sensorRepository.flush();
+        }catch (DataIntegrityViolationException e) {
+            throw translateSensorPersistenceException(e);
+        }
+
+
     }
 
 
@@ -187,7 +209,16 @@ public class SensorServiceImpl implements SensorService {
 
 
 
+    private RuntimeException translateSensorPersistenceException(DataIntegrityViolationException exception) {
 
+        if ( exception.getCause() instanceof ConstraintViolationException constraintViolation
+                && SENSOR_OWNER_NAME_UNIQUE_INDEX.equals(constraintViolation.getConstraintName()) ) {
+
+            return new DuplicateSensorNameException();
+        }
+
+        return exception;
+    }
 
 
     private SensorListItemDTO toListItem(Sensor sensor) {

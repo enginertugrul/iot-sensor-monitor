@@ -5,6 +5,7 @@ import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.repository.SensorReadingRepository;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.support.temperature.TemperatureUnitConverter;
@@ -13,9 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.util.List;
-import java.util.NoSuchElementException;
-
-
 
 
 @Service
@@ -110,7 +108,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
     private Sensor getOwnedSensor(Long sensorId, Long ownerId) {
 
         return sensorRepository.findByIdAndOwnerId(sensorId, ownerId)
-                .orElseThrow(() ->new NoSuchElementException("Sensor not found"));
+                .orElseThrow(SensorNotFoundException::new);
     }
 
 

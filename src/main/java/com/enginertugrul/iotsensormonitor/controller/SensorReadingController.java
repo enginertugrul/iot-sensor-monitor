@@ -3,6 +3,7 @@ package com.enginertugrul.iotsensormonitor.controller;
 import com.enginertugrul.iotsensormonitor.dto.reading.SensorReadingViewDTO;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorListItemDTO;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.reading.SensorReadingService;
 import com.enginertugrul.iotsensormonitor.service.sensor.SensorService;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 
 
@@ -58,7 +58,7 @@ public class SensorReadingController {
                         selectedSensor.id(),
                         ownerId,
                         temperatureUnit);
-            } catch (NoSuchElementException exception) {
+            } catch (SensorNotFoundException exception) {
                 selectedSensor = null;
             }
         }
