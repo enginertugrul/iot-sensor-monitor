@@ -123,16 +123,17 @@ public class Sensor {
 
 
     public void deactivate() {
-        this.active = false;
-        this.updatedAt = Instant.now();
+        if (active) {
+            this.active = false;
+            this.updatedAt = Instant.now();
+        }
     }
 
-
-
-
     public void activate() {
-        this.active = true;
-        this.updatedAt = Instant.now();
+        if (!active) {
+            this.active = true;
+            this.updatedAt = Instant.now();
+        }
     }
 
 

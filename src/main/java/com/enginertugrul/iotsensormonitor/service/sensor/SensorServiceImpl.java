@@ -146,7 +146,7 @@ public class SensorServiceImpl implements SensorService {
         Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
         String requestedName = form.getName().trim();
 
-        if(sensorRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(ownerId, form.getName(), sensorId) ) {
+        if(sensorRepository.existsByOwnerIdAndNameIgnoreCaseAndIdNot(ownerId, requestedName, sensorId) ) {
             throw new DuplicateSensorNameException();
         }
 
@@ -190,6 +190,22 @@ public class SensorServiceImpl implements SensorService {
                 .getPreferredTimezone();
     }
 
+
+
+
+    @Override
+    @Transactional
+    public void activateSensor(Long sensorId, Long ownerId) {
+        Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
+        sensor.activate();
+    }
+
+    @Override
+    @Transactional
+    public void deactivateSensor(Long sensorId, Long ownerId) {
+        Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
+        sensor.deactivate();
+    }
 
 
 
