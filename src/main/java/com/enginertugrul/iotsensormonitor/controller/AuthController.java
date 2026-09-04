@@ -4,6 +4,7 @@ import com.enginertugrul.iotsensormonitor.dto.auth.RegisterUserForm;
 import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.EmailAlreadyRegisteredException;
 import com.enginertugrul.iotsensormonitor.service.user.AppUserService;
 import com.enginertugrul.iotsensormonitor.support.web.PendingEmailVerificationSession;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,7 +86,7 @@ public class AuthController {
             bindingResult.rejectValue("preferredTimezone", "timezone.invalid");
             addRegistrationOptions(model);
             return "register";
-        } catch (IllegalArgumentException ex) {
+        } catch (EmailAlreadyRegisteredException ex) {
             bindingResult.rejectValue("email", "auth.alreadyRegistered");
             addRegistrationOptions(model);
             return "register";
