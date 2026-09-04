@@ -8,6 +8,7 @@ import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.InvalidAlertRuleException;
 import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.alert.AlertRuleService;
@@ -82,7 +83,7 @@ public class AlertRuleController {
 
         try {
             alertRuleService.createNumericThresholdRule(ownerId, form, preferredTemperatureUnit);
-        } catch (IllegalArgumentException | SensorNotFoundException e) {
+        } catch (InvalidAlertRuleException | SensorNotFoundException e) {
             bindingResult.reject("alertRules.invalid");
             addPageData(model,ownerId);
             return "alert-rules";
@@ -115,8 +116,7 @@ public class AlertRuleController {
         try {
             alertRuleService.createMotionDetectedRule(ownerId, form);
 
-        }catch (IllegalArgumentException | SensorNotFoundException e){
-
+        } catch (InvalidAlertRuleException | SensorNotFoundException e) {
             bindingResult.reject("alertRules.invalid");
             addPageData(model,ownerId);
             return "alert-rules";

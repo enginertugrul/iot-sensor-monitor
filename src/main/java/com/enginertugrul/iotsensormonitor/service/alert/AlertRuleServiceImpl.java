@@ -10,6 +10,8 @@ import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.AlertRuleNotFoundException;
+import com.enginertugrul.iotsensormonitor.exception.InvalidAlertRuleException;
 import com.enginertugrul.iotsensormonitor.repository.AlertRuleRepository;
 import com.enginertugrul.iotsensormonitor.service.sensor.SensorService;
 import com.enginertugrul.iotsensormonitor.support.temperature.TemperatureUnitConverter;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 
 
@@ -81,6 +82,11 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
         Sensor sensor = sensorService.getSensorForUser(form.getSensorId(), ownerId);
 
+
+        if (sensor.getType() != SensorType.MOTION) {
+            throw new InvalidAlertRuleException("Motion-detected rules require a motion sensor");
+        }
+
         AlertRule rule = AlertRule.motionDetected(sensor,form.getCooldownMinutes());
 
         alertRuleRepository.save(rule);
@@ -116,10 +122,10 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
 
 
-    private AlertRule getOwnedAlertRule(Long alertRuleId, Long ownerId ) {
+    private AlertRule getOwnedAlertRule(Long alertRuleId, Long ownerId) {
 
-        return alertRuleRepository.findByIdAndOwnerId(alertRuleId, ownerId)
-                .orElseThrow(() -> new NoSuchElementException("Alert rule not found"));
+        return alertRuleRepository.findByIdAndOwnerId(alertRuleId,ownerId)
+                .orElseThrow(AlertRuleNotFoundException::new);
     }
 
 
@@ -128,16 +134,19 @@ public class AlertRuleServiceImpl implements AlertRuleService {
 
     private Double toCanonicalThreshold(Sensor sensor, Double submittedThreshold, TemperatureUnit preferredTemperatureUnit) {
 
-        return switch (sensor.getType()) {
-            case TEMPERATURE -> temperatureUnitConverter.convertToCelsius(
-                                    submittedThreshold,
-                                    preferredTemperatureUnit);
+        SensorType sensorType = sensor.getType();
 
+        Double canonicalThreshold = switch (sensorType) {
+            case TEMPERATURE -> temperatureUnitConverter.convertToCelsius(submittedThreshold,preferredTemperatureUnit);
             case HUMIDITY -> submittedThreshold;
-
-            default -> throw new IllegalArgumentException("Numeric sensor required");
+            case MOTION -> throw new InvalidAlertRuleException("Numeric threshold rules require a numeric sensor");
         };
 
+        try {
+            return SensorMeasurementPolicy.requireValidNumericValue(sensorType,canonicalThreshold,"thresholdValue");
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidAlertRuleException("Threshold value is invalid for the selected sensor",exception);
+        }
     }
 
 

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="en"
+      th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,follow">
+    <title th:text="#{error.internalServerError.pageTitle}">
+        Internal Server Error | IoT Sensor Monitor
+    </title>
+    <link rel="icon" type="image/png" th:href="@{/favicon.png}"/>
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components/forms.css}">
+    <link rel="stylesheet" th:href="@{/css/pages/error.css}">
+</head>
+
+<body class="error-page">
+
+<main id="main-content" class="app-main--error">
+    <section class="error-card"
+             aria-labelledby="internal-error-title"
+             aria-describedby="internal-error-description">
+        <div class="error-card__visual" aria-hidden="true">
+            <img class="error-card__logo"
+                 src="/images/app-logo.png"
+                 th:src="@{/images/app-logo.png}"
+                 width="512"
+                 height="512"
+                 alt=""
+                 decoding="async">
+        </div>
+
+        <div class="error-card__content">
+            <p class="error-card__brand"
+               th:text="#{app.title}">
+                IoT Sensor Monitor
+            </p>
+
+            <p class="error-card__status"
+               th:text="#{error.internalServerError.status}">
+                Error 500
+            </p>
+
+            <h1 id="internal-error-title"
+                th:text="#{error.internalServerError.heading}">
+                Something went wrong
+            </h1>
+
+            <p id="internal-error-description"
+               class="error-card__description"
+               th:text="#{error.internalServerError.description}">
+                We couldn't complete your request because of an unexpected problem. Please try again later, or return home.
+            </p>
+
+            <div class="error-card__actions">
+                <a class="form-button form-button--primary"
+                   href="/"
+                   th:href="@{/}"
+                   th:text="#{error.internalServerError.home}">
+                    Return home
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

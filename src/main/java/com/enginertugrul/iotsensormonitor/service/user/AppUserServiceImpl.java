@@ -5,8 +5,11 @@ import com.enginertugrul.iotsensormonitor.dto.user.AccountSettingsPageDTO;
 import com.enginertugrul.iotsensormonitor.dto.user.UserPreferencesForm;
 import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.exception.EmailAlreadyRegisteredException;
 import com.enginertugrul.iotsensormonitor.repository.AppUserRepository;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationService;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ import java.util.NoSuchElementException;
 
 @Service
 public class AppUserServiceImpl implements AppUserService {
+
+    private static final String APP_USER_EMAIL_UNIQUE_INDEX = "uk_app_users_email_lower";
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -58,7 +63,14 @@ public class AppUserServiceImpl implements AppUserService {
                 registerUserForm.getPreferredTimezone()
         );
 
-        AppUser savedUser =  appUserRepository.saveAndFlush(appUser);
+        AppUser savedUser;
+
+        try {
+            savedUser = appUserRepository.saveAndFlush(appUser);
+        } catch (DataIntegrityViolationException exception) {
+            throw translateAppUserPersistenceException(exception);
+        }
+
         emailVerificationService.issueInitialCode(savedUser.getId());
         return savedUser;
 
@@ -100,17 +112,6 @@ public class AppUserServiceImpl implements AppUserService {
 
 
 
-
-    @Transactional(readOnly = true)
-    protected void ensureEmailIsAvailable(String normalizedEmail) {
-        if (appUserRepository.existsByEmail(normalizedEmail)) {
-            throw new IllegalArgumentException("Email is already registered");
-        }
-    }
-
-
-
-
     @Override
     @Transactional(readOnly = true)
     public TemperatureUnit getPreferredTemperatureUnit(Long userId) {
@@ -118,6 +119,40 @@ public class AppUserServiceImpl implements AppUserService {
                 .map(AppUser::getPreferredTemperatureUnit)
                 .orElseThrow( ()-> new NoSuchElementException("User not found"));
     }
+
+
+
+
+
+    @Transactional(readOnly = true)
+    protected void ensureEmailIsAvailable(String normalizedEmail) {
+        if (appUserRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyRegisteredException();
+        }
+    }
+
+
+    private RuntimeException translateAppUserPersistenceException(DataIntegrityViolationException exception) {
+
+        Throwable cause = exception.getCause();
+
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolation
+                    && APP_USER_EMAIL_UNIQUE_INDEX.equals(constraintViolation.getConstraintName())) {
+
+                return new EmailAlreadyRegisteredException(exception);
+            }
+
+            cause = cause.getCause();
+        }
+
+        return exception;
+    }
+
+
+
+
+
 
 
 
