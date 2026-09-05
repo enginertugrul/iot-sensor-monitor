@@ -4,7 +4,9 @@ import com.enginertugrul.iotsensormonitor.config.SensorReadingStreamConfig;
 import com.enginertugrul.iotsensormonitor.dto.reading.RecentSensorReadingsDTO;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
+import com.enginertugrul.iotsensormonitor.exception.SensorReadingStreamSessionExpiredException;
 import com.enginertugrul.iotsensormonitor.exception.SensorReadingStreamUnavailableException;
+import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.reading.SensorReadingService;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -13,6 +15,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -36,6 +40,7 @@ public class SensorReadingStreamService {
     private final SensorReadingService readingService;
     private final SensorReadingStreamPolicy policy;
     private final ThreadPoolTaskExecutor streamExecutor;
+    private final SessionRegistry sessionRegistry;
 
     private final Object registryMonitor = new Object();
     private final Map<UUID,Subscription> subscriptions = new LinkedHashMap<>();
@@ -43,18 +48,21 @@ public class SensorReadingStreamService {
 
 
     public SensorReadingStreamService(SensorReadingService readingService,SensorReadingStreamPolicy policy,
+                                      SessionRegistry sessionRegistry,
                                       @Qualifier(SensorReadingStreamConfig.STREAM_EXECUTOR) ThreadPoolTaskExecutor streamExecutor) {
         this.readingService = readingService;
         this.policy = policy;
+        this.sessionRegistry = sessionRegistry;
         this.streamExecutor = streamExecutor;
     }
 
 
 
 
-    public SseEmitter subscribe(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit) {
+    public SseEmitter subscribe(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit,String sessionId) {
         Objects.requireNonNull(sensorId,"sensorId must not be null");
         Objects.requireNonNull(ownerId,"ownerId must not be null");
+        requireActiveSession(sessionId,ownerId);
 
         synchronized (registryMonitor) {
             requireCapacity();
@@ -62,7 +70,9 @@ public class SensorReadingStreamService {
 
         TemperatureUnit displayUnit = temperatureUnit == null ? TemperatureUnit.CELSIUS : temperatureUnit;
         RecentSensorReadingsDTO initialSnapshot = readingService.getRecentReadingsSnapshot(sensorId,ownerId,displayUnit);
-        Subscription subscription = new Subscription(sensorId,ownerId,displayUnit,initialSnapshot,
+        requireActiveSession(sessionId,ownerId);
+
+        Subscription subscription = new Subscription(sensorId,ownerId,displayUnit,sessionId,initialSnapshot,
                 policy.getConnectionLifetime().toMillis());
 
         subscription.emitter.onCompletion(() -> detach(subscription,false));
@@ -74,15 +84,31 @@ public class SensorReadingStreamService {
             subscriptions.put(subscription.id,subscription);
         }
 
-        if (!enqueueRefresh(subscription)) {
-            throw new SensorReadingStreamUnavailableException();
+        try {
+            requireActiveSession(sessionId,ownerId);
+
+            if (!enqueueRefresh(subscription)) {
+                requireActiveSession(sessionId,ownerId);
+                throw new SensorReadingStreamUnavailableException();
+            }
+        } catch (RuntimeException exception) {
+            detach(subscription,true);
+            throw exception;
         }
 
         return subscription.emitter;
     }
 
+
+
+
+
     public void maintainStreams() {
         for (Subscription subscription : currentSubscriptions()) {
+            if (closeIfSessionExpired(subscription)) {
+                continue;
+            }
+
             boolean expired;
 
             synchronized (subscription) {
@@ -101,6 +127,10 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
+
+
     @PreDestroy
     public void shutdown() {
         List<Subscription> activeSubscriptions;
@@ -113,17 +143,64 @@ public class SensorReadingStreamService {
         activeSubscriptions.forEach(subscription -> detach(subscription,true));
     }
 
+
+
+
+    public void closeSessionStreams(String sessionId) {
+        for (Subscription subscription : currentSubscriptions()) {
+            if (subscription.sessionId.equals(sessionId)) {
+                detach(subscription,true,StreamEndReason.SESSION_EXPIRED);
+            }
+        }
+    }
+
+    private void requireActiveSession(String sessionId,Long ownerId) {
+        if (!isSessionActive(sessionId,ownerId)) {
+            throw new SensorReadingStreamSessionExpiredException();
+        }
+    }
+
+    private boolean isSessionActive(String sessionId,Long ownerId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return false;
+        }
+
+        SessionInformation information = sessionRegistry.getSessionInformation(sessionId);
+
+        return information != null
+                && !information.isExpired()
+                && information.getPrincipal() instanceof AuthenticatedUser authenticatedUser
+                && authenticatedUser.getAppUserId().equals(ownerId);
+    }
+
+    private boolean closeIfSessionExpired(Subscription subscription) {
+        if (isSessionActive(subscription.sessionId,subscription.ownerId)) {
+            return false;
+        }
+
+        detach(subscription,true,StreamEndReason.SESSION_EXPIRED);
+        return true;
+    }
+
+
+
+
     private void requireCapacity() {
         if (!acceptingSubscriptions || subscriptions.size() >= policy.getMaximumSubscriptions()) {
             throw new SensorReadingStreamUnavailableException();
         }
     }
 
+
+
     private List<Subscription> currentSubscriptions() {
         synchronized (registryMonitor) {
             return List.copyOf(subscriptions.values());
         }
     }
+
+
+
 
     private boolean enqueueRefresh(Subscription subscription) {
         FutureTask<Void> task;
@@ -164,6 +241,9 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
+
     private void refresh(Subscription subscription) {
         RecentSensorReadingsDTO snapshot;
 
@@ -178,6 +258,10 @@ public class SensorReadingStreamService {
         }
 
         try {
+            if (closeIfSessionExpired(subscription)) {
+                return;
+            }
+
             if (snapshot == null) {
                 snapshot = readingService.getRecentReadingsSnapshot(subscription.sensorId,
                         subscription.ownerId,subscription.temperatureUnit);
@@ -196,6 +280,10 @@ public class SensorReadingStreamService {
                 expired = isExpired(subscription,now);
                 changed = !snapshot.equals(subscription.lastSnapshot);
                 heartbeatDue = now - subscription.lastSentAt >= policy.getHeartbeatInterval().toNanos();
+            }
+
+            if (closeIfSessionExpired(subscription)) {
+                return;
             }
 
             if (expired) {
@@ -221,7 +309,9 @@ public class SensorReadingStreamService {
         } catch (IOException exception) {
             detach(subscription,false);
         } catch (SensorNotFoundException exception) {
-            detach(subscription,true);
+            if (!closeIfSessionExpired(subscription)) {
+                detach(subscription,true,StreamEndReason.SENSOR_NOT_FOUND);
+            }
         } catch (RuntimeException exception) {
             logger.warn("Recent reading stream failed. sensorId={}, failureType={}",
                     subscription.sensorId,exception.getClass().getSimpleName());
@@ -231,6 +321,10 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
+
+
     private boolean isExpired(Subscription subscription,long now) {
         boolean lifetimeExpired = now - subscription.createdAt >= policy.getConnectionLifetime().toNanos();
         boolean workExpired = subscription.task != null
@@ -238,6 +332,9 @@ public class SensorReadingStreamService {
 
         return lifetimeExpired || workExpired;
     }
+
+
+
 
     private void finishWork(Subscription subscription) {
         boolean complete;
@@ -251,11 +348,21 @@ public class SensorReadingStreamService {
         }
 
         if (complete) {
-            completeQuietly(subscription);
+            enqueueCompletion(subscription);
         }
     }
 
+
+
+
+
     private void detach(Subscription subscription,boolean applicationCompletion) {
+        detach(subscription,applicationCompletion,null);
+    }
+
+
+
+    private void detach(Subscription subscription,boolean applicationCompletion,StreamEndReason terminalReason) {
         FutureTask<Void> task;
         boolean completeNow = false;
 
@@ -263,6 +370,7 @@ public class SensorReadingStreamService {
             if (!applicationCompletion) {
                 subscription.containerManaged = true;
                 subscription.completeOnExit = false;
+                subscription.terminalReason = null;
             }
 
             if (subscription.closed) {
@@ -270,6 +378,7 @@ public class SensorReadingStreamService {
             }
 
             subscription.closed = true;
+            subscription.terminalReason = terminalReason;
             subscription.initialSnapshot = null;
             subscription.lastSnapshot = null;
             task = subscription.task;
@@ -298,6 +407,8 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
     private void enqueueCompletion(Subscription subscription) {
         try {
             streamExecutor.execute(() -> completeQuietly(subscription));
@@ -307,10 +418,31 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
+
     private void completeQuietly(Subscription subscription) {
+        StreamEndReason terminalReason;
+
         synchronized (subscription) {
             if (subscription.containerManaged) {
                 return;
+            }
+
+            terminalReason = subscription.terminalReason;
+            subscription.terminalReason = null;
+        }
+
+        if (terminalReason != null) {
+            try {
+                subscription.emitter.send(SseEmitter.event().name("stream-ended")
+                        .data(Map.of("code",terminalReason.name()),MediaType.APPLICATION_JSON));
+            } catch (IOException exception) {
+                detach(subscription,false);
+                return;
+            } catch (RuntimeException exception) {
+                logger.debug("Recent reading stream terminal event failed. sensorId={}, failureType={}",
+                        subscription.sensorId,exception.getClass().getSimpleName());
             }
         }
 
@@ -322,12 +454,24 @@ public class SensorReadingStreamService {
         }
     }
 
+
+
+    private enum StreamEndReason {
+        SESSION_EXPIRED,
+        SENSOR_NOT_FOUND
+    }
+
+
+
+
     private static final class Subscription {
 
         private final UUID id = UUID.randomUUID();
         private final Long sensorId;
         private final Long ownerId;
         private final TemperatureUnit temperatureUnit;
+        private final String sessionId;
+        private StreamEndReason terminalReason;
         private final SseEmitter emitter;
         private final long createdAt = System.nanoTime();
 
@@ -342,13 +486,17 @@ public class SensorReadingStreamService {
         private boolean containerManaged;
         private boolean completeOnExit;
 
-        private Subscription(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit,
+
+        private Subscription(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit,String sessionId,
                              RecentSensorReadingsDTO initialSnapshot,long timeoutMillis) {
             this.sensorId = sensorId;
             this.ownerId = ownerId;
             this.temperatureUnit = temperatureUnit;
+            this.sessionId = sessionId;
             this.initialSnapshot = initialSnapshot;
             this.emitter = new SseEmitter(timeoutMillis);
         }
     }
+
+
 }
