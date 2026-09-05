@@ -17,7 +17,7 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
 
 
 
-    List<SensorReading> findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(Long sensorId, Long ownerId);
+    List<SensorReading> findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDescIdDesc(Long sensorId, Long ownerId);
 
 
 
