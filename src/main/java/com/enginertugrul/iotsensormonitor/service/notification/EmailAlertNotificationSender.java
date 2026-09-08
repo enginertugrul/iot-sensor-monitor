@@ -59,7 +59,7 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
 
         if (mailSender == null) {
-            return;
+            throw new IllegalStateException("JavaMailSender is unavailable");
         }
 
         Context context = requiredEvent.context();
