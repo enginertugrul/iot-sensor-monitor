@@ -56,7 +56,8 @@
                         Readings shown
                     </dt>
 
-                    <dd th:text="${#lists.size(recentRecords)}">0</dd>
+                    <dd id="readings-shown"
+                        th:text="${#lists.size(recentRecords)}">0</dd>
                 </div>
 
                 <div class="dashboard-summary__item">
@@ -71,14 +72,12 @@
                         </span>
 
                         <span th:if="${selectedSensorType != null}"
-                              th:text="${#messages.msg(
-                                  'sensorType.'
-                                  + selectedSensorType.name()
-                              )}">
+                              th:text="${#messages.msg('sensorType.' + selectedSensorType.name())}">
                             Temperature sensor
                         </span>
                     </dd>
                 </div>
+
             </dl>
         </section>
     </section>
@@ -158,8 +157,14 @@
         </form>
     </section>
 
-    <section class="dashboard-panel"
-             aria-labelledby="readings-heading">
+    <section id="readings-panel"
+             class="dashboard-panel"
+             aria-labelledby="readings-heading"
+             th:data-sensor-id="${selectedSensorId}"
+             th:data-stream-url="${selectedSensorId != null} ? @{/api/sensors/{sensorId}/readings/stream(sensorId=${selectedSensorId})} : null"
+             th:data-locale="${#locale.toLanguageTag()}"
+             th:data-motion-detected="#{dashboard.motion.detected}"
+             th:data-motion-clear="#{dashboard.motion.clear}">
         <header class="dashboard-panel__header">
             <p class="dashboard-eyebrow" th:text="#{dashboard.readingsEyebrow}">
                 Latest activity
@@ -177,21 +182,40 @@
             </p>
         </header>
 
+        <div id="readings-connection-status"
+             class="dashboard-connection-status"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true"
+             data-state="connecting"
+             th:if="${selectedSensorId != null}"
+             th:data-connecting-message="#{dashboard.connectionConnecting}"
+             th:data-live-message="#{dashboard.connectionLive}"
+             th:data-reconnecting-message="#{dashboard.connectionReconnecting}"
+             th:data-unavailable-message="#{dashboard.connectionUnavailable}"
+             hidden>
+            <span class="dashboard-connection-status__indicator"
+                  aria-hidden="true"></span>
+
+            <p id="readings-connection-message"></p>
+        </div>
+
         <p class="table-scroll-hint"
            id="readings-table-scroll-hint"
-           th:if="${selectedSensorId != null
-           and not #lists.isEmpty(recentRecords)}"
+           th:if="${selectedSensorId != null}"
+           th:hidden="${#lists.isEmpty(recentRecords)}"
            th:text="#{dashboard.tableScrollHint}">
             Scroll horizontally to view all columns.
         </p>
 
-        <div class="table-wrapper"
+        <div id="readings-table-wrapper"
+             class="table-wrapper"
              role="region"
              tabindex="0"
              aria-labelledby="readings-heading"
              aria-describedby="readings-description readings-table-scroll-hint"
-             th:if="${selectedSensorId != null
-             and not #lists.isEmpty(recentRecords)}">
+             th:if="${selectedSensorId != null}"
+             th:hidden="${#lists.isEmpty(recentRecords)}">
 
             <table class="readings-table"
                    aria-describedby="readings-description">
@@ -226,7 +250,8 @@
                 </tr>
                 </thead>
 
-                <tbody>
+                <tbody id="readings-table-body">
+
                 <tr th:each="recentRecord : ${recentRecords}">
                     <td class="reading-location"
                         th:text="${recentRecord.installationLocation}">
@@ -332,9 +357,10 @@
             </p>
         </div>
 
-        <div class="dashboard-empty-state"
-             th:if="${selectedSensorId != null
-             and #lists.isEmpty(recentRecords)}">
+        <div id="readings-empty-state"
+             class="dashboard-empty-state"
+             th:if="${selectedSensorId != null}"
+             th:hidden="${not #lists.isEmpty(recentRecords)}">
             <span class="dashboard-empty-state__icon"
                   aria-hidden="true"></span>
 
@@ -343,15 +369,15 @@
             </h3>
 
             <p th:text="#{dashboard.noReadingsHelp}">
-                This sensor has not reported any readings yet.
+                Readings may not have arrived yet, or earlier readings may no longer be available.
             </p>
-        </div>
-    </section>
+        </div>    </section>
 </main>
 
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/components/auto-submit-select.js}"></script>
+<script th:src="@{/js/pages/dashboard.js}"></script>
 
 </body>
 </html>

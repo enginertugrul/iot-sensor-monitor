@@ -1,5 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.reading;
 
+import com.enginertugrul.iotsensormonitor.dto.reading.RecentSensorReadingsDTO;
+import com.enginertugrul.iotsensormonitor.dto.reading.SensorReadingSnapshotDTO;
 import com.enginertugrul.iotsensormonitor.dto.reading.SensorReadingViewDTO;
 import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 
@@ -40,7 +44,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
     public List<SensorReadingViewDTO> getRecentReadings(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit) {
         Sensor sensor = getOwnedSensor(sensorId, ownerId);
 
-        return sensorReadingRepository.findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDesc(sensorId,ownerId)
+        return sensorReadingRepository.findTop10BySensorIdAndSensorOwnerIdOrderByRecordedAtDescIdDesc(sensorId,ownerId)
                 .stream()
                 .map(reading -> toViewDTO(reading, sensor, temperatureUnit))
                 .toList();
@@ -48,7 +52,26 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public RecentSensorReadingsDTO getRecentReadingsSnapshot(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit) {
+        List<SensorReadingSnapshotDTO> readings = getRecentReadings(sensorId,ownerId,temperatureUnit).stream()
+                .map(this::toSnapshotDTO)
+                .toList();
 
+        return new RecentSensorReadingsDTO(sensorId,readings);
+    }
+
+
+
+    private SensorReadingSnapshotDTO toSnapshotDTO(SensorReadingViewDTO reading) {
+        ZonedDateTime timestamp = reading.timestamp();
+        String timestampText = timestamp.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        return new SensorReadingSnapshotDTO(reading.sensorType(),reading.installationLocation(),
+                reading.numericValue(),reading.booleanValue(),reading.unitSymbol(),timestampText,
+                timestamp.getZone().getId(),timestamp.getOffset().getId());
+    }
 
 
 

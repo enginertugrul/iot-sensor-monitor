@@ -1,6 +1,8 @@
 package com.enginertugrul.iotsensormonitor.controller.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -18,23 +20,19 @@ public class ApiMediaTypeExceptionHandler {
 
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ProblemDetail> handleUnsupportedMediaType(
-            HttpMediaTypeNotSupportedException exception,
-            HttpServletRequest request
+    public @Nullable ResponseEntity<ProblemDetail> handleUnsupportedMediaType(
+            HttpMediaTypeNotSupportedException exception, HttpServletRequest request, HttpServletResponse response
     ) throws HttpMediaTypeNotSupportedException {
         if (isHandledApiRequest(request)) {
-            ProblemDetail problemDetail = ApiProblemDetails.create(
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "UNSUPPORTED_MEDIA_TYPE",
-                    "The request media type is not supported",
-                    request.getRequestURI()
-            );
+            if (response.isCommitted()) {
+                return null;
+            }
 
-            return new ResponseEntity<>(
-                    problemDetail,
-                    ApiProblemDetails.headers(exception.getHeaders()),
-                    HttpStatus.UNSUPPORTED_MEDIA_TYPE
-            );
+            ProblemDetail problemDetail = ApiProblemDetails.create(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "UNSUPPORTED_MEDIA_TYPE","The request media type is not supported",request.getRequestURI());
+
+            return new ResponseEntity<>(problemDetail,ApiProblemDetails.headers(exception.getHeaders()),
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE);
         }
 
         throw exception;
@@ -42,25 +40,20 @@ public class ApiMediaTypeExceptionHandler {
 
 
 
-
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
-    public ResponseEntity<ProblemDetail> handleNotAcceptable(
-            HttpMediaTypeNotAcceptableException exception,
-            HttpServletRequest request
+    public @Nullable ResponseEntity<ProblemDetail> handleNotAcceptable(
+            HttpMediaTypeNotAcceptableException exception,HttpServletRequest request,HttpServletResponse response
     ) throws HttpMediaTypeNotAcceptableException {
         if (isHandledApiRequest(request)) {
-            ProblemDetail problemDetail = ApiProblemDetails.create(
-                    HttpStatus.NOT_ACCEPTABLE,
-                    "NOT_ACCEPTABLE",
-                    "The requested response media type is not supported",
-                    request.getRequestURI()
-            );
+            if (response.isCommitted()) {
+                return null;
+            }
 
-            return new ResponseEntity<>(
-                    problemDetail,
-                    ApiProblemDetails.headers(exception.getHeaders()),
-                    HttpStatus.NOT_ACCEPTABLE
-            );
+            ProblemDetail problemDetail = ApiProblemDetails.create(HttpStatus.NOT_ACCEPTABLE,
+                    "NOT_ACCEPTABLE","The requested response media type is not supported",request.getRequestURI());
+
+            return new ResponseEntity<>(problemDetail,ApiProblemDetails.headers(exception.getHeaders()),
+                    HttpStatus.NOT_ACCEPTABLE);
         }
 
         throw exception;
@@ -72,8 +65,10 @@ public class ApiMediaTypeExceptionHandler {
     private boolean isHandledApiRequest(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         boolean statisticsRequest = path.startsWith("/api/sensors/") && path.contains("/statistics/");
+        boolean readingStreamRequest = path.matches("/api/sensors/[^/]+/readings/stream");
 
         return statisticsRequest
+                || readingStreamRequest
                 || path.equals("/readings/temperature")
                 || path.equals("/readings/humidity")
                 || path.equals("/readings/motion");

@@ -167,6 +167,47 @@
     width: 100%;
 }
 
+.app-main--dashboard .dashboard-connection-status {
+    display: flex;
+    min-width: 0;
+    margin-top: var(--space-5);
+    border: 1px solid var(--color-info);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-soft);
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    align-items: center;
+}
+
+.app-main--dashboard .dashboard-connection-status[data-state="live"] {
+    border-color: var(--color-success);
+    background-color: var(--color-success-surface);
+    color: var(--color-success-text);
+}
+
+.app-main--dashboard .dashboard-connection-status[data-state="reconnecting"],
+.app-main--dashboard .dashboard-connection-status[data-state="unavailable"] {
+    border-color: var(--color-warning);
+    background-color: var(--color-warning-surface);
+    color: var(--color-warning-text);
+}
+
+.app-main--dashboard .dashboard-connection-status__indicator {
+    width: var(--space-3);
+    height: var(--space-3);
+    flex: 0 0 auto;
+    border-radius: var(--radius-pill);
+    background-color: currentColor;
+}
+
+.app-main--dashboard .dashboard-connection-status p {
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+}
+
 .app-main--dashboard .table-scroll-hint {
     display: none;
     margin: var(--space-5) 0 var(--space-3);
@@ -367,6 +408,49 @@
 .app-main--dashboard .dashboard-empty-state .form-button {
     margin-top: var(--space-2);
 }
+
+.app-main--dashboard .readings-table .reading-flash-blue {
+    --reading-flash-rgb: 0, 170, 255;
+}
+
+.app-main--dashboard .readings-table .reading-flash-red {
+    --reading-flash-rgb: 255, 65, 90;
+}
+
+.app-main--dashboard .readings-table .reading-flash-blue > td,
+.app-main--dashboard .readings-table .reading-flash-red > td {
+    animation: reading-flicker 1100ms ease-out;
+}
+
+@keyframes reading-flicker {
+    0%, 100% {
+        background-color: transparent;
+        box-shadow: inset 0 0 0 transparent;
+    }
+
+    12% {
+        background-color: rgba(var(--reading-flash-rgb), 0.28);
+        box-shadow: inset 0 0 16px rgba(var(--reading-flash-rgb), 0.22);
+    }
+
+    38% {
+        background-color: rgba(var(--reading-flash-rgb), 0.05);
+        box-shadow: inset 0 0 4px rgba(var(--reading-flash-rgb), 0.06);
+    }
+
+    55% {
+        background-color: rgba(var(--reading-flash-rgb), 0.18);
+        box-shadow: inset 0 0 12px rgba(var(--reading-flash-rgb), 0.15);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-main--dashboard .readings-table .reading-flash-blue > td,
+    .app-main--dashboard .readings-table .reading-flash-red > td {
+        animation: none;
+    }
+}
+
 
 @media (max-width: 60rem) {
     .app-main--dashboard .dashboard-selector-panel {

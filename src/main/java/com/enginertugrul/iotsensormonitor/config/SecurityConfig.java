@@ -34,11 +34,14 @@ public class SecurityConfig {
     ) {
 
         RequestMatcher apiRequestMatcher = PathPatternRequestMatcher.pathPattern("/api/**");
+        RequestMatcher readingStreamRequestMatcher = PathPatternRequestMatcher.pathPattern(HttpMethod.GET,"/api/sensors/{sensorId}/readings/stream");
         ApiSecurityExceptionHandler apiSecurityExceptionHandler = new ApiSecurityExceptionHandler(jsonMapper,apiRequestMatcher);
 
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(request -> request.getDispatcherType() == DispatcherType.ASYNC
+                                && readingStreamRequestMatcher.matches(request)).permitAll()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/login",

@@ -96,6 +96,10 @@ public final class ApiSecurityExceptionHandler implements AuthenticationEntryPoi
             String detail
     ) throws IOException {
 
+        if (response.isCommitted()) {
+            return;
+        }
+
         ProblemDetail problemDetail = ApiProblemDetails.create(
                 status,
                 code,

@@ -1,14 +1,12 @@
 package com.enginertugrul.iotsensormonitor.controller.advice;
 
 import com.enginertugrul.iotsensormonitor.controller.SensorIngestionController;
+import com.enginertugrul.iotsensormonitor.controller.SensorReadingStreamController;
 import com.enginertugrul.iotsensormonitor.controller.StatisticsApiController;
 import com.enginertugrul.iotsensormonitor.controller.StatisticsExportController;
-import com.enginertugrul.iotsensormonitor.exception.InactiveSensorException;
-import com.enginertugrul.iotsensormonitor.exception.InvalidSensorReadingException;
-import com.enginertugrul.iotsensormonitor.exception.InvalidSensorTokenException;
-import com.enginertugrul.iotsensormonitor.exception.InvalidStatisticsQueryException;
-import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
+import com.enginertugrul.iotsensormonitor.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.Ordered;
@@ -23,12 +21,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
+import org.springframework.web.util.DisconnectedClientHelper;
 
 
 @NullMarked
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
-@RestControllerAdvice(assignableTypes = {SensorIngestionController.class,StatisticsApiController.class,StatisticsExportController.class})
+@RestControllerAdvice(assignableTypes = {SensorIngestionController.class,StatisticsApiController.class,
+        StatisticsExportController.class, SensorReadingStreamController.class})
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 
@@ -68,17 +67,47 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
 
+    @ExceptionHandler(SensorReadingStreamSessionExpiredException.class)
+    public ResponseEntity<ProblemDetail> handleSensorReadingStreamSessionExpired(HttpServletRequest request) {
+        return response(HttpStatus.UNAUTHORIZED,"SESSION_EXPIRED","The authenticated session has expired",request);
+    }
+
+    @ExceptionHandler(SensorReadingStreamUnavailableException.class)
+    public ResponseEntity<ProblemDetail> handleSensorReadingStreamUnavailable(HttpServletRequest request) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE,"STREAM_UNAVAILABLE",
+                "Recent reading streaming is temporarily unavailable",request);
+    }
+
+
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleUnexpectedException(Exception exception,HttpServletRequest request) {
+    public @Nullable ResponseEntity<ProblemDetail> handleUnexpectedException(Exception exception,
+
+                                                                             HttpServletRequest request, HttpServletResponse servletResponse) {
+        if (servletResponse.isCommitted() || DisconnectedClientHelper.isClientDisconnectedException(exception)) {
+            return null;
+        }
+
         logger.error("Unhandled API exception at " + request.getRequestURI(),exception);
         return response(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_ERROR","An unexpected error occurred",request);
     }
 
 
-
     @Override
-    protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception exception, @Nullable Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception exception,@Nullable Object body,
+                                                                       HttpHeaders headers,HttpStatusCode statusCode,WebRequest request) {
+        if (DisconnectedClientHelper.isClientDisconnectedException(exception)) {
+            return null;
+        }
+
+        if (request instanceof ServletWebRequest servletWebRequest) {
+            HttpServletResponse servletResponse = servletWebRequest.getResponse();
+
+            if (servletResponse != null && servletResponse.isCommitted()) {
+                return null;
+            }
+        }
+
         if (statusCode.is5xxServerError()) {
             logger.error("Unhandled API exception at " + requestPath(request),exception);
         }
