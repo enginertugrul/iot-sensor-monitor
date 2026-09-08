@@ -409,6 +409,49 @@
     margin-top: var(--space-2);
 }
 
+.app-main--dashboard .readings-table .reading-flash-blue {
+    --reading-flash-rgb: 0, 170, 255;
+}
+
+.app-main--dashboard .readings-table .reading-flash-red {
+    --reading-flash-rgb: 255, 65, 90;
+}
+
+.app-main--dashboard .readings-table .reading-flash-blue > td,
+.app-main--dashboard .readings-table .reading-flash-red > td {
+    animation: reading-flicker 1100ms ease-out;
+}
+
+@keyframes reading-flicker {
+    0%, 100% {
+        background-color: transparent;
+        box-shadow: inset 0 0 0 transparent;
+    }
+
+    12% {
+        background-color: rgba(var(--reading-flash-rgb), 0.28);
+        box-shadow: inset 0 0 16px rgba(var(--reading-flash-rgb), 0.22);
+    }
+
+    38% {
+        background-color: rgba(var(--reading-flash-rgb), 0.05);
+        box-shadow: inset 0 0 4px rgba(var(--reading-flash-rgb), 0.06);
+    }
+
+    55% {
+        background-color: rgba(var(--reading-flash-rgb), 0.18);
+        box-shadow: inset 0 0 12px rgba(var(--reading-flash-rgb), 0.15);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-main--dashboard .readings-table .reading-flash-blue > td,
+    .app-main--dashboard .readings-table .reading-flash-red > td {
+        animation: none;
+    }
+}
+
+
 @media (max-width: 60rem) {
     .app-main--dashboard .dashboard-selector-panel {
         grid-template-columns: minmax(0, 1fr);

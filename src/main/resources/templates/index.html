@@ -56,7 +56,8 @@
                         Readings shown
                     </dt>
 
-                    <dd th:text="${#lists.size(recentRecords)}">0</dd>
+                    <dd id="readings-shown"
+                        th:text="${#lists.size(recentRecords)}">0</dd>
                 </div>
 
                 <div class="dashboard-summary__item">
@@ -64,11 +65,19 @@
                         Selected sensor type
                     </dt>
 
-                    <dd id="readings-shown"
-                        th:text="${#lists.size(recentRecords)}">0
-                    </dd>
+                    <dd>
+                        <span th:if="${selectedSensorType == null}"
+                              th:text="#{dashboard.notSelected}">
+                            Not selected
+                        </span>
 
+                        <span th:if="${selectedSensorType != null}"
+                              th:text="${#messages.msg('sensorType.' + selectedSensorType.name())}">
+                            Temperature sensor
+                        </span>
+                    </dd>
                 </div>
+
             </dl>
         </section>
     </section>
@@ -368,6 +377,7 @@
 <footer th:replace="~{fragments/app-shell :: footer}"></footer>
 
 <script th:src="@{/js/components/auto-submit-select.js}"></script>
+<script th:src="@{/js/pages/dashboard.js}"></script>
 
 </body>
 </html>
