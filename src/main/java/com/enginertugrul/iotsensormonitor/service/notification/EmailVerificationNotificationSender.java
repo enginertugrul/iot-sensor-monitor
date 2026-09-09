@@ -1,6 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.notification;
 
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationCodeDelivery;
+import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -18,31 +19,33 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final MessageSource messageSource;
+    private final EmailVerificationService emailVerificationService;
     private final boolean verificationEmailsEnabled;
     private final String fromAddress;
 
     public EmailVerificationNotificationSender(
             ObjectProvider<JavaMailSender> mailSenderProvider,
             MessageSource messageSource,
+            EmailVerificationService emailVerificationService,
             @Value("${app.mail.email-verification.enabled:true}") boolean verificationEmailsEnabled,
             @Value("${spring.mail.username}") String fromAddress
     ) {
         this.mailSenderProvider = mailSenderProvider;
         this.messageSource = messageSource;
+        this.emailVerificationService = emailVerificationService;
         this.verificationEmailsEnabled = verificationEmailsEnabled;
         this.fromAddress = requireText(fromAddress,"fromAddress");
     }
 
     @Override
     public void send(EmailVerificationCodeDelivery delivery) {
-        EmailVerificationCodeDelivery requiredDelivery =
-                Objects.requireNonNull(delivery, "delivery must not be null");
+        Objects.requireNonNull(delivery,"delivery must not be null");
 
-        if (!verificationEmailsEnabled) {
+        if (!verificationEmailsEnabled || !emailVerificationService.canDeliverCode(delivery)) {
             return;
         }
 
-        long remainingMinutes = calculateRemainingMinutes(requiredDelivery.expiresAt());
+        long remainingMinutes = calculateRemainingMinutes(delivery.expiresAt());
 
         if (remainingMinutes < 1) {
             return;
@@ -54,17 +57,13 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
             throw new IllegalStateException("JavaMailSender is unavailable");
         }
 
-        Locale locale = requiredDelivery.preferredLanguage().toLocale();
+        Locale locale = delivery.preferredLanguage().toLocale();
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);
-        message.setTo(requiredDelivery.recipientEmail());
-        message.setSubject(messageSource.getMessage("email.verification.subject",null,locale));
-        message.setText(messageSource.getMessage(
-                "email.verification.body",
-                new Object[]{requiredDelivery.rawCode(),remainingMinutes},
-                locale
-        ));
+        message.setTo(delivery.recipientEmail());
+        message.setSubject(messageSource.getMessage("email.verification.subject",null, locale));
+        message.setText(messageSource.getMessage("email.verification.body",new Object[]{delivery.rawCode(), remainingMinutes}, locale));
 
         mailSender.send(message);
     }

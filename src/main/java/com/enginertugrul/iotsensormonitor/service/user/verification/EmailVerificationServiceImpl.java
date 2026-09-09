@@ -170,6 +170,34 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
 
 
+    @Override
+    @Transactional
+    public boolean canDeliverCode(EmailVerificationCodeDelivery delivery) {
+        Optional<AppUser> userResult = appUserRepository.findByIdForUpdate(delivery.userId());
+
+        if (userResult.isEmpty()) {
+            return false;
+        }
+
+        AppUser user = userResult.get();
+
+        if (!user.isEnabled() || user.isEmailVerified()) {
+            return false;
+        }
+
+        Optional<EmailVerificationChallenge> challengeResult =
+                emailVerificationChallengeRepository.findByUserIdForUpdate(user.getId());
+
+        if (challengeResult.isEmpty()) {
+            return false;
+        }
+
+        EmailVerificationChallenge challenge = challengeResult.get();
+
+        return !challenge.isExpiredAt(Instant.now())
+                && !challenge.hasReachedAttemptLimit(policy.getMaximumFailedAttempts())
+                && emailVerificationCodeGenerator.matches(user.getId(),delivery.rawCode(),challenge.getCodeHash());
+    }
 
 
 
