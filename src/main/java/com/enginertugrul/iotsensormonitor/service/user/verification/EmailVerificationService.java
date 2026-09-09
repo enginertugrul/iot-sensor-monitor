@@ -8,4 +8,7 @@ public interface EmailVerificationService {
     void requestNewCode(String email, String clientKey);
 
     EmailVerificationResult verifyCode(String email, String rawCode, String clientKey);
+
+    boolean canDeliverCode(EmailVerificationCodeDelivery delivery);
+
 }

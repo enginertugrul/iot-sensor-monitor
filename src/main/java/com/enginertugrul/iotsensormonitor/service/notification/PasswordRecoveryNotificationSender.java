@@ -1,6 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.notification;
 
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryCodeDelivery;
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -22,6 +23,7 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final MessageSource messageSource;
+    private final PasswordRecoveryService passwordRecoveryService;
     private final boolean passwordRecoveryEmailsEnabled;
     private final String fromAddress;
 
@@ -31,11 +33,13 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
     public PasswordRecoveryNotificationSender(
             ObjectProvider<JavaMailSender> mailSenderProvider,
             MessageSource messageSource,
+            PasswordRecoveryService passwordRecoveryService,
             @Value("${app.mail.password-recovery.enabled:true}") boolean passwordRecoveryEmailsEnabled,
             @Value("${spring.mail.username}") String fromAddress
     ) {
         this.mailSenderProvider = mailSenderProvider;
         this.messageSource = messageSource;
+        this.passwordRecoveryService = passwordRecoveryService;
         this.passwordRecoveryEmailsEnabled = passwordRecoveryEmailsEnabled;
         this.fromAddress = requireText(fromAddress,"fromAddress");
     }
@@ -47,7 +51,7 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
     public void send(PasswordRecoveryCodeDelivery delivery) {
         PasswordRecoveryCodeDelivery requiredDelivery = Objects.requireNonNull(delivery,"delivery must not be null");
 
-        if (!passwordRecoveryEmailsEnabled) {
+        if (!passwordRecoveryEmailsEnabled || !passwordRecoveryService.canDeliverCode(requiredDelivery)) {
             return;
         }
 
@@ -69,11 +73,7 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
         message.setFrom(fromAddress);
         message.setTo(requiredDelivery.recipientEmail());
         message.setSubject(messageSource.getMessage("email.passwordRecovery.subject",null,locale));
-        message.setText(messageSource.getMessage(
-                "email.passwordRecovery.body",
-                new Object[]{requiredDelivery.rawCode(),remainingMinutes},
-                locale
-        ));
+        message.setText(messageSource.getMessage("email.passwordRecovery.body",new Object[]{requiredDelivery.rawCode(),remainingMinutes},locale));
 
         mailSender.send(message);
     }

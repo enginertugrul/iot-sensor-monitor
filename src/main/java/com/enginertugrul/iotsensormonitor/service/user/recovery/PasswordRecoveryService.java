@@ -7,5 +7,6 @@ public interface PasswordRecoveryService {
 
     PasswordRecoveryResult resetPassword(String email,String rawCode,String newPassword,String clientKey);
 
+    boolean canDeliverCode(PasswordRecoveryCodeDelivery delivery);
 
 }

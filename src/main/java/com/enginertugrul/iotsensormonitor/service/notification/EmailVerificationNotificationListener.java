@@ -16,13 +16,16 @@ public class EmailVerificationNotificationListener {
 
     private final Logger logger = LoggerFactory.getLogger(EmailVerificationNotificationListener.class);
     private final EmailVerificationNotificationDispatcher notificationDispatcher;
+    private final EmailDeliveryRetryService emailDeliveryRetryService;
     private final TaskExecutor mailExecutor;
 
     public EmailVerificationNotificationListener(
             EmailVerificationNotificationDispatcher notificationDispatcher,
+            EmailDeliveryRetryService emailDeliveryRetryService,
             @Qualifier(EmailVerificationMailConfig.EMAIL_VERIFICATION_MAIL_EXECUTOR) TaskExecutor mailExecutor
     ) {
         this.notificationDispatcher = notificationDispatcher;
+        this.emailDeliveryRetryService = emailDeliveryRetryService;
         this.mailExecutor = mailExecutor;
     }
 
@@ -37,17 +40,14 @@ public class EmailVerificationNotificationListener {
 
     private void sendSafely(EmailVerificationCodeDelivery delivery) {
         try {
-            notificationDispatcher.send(delivery);
+            emailDeliveryRetryService.send("EMAIL_VERIFICATION",delivery.userId(),() -> notificationDispatcher.send(delivery));
         } catch (RuntimeException exception) {
             logFailure(delivery,exception);
         }
     }
 
     private void logFailure(EmailVerificationCodeDelivery delivery, RuntimeException exception) {
-        logger.error(
-                "Email verification delivery failed. userId={}, failureType={}",
-                delivery.userId(),
-                exception.getClass().getSimpleName()
-        );
+        logger.error("Email verification delivery failed. userId={}, failureType={}",
+                delivery.userId(), exception.getClass().getSimpleName());
     }
 }

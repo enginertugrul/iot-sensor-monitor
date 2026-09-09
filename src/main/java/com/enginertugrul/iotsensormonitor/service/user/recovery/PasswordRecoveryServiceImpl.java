@@ -170,6 +170,38 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
 
 
+    @Override
+    @Transactional
+    public boolean canDeliverCode(PasswordRecoveryCodeDelivery delivery) {
+
+        Optional<AppUser> userResult = appUserRepository.findByIdForUpdate(delivery.userId());
+
+        if (userResult.isEmpty()) {
+            return false;
+        }
+
+        AppUser user = userResult.get();
+
+        if (!user.isEnabled() || !user.isEmailVerified()) {
+            return false;
+        }
+
+        Optional<PasswordResetChallenge> challengeResult =
+                passwordResetChallengeRepository.findByUserIdForUpdate(user.getId());
+
+        if (challengeResult.isEmpty()) {
+            return false;
+        }
+
+        PasswordResetChallenge challenge = challengeResult.get();
+
+        return !challenge.isExpiredAt(Instant.now())
+                && !challenge.hasReachedAttemptLimit(policy.getMaximumFailedAttempts())
+                && passwordRecoveryCodeGenerator.matches(user.getId(),delivery.rawCode(),challenge.getCodeHash());
+    }
+
+
+
 
 
     private void issueCode(AppUser user, PasswordResetChallenge existingChallenge, Instant issuedAt) {
