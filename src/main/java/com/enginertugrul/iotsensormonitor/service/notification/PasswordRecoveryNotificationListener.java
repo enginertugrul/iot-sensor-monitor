@@ -22,14 +22,17 @@ public class PasswordRecoveryNotificationListener {
 
     private final Logger logger = LoggerFactory.getLogger(PasswordRecoveryNotificationListener.class);
     private final PasswordRecoveryNotificationDispatcher notificationDispatcher;
+    private final EmailDeliveryRetryService emailDeliveryRetryService;
     private final TaskExecutor mailExecutor;
 
 
     public PasswordRecoveryNotificationListener(
             PasswordRecoveryNotificationDispatcher notificationDispatcher,
+            EmailDeliveryRetryService emailDeliveryRetryService,
             @Qualifier(PasswordRecoveryMailConfig.PASSWORD_RECOVERY_MAIL_EXECUTOR) TaskExecutor mailExecutor
     ) {
         this.notificationDispatcher = notificationDispatcher;
+        this.emailDeliveryRetryService = emailDeliveryRetryService;
         this.mailExecutor = mailExecutor;
     }
 
@@ -50,7 +53,7 @@ public class PasswordRecoveryNotificationListener {
 
     private void sendSafely(PasswordRecoveryCodeDelivery delivery) {
         try {
-            notificationDispatcher.send(delivery);
+            emailDeliveryRetryService.send("PASSWORD_RECOVERY",delivery.userId(),() -> notificationDispatcher.send(delivery));
         } catch (RuntimeException exception) {
             logFailure(delivery,exception);
         }
@@ -60,13 +63,7 @@ public class PasswordRecoveryNotificationListener {
 
 
     private void logFailure(PasswordRecoveryCodeDelivery delivery, RuntimeException exception) {
-        logger.error(
-                "Password recovery delivery failed. userId={}, failureType={}",
-                delivery.userId(),
-                exception.getClass().getSimpleName()
-        );
+        logger.error("Password recovery delivery failed. userId={}, failureType={}",
+                delivery.userId(),exception.getClass().getSimpleName());
     }
-
-
-
 }
