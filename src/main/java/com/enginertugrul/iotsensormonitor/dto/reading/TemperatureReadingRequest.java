@@ -23,4 +23,8 @@ public record TemperatureReadingRequest(
         @NotNull
         Instant recordedAt
 ) {
+        @Override
+        public String toString() {
+                return "TemperatureReadingRequest[sensorToken=[REDACTED], celsiusValue=" + celsiusValue + ", recordedAt=" + recordedAt + "]";
+        }
 }
