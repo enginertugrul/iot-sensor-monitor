@@ -9,6 +9,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
@@ -26,6 +27,7 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
     private final PasswordRecoveryService passwordRecoveryService;
     private final boolean passwordRecoveryEmailsEnabled;
     private final String fromAddress;
+    private final Clock clock;
 
 
 
@@ -35,13 +37,15 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
             MessageSource messageSource,
             PasswordRecoveryService passwordRecoveryService,
             @Value("${app.mail.password-recovery.enabled:true}") boolean passwordRecoveryEmailsEnabled,
-            @Value("${spring.mail.username}") String fromAddress
+            @Value("${spring.mail.username}") String fromAddress,
+            Clock clock
     ) {
         this.mailSenderProvider = mailSenderProvider;
         this.messageSource = messageSource;
         this.passwordRecoveryService = passwordRecoveryService;
         this.passwordRecoveryEmailsEnabled = passwordRecoveryEmailsEnabled;
         this.fromAddress = requireText(fromAddress,"fromAddress");
+        this.clock = clock;
     }
 
 
@@ -83,7 +87,7 @@ public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotif
 
 
     private long calculateRemainingMinutes(Instant expiresAt) {
-        long remainingSeconds = Duration.between(Instant.now(),expiresAt).getSeconds();
+        long remainingSeconds = Duration.between(clock.instant(), expiresAt).getSeconds();
 
         if (remainingSeconds <= 0) {
             return 0;

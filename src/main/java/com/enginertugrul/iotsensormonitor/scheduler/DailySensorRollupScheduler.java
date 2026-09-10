@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -19,10 +20,12 @@ public class DailySensorRollupScheduler {
 
     private final DailySensorRollupService dailySensorRollupService;
     private final SensorDataLifecyclePolicy lifecyclePolicy;
+    private final Clock clock;
 
-    public DailySensorRollupScheduler(DailySensorRollupService dailySensorRollupService, SensorDataLifecyclePolicy lifecyclePolicy) {
+    public DailySensorRollupScheduler(DailySensorRollupService dailySensorRollupService, SensorDataLifecyclePolicy lifecyclePolicy, Clock clock) {
         this.dailySensorRollupService = dailySensorRollupService;
         this.lifecyclePolicy = lifecyclePolicy;
+        this.clock = clock;
     }
 
 
@@ -30,7 +33,7 @@ public class DailySensorRollupScheduler {
     @Scheduled(fixedDelayString = "${app.sensor-data.lifecycle.daily-rollup-interval:PT15M}")
     public void rollUpClosedLocalDays() {
 
-        Instant startedAt = Instant.now();
+        Instant startedAt = clock.instant();
 
         Instant eligibleBucketEnd = startedAt.minus(lifecyclePolicy.getDailyRollupGrace());
 
@@ -43,7 +46,7 @@ public class DailySensorRollupScheduler {
 
             DailyRollupRunResult result = dailySensorRollupService.rollUpClosedLocalDays(eligibleBucketEnd);
 
-            Instant completedAt = Instant.now();
+            Instant completedAt = clock.instant();
 
             logger.info(
                     "Daily sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} refreshedBuckets={} sourceRowsSummarized={} hourlySummaryRowsConsumed={} rawBoundaryRowsSummarized={} waitingSensors={} failedSensors={} bounded={} eligibleBucketEnd={} oldestCoveredUntil={} maximumRollupLag={} duration={}",
@@ -63,7 +66,7 @@ public class DailySensorRollupScheduler {
                     result.maximumRollupLag(),
                     nonNegativeDuration(startedAt,completedAt));
         } catch (RuntimeException exception) {
-            Instant failedAt = Instant.now();
+            Instant failedAt = clock.instant();
 
             logger.error(
                     "Daily sensor rollup failed eligibleBucketEnd={} duration={}",

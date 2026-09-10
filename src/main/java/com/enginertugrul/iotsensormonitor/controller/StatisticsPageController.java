@@ -19,10 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-import java.time.DateTimeException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -47,13 +44,15 @@ public class StatisticsPageController {
     private final SensorService sensorService;
     private final StatisticsQueryService statisticsQueryService;
     private final AppUserService appUserService;
+    private final Clock clock;
 
 
 
-    public StatisticsPageController(SensorService sensorService,StatisticsQueryService statisticsQueryService,AppUserService appUserService) {
+    public StatisticsPageController(SensorService sensorService,StatisticsQueryService statisticsQueryService,AppUserService appUserService, Clock clock) {
         this.sensorService = sensorService;
         this.statisticsQueryService = statisticsQueryService;
         this.appUserService = appUserService;
+        this.clock = clock;
     }
 
 
@@ -96,7 +95,7 @@ public class StatisticsPageController {
         addSelectedSensorModel(model,selectedSensor);
 
         ZoneId sensorTimeZone = ZoneId.of(selectedSensor.timezone());
-        Instant pageNow = Instant.now();
+        Instant pageNow = clock.instant();
         LocalDate sensorToday = pageNow.atZone(sensorTimeZone).toLocalDate();
 
         model.addAttribute("statisticsToday",sensorToday);

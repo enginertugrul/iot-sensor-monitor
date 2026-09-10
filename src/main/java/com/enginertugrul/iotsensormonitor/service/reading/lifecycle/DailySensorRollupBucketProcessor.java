@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -37,14 +38,16 @@ public class DailySensorRollupBucketProcessor {
     private final HourlySensorSummaryRepository hourlySensorSummaryRepository;
     private final DailySensorSummaryRepository dailySensorSummaryRepository;
     private final SensorRollupCheckpointRepository checkpointRepository;
+    private final Clock clock;
 
 
 
-    public DailySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, DailySensorSummaryRepository dailySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository) {
+    public DailySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, DailySensorSummaryRepository dailySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.dailySensorSummaryRepository = dailySensorSummaryRepository;
         this.checkpointRepository = checkpointRepository;
+        this.clock = clock;
     }
 
 
@@ -94,14 +97,14 @@ public class DailySensorRollupBucketProcessor {
                     hourlyCoverageCheckpoint);
         }
 
-        Instant attemptedAt = notBefore(Instant.now(),dailyCoverageCheckpoint.getUpdatedAt());
+        Instant attemptedAt = notBefore(clock.instant(),dailyCoverageCheckpoint.getUpdatedAt());
         attemptedAt = notBefore(attemptedAt,hourlyCoverageCheckpoint.getUpdatedAt());
         attemptedAt = notBefore(attemptedAt,bucket.end());
         dailyCoverageCheckpoint.recordAttempt(bucket.start(),attemptedAt);
 
         DailyAggregateSource source = aggregateDailySource(sensor, bucket, hourlyCoverageCheckpoint);
 
-        Instant completedAt = notBefore(Instant.now(),attemptedAt);
+        Instant completedAt = notBefore(clock.instant(),attemptedAt);
 
         completedAt = upsertDailySummaryDuringAdvance(
                 sensorId,
@@ -216,7 +219,7 @@ public class DailySensorRollupBucketProcessor {
 
         DailyAggregateSource source = aggregateDailySource(sensor, bucket, hourlyCheckpoint);
 
-        Instant refreshedAt = notBefore(Instant.now(), bucket.end());
+        Instant refreshedAt = notBefore(clock.instant(), bucket.end());
         refreshedAt = notBefore(refreshedAt, hourlyCheckpoint.getUpdatedAt());
         refreshedAt = notBefore(refreshedAt, dailyCheckpoint.getUpdatedAt());
         refreshedAt = notBefore(refreshedAt, summary.getRefreshedAt());
@@ -325,7 +328,7 @@ public class DailySensorRollupBucketProcessor {
         LocalDate firstReadingLocalDate = firstReadingAt.atZone(timeZone).toLocalDate();
 
         Instant dailyCoverageStart = firstReadingLocalDate.atStartOfDay(timeZone).toInstant();
-        Instant initializedAt = notBefore(Instant.now(),dailyCoverageStart);
+        Instant initializedAt = notBefore(clock.instant(),dailyCoverageStart);
         initializedAt = notBefore(initializedAt,hourlyCoverageCheckpoint.getUpdatedAt());
 
         Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());

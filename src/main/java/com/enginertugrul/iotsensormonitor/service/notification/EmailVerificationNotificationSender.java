@@ -9,10 +9,13 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
+
+
 
 @Service
 public class EmailVerificationNotificationSender implements EmailVerificationNotificationDispatcher {
@@ -22,19 +25,23 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
     private final EmailVerificationService emailVerificationService;
     private final boolean verificationEmailsEnabled;
     private final String fromAddress;
+    private final Clock clock;
+
 
     public EmailVerificationNotificationSender(
             ObjectProvider<JavaMailSender> mailSenderProvider,
             MessageSource messageSource,
             EmailVerificationService emailVerificationService,
             @Value("${app.mail.email-verification.enabled:true}") boolean verificationEmailsEnabled,
-            @Value("${spring.mail.username}") String fromAddress
+            @Value("${spring.mail.username}") String fromAddress,
+            Clock clock
     ) {
         this.mailSenderProvider = mailSenderProvider;
         this.messageSource = messageSource;
         this.emailVerificationService = emailVerificationService;
         this.verificationEmailsEnabled = verificationEmailsEnabled;
         this.fromAddress = requireText(fromAddress,"fromAddress");
+        this.clock = clock;
     }
 
     @Override
@@ -69,7 +76,7 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
     }
 
     private long calculateRemainingMinutes(Instant expiresAt) {
-        long remainingSeconds = Duration.between(Instant.now(),expiresAt).getSeconds();
+        long remainingSeconds = Duration.between(clock.instant(), expiresAt).getSeconds();
 
         if (remainingSeconds <= 0) {
             return 0;

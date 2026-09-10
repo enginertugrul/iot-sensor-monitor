@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -36,6 +37,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     private final PasswordRecoveryRateLimiter rateLimiter;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
 
 
@@ -47,7 +49,8 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
             PasswordRecoveryPolicy policy,
             PasswordRecoveryRateLimiter rateLimiter,
             PasswordEncoder passwordEncoder,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            Clock clock
     ) {
         this.appUserRepository = appUserRepository;
         this.passwordResetChallengeRepository = passwordResetChallengeRepository;
@@ -56,6 +59,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         this.rateLimiter = rateLimiter;
         this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
 
@@ -65,7 +69,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     @Transactional
     public void requestResetCode(String email,String clientKey) {
 
-        Instant requestedAt = Instant.now();
+        Instant requestedAt = clock.instant();
         String normalizedEmail = normalizeEmailOrNull(email);
 
         String addressRateLimitKey = normalizedEmail == null
@@ -111,7 +115,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
     @Transactional
     public PasswordRecoveryResult resetPassword(String email, String rawCode, String newPassword, String clientKey) {
 
-        Instant attemptedAt = Instant.now();
+        Instant attemptedAt = clock.instant();
 
         if (!rateLimiter.allowPasswordReset(clientKey,attemptedAt)) {
             return PasswordRecoveryResult.INVALID;
@@ -195,7 +199,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
         PasswordResetChallenge challenge = challengeResult.get();
 
-        return !challenge.isExpiredAt(Instant.now())
+        return !challenge.isExpiredAt(clock.instant())
                 && !challenge.hasReachedAttemptLimit(policy.getMaximumFailedAttempts())
                 && passwordRecoveryCodeGenerator.matches(user.getId(),delivery.rawCode(),challenge.getCodeHash());
     }

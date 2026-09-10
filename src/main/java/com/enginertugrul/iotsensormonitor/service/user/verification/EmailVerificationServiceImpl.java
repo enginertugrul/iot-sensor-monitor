@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -31,16 +32,18 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     private final EmailVerificationPolicy policy;
     private final EmailVerificationRateLimiter rateLimiter;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
 
 
-    public EmailVerificationServiceImpl(AppUserRepository appUserRepository, EmailVerificationChallengeRepository emailVerificationChallengeRepository, EmailVerificationCodeGenerator emailVerificationCodeGenerator, EmailVerificationPolicy policy, EmailVerificationRateLimiter rateLimiter, ApplicationEventPublisher eventPublisher) {
+    public EmailVerificationServiceImpl(AppUserRepository appUserRepository, EmailVerificationChallengeRepository emailVerificationChallengeRepository, EmailVerificationCodeGenerator emailVerificationCodeGenerator, EmailVerificationPolicy policy, EmailVerificationRateLimiter rateLimiter, ApplicationEventPublisher eventPublisher, Clock clock) {
         this.appUserRepository = appUserRepository;
         this.emailVerificationChallengeRepository = emailVerificationChallengeRepository;
         this.emailVerificationCodeGenerator = emailVerificationCodeGenerator;
         this.policy = policy;
         this.rateLimiter = rateLimiter;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
 
@@ -65,7 +68,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
             throw new IllegalStateException("Initial email verification challenge already exists");
         }
 
-        issueCode(user,null,Instant.now());
+        issueCode(user,null,clock.instant());
     }
 
 
@@ -74,7 +77,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     @Transactional
     public void requestNewCode(String email, String clientKey) {
 
-        Instant requestedAt = Instant.now();
+        Instant requestedAt = clock.instant();
         String normalizedEmail = normalizeEmailOrNull(email);
         String addressRateLimitKey = normalizedEmail == null
                 ? INVALID_ADDRESS_RATE_LIMIT_KEY
@@ -120,7 +123,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
     @Transactional
     public EmailVerificationResult verifyCode(String email, String rawCode, String clientKey) {
 
-        Instant attemptedAt = Instant.now();
+        Instant attemptedAt = clock.instant();
 
         if (!rateLimiter.allowVerification(clientKey,attemptedAt)) {
             return EmailVerificationResult.INVALID;
@@ -194,7 +197,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 
         EmailVerificationChallenge challenge = challengeResult.get();
 
-        return !challenge.isExpiredAt(Instant.now())
+        return !challenge.isExpiredAt(clock.instant())
                 && !challenge.hasReachedAttemptLimit(policy.getMaximumFailedAttempts())
                 && emailVerificationCodeGenerator.matches(user.getId(),delivery.rawCode(),challenge.getCodeHash());
     }

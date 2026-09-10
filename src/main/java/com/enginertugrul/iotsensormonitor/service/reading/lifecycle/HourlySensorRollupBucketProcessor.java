@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
@@ -30,12 +31,14 @@ public class HourlySensorRollupBucketProcessor {
     private final SensorReadingRepository sensorReadingRepository;
     private final HourlySensorSummaryRepository hourlySensorSummaryRepository;
     private final SensorRollupCheckpointRepository checkpointRepository;
+    private final Clock clock;
 
 
-    public HourlySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository) {
+    public HourlySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.checkpointRepository = checkpointRepository;
+        this.clock = clock;
     }
 
 
@@ -68,7 +71,7 @@ public class HourlySensorRollupBucketProcessor {
             return upToDateResult(sensorId, checkpoint);
         }
 
-        Instant attemptedAt = notBefore(Instant.now(), checkpoint.getUpdatedAt());
+        Instant attemptedAt = notBefore(clock.instant(), checkpoint.getUpdatedAt());
 
         attemptedAt = notBefore(attemptedAt,bucketEnd);
         checkpoint.recordAttempt(bucketStart,attemptedAt);
@@ -82,7 +85,7 @@ public class HourlySensorRollupBucketProcessor {
         SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
 
 
-        Instant completedAt = notBefore(Instant.now(),attemptedAt);
+        Instant completedAt = notBefore(clock.instant(),attemptedAt);
 
 
         completedAt = upsertHourlySummaryDuringAdvance(
@@ -171,7 +174,7 @@ public class HourlySensorRollupBucketProcessor {
                 SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
 
 
-        Instant refreshedAt = notBefore(Instant.now(),bucketEnd);
+        Instant refreshedAt = notBefore(clock.instant(),bucketEnd);
         refreshedAt = notBefore(refreshedAt,checkpoint.getUpdatedAt());
         refreshedAt = notBefore(refreshedAt,summary.getRefreshedAt());
 
@@ -230,7 +233,7 @@ public class HourlySensorRollupBucketProcessor {
 
         Instant coverageStartedAt = firstReadingAt.truncatedTo(ChronoUnit.HOURS);
 
-        Instant initializedAt = notBefore(Instant.now(), coverageStartedAt);
+        Instant initializedAt = notBefore(clock.instant(), coverageStartedAt);
 
         Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
 
