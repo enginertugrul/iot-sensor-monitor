@@ -6,6 +6,7 @@ import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationResult;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationService;
+import com.enginertugrul.iotsensormonitor.support.web.BindingResultSanitizer;
 import com.enginertugrul.iotsensormonitor.support.web.PendingEmailVerificationSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -104,8 +105,7 @@ public class EmailVerificationController {
         }
 
         if (bindingResult.hasErrors()) {
-            codeForm.setCode(null);
-            return redirectWithErrors("codeForm",codeForm,bindingResult,redirectAttributes);
+            return redirectWithCodeErrors(codeForm,bindingResult,redirectAttributes);
         }
 
         EmailVerificationResult result = emailVerificationService.verifyCode(
@@ -120,9 +120,8 @@ public class EmailVerificationController {
             return "redirect:/login";
         }
 
-        codeForm.setCode(null);
         bindingResult.rejectValue("code","emailVerification.codeInvalid");
-        return redirectWithErrors("codeForm",codeForm,bindingResult,redirectAttributes);
+        return redirectWithCodeErrors(codeForm,bindingResult,redirectAttributes);
     }
 
 
@@ -168,6 +167,17 @@ public class EmailVerificationController {
         redirectAttributes.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + formAttribute, bindingResult);
 
         return REDIRECT_TO_VERIFICATION;
+    }
+
+
+
+
+    private String redirectWithCodeErrors(EmailVerificationCodeForm submittedForm,BindingResult sourceBindingResult,RedirectAttributes redirectAttributes) {
+        EmailVerificationCodeForm sanitizedForm = new EmailVerificationCodeForm();
+        BindingResult sanitizedBindingResult = BindingResultSanitizer.copyWithoutRejectedValues(sanitizedForm,"codeForm",sourceBindingResult);
+
+        submittedForm.setCode(null);
+        return redirectWithErrors("codeForm",sanitizedForm,sanitizedBindingResult,redirectAttributes);
     }
 
 

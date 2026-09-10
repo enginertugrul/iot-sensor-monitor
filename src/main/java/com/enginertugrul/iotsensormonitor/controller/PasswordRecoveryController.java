@@ -5,6 +5,7 @@ import com.enginertugrul.iotsensormonitor.dto.auth.PasswordResetForm;
 import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryResult;
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryService;
+import com.enginertugrul.iotsensormonitor.support.web.BindingResultSanitizer;
 import com.enginertugrul.iotsensormonitor.support.web.PendingPasswordRecoverySession;
 import com.enginertugrul.iotsensormonitor.support.web.PublicLocaleSession;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -182,14 +180,9 @@ public class PasswordRecoveryController {
 
 
 
-    private String redirectWithResetErrors(
-            PasswordResetForm submittedForm,
-            BindingResult sourceBindingResult,
-            RedirectAttributes redirectAttributes) {
-
+    private String redirectWithResetErrors(PasswordResetForm submittedForm,BindingResult sourceBindingResult,RedirectAttributes redirectAttributes) {
         PasswordResetForm sanitizedForm = new PasswordResetForm();
-
-        BindingResult sanitizedBindingResult = copyWithoutRejectedValues(sanitizedForm, "resetForm",sourceBindingResult);
+        BindingResult sanitizedBindingResult = BindingResultSanitizer.copyWithoutRejectedValues(sanitizedForm,"resetForm",sourceBindingResult);
 
         submittedForm.clearSensitiveValues();
         redirectAttributes.addFlashAttribute("resetForm",sanitizedForm);
@@ -201,37 +194,6 @@ public class PasswordRecoveryController {
 
 
 
-    private BindingResult copyWithoutRejectedValues(Object target,String objectName,BindingResult sourceBindingResult) {
-
-        BeanPropertyBindingResult sanitizedBindingResult = new BeanPropertyBindingResult(target,objectName);
-
-        for (ObjectError error : sourceBindingResult.getAllErrors()) {
-            if (error instanceof FieldError fieldError) {
-                sanitizedBindingResult.addError(withoutRejectedValue(objectName,fieldError));
-                continue;
-            }
-
-            sanitizedBindingResult.addError(new ObjectError(objectName,error.getCodes(),error.getArguments(),error.getDefaultMessage() ) );
-        }
-
-        return sanitizedBindingResult;
-    }
-
-
-
-
-    private FieldError withoutRejectedValue(String objectName,FieldError fieldError) {
-
-        return new FieldError(
-                objectName,
-                fieldError.getField(),
-                null,
-                fieldError.isBindingFailure(),
-                fieldError.getCodes(),
-                fieldError.getArguments(),
-                fieldError.getDefaultMessage()
-        );
-    }
 
 
 

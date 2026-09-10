@@ -19,4 +19,8 @@ public record MotionReadingRequest(
         @NotNull
         Instant recordedAt
 ) {
+        @Override
+        public String toString() {
+                return "MotionReadingRequest[sensorToken=[REDACTED], motionDetected=" + motionDetected + ", recordedAt=" + recordedAt + "]";
+        }
 }

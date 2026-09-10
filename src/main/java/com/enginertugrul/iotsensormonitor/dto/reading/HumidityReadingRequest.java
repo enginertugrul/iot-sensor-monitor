@@ -25,4 +25,8 @@ public record HumidityReadingRequest(
         @NotNull
         Instant recordedAt
 ) {
+        @Override
+        public String toString() {
+                return "HumidityReadingRequest[sensorToken=[REDACTED], humidityPercentage=" + humidityPercentage + ", recordedAt=" + recordedAt + "]";
+        }
 }
