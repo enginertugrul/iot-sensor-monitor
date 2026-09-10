@@ -4,6 +4,7 @@ import com.enginertugrul.iotsensormonitor.dto.user.PasswordChangeForm;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.user.password.PasswordChangeResult;
 import com.enginertugrul.iotsensormonitor.service.user.password.PasswordChangeService;
+import com.enginertugrul.iotsensormonitor.support.web.BindingResultSanitizer;
 import com.enginertugrul.iotsensormonitor.support.web.PublicLocaleSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,10 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -110,7 +108,7 @@ public class PasswordChangeController {
 
     private String redirectWithErrors(PasswordChangeForm submittedForm,BindingResult sourceBindingResult,RedirectAttributes redirectAttributes) {
         PasswordChangeForm sanitizedForm = new PasswordChangeForm();
-        BindingResult sanitizedBindingResult = copyWithoutRejectedValues(sanitizedForm,"form",sourceBindingResult);
+        BindingResult sanitizedBindingResult = BindingResultSanitizer.copyWithoutRejectedValues(sanitizedForm,"form",sourceBindingResult);
 
         submittedForm.clearSensitiveValues();
         redirectAttributes.addFlashAttribute("form",sanitizedForm);
@@ -123,37 +121,5 @@ public class PasswordChangeController {
 
 
 
-
-    private BindingResult copyWithoutRejectedValues(Object target,String objectName,BindingResult sourceBindingResult) {
-        BeanPropertyBindingResult sanitizedBindingResult = new BeanPropertyBindingResult(target,objectName);
-
-        for (ObjectError error : sourceBindingResult.getAllErrors()) {
-            if (error instanceof FieldError fieldError) {
-                sanitizedBindingResult.addError(withoutRejectedValue(objectName,fieldError));
-                continue;
-            }
-
-            sanitizedBindingResult.addError(new ObjectError(objectName,error.getCodes(),error.getArguments(),error.getDefaultMessage()));
-        }
-
-        return sanitizedBindingResult;
-    }
-
-
-
-
-
-
-    private FieldError withoutRejectedValue(String objectName,FieldError fieldError) {
-        return new FieldError(
-                objectName,
-                fieldError.getField(),
-                null,
-                fieldError.isBindingFailure(),
-                fieldError.getCodes(),
-                fieldError.getArguments(),
-                fieldError.getDefaultMessage()
-        );
-    }
 
 }
