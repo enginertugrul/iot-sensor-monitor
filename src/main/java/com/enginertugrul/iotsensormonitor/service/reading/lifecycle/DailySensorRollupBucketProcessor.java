@@ -8,8 +8,6 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAg
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.repository.*;
 import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +29,7 @@ import java.util.Optional;
 public class DailySensorRollupBucketProcessor {
 
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
+    private final SensorRepository sensorRepository;
     private final SensorReadingRepository sensorReadingRepository;
     private final HourlySensorSummaryRepository hourlySensorSummaryRepository;
     private final DailySensorSummaryRepository dailySensorSummaryRepository;
@@ -42,7 +38,8 @@ public class DailySensorRollupBucketProcessor {
 
 
 
-    public DailySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, DailySensorSummaryRepository dailySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
+    public DailySensorRollupBucketProcessor(SensorRepository sensorRepository, SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, DailySensorSummaryRepository dailySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
+        this.sensorRepository = sensorRepository;
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.dailySensorSummaryRepository = dailySensorSummaryRepository;
@@ -331,7 +328,7 @@ public class DailySensorRollupBucketProcessor {
         Instant initializedAt = notBefore(clock.instant(),dailyCoverageStart);
         initializedAt = notBefore(initializedAt,hourlyCoverageCheckpoint.getUpdatedAt());
 
-        Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
+        Sensor sensorReference = sensorRepository.getReferenceById(sensor.getId());
 
         SensorRollupCheckpoint checkpoint =
                 SensorRollupCheckpoint.initialize(
@@ -474,7 +471,7 @@ public class DailySensorRollupBucketProcessor {
             summary.refresh(aggregate,effectiveCompletedAt);
         } else {
 
-            Sensor sensor = entityManager.getReference(Sensor.class, sensorId);
+            Sensor sensor = sensorRepository.getReferenceById(sensorId);
 
             summary = DailySensorSummary.create(
                     sensor,

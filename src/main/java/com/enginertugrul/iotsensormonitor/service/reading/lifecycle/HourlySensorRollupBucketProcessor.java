@@ -7,8 +7,6 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAg
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.repository.*;
 import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,16 +23,16 @@ import java.util.Optional;
 @Service
 public class HourlySensorRollupBucketProcessor {
 
-    @PersistenceContext
-    private EntityManager entityManager;
 
+    private final SensorRepository sensorRepository;
     private final SensorReadingRepository sensorReadingRepository;
     private final HourlySensorSummaryRepository hourlySensorSummaryRepository;
     private final SensorRollupCheckpointRepository checkpointRepository;
     private final Clock clock;
 
 
-    public HourlySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
+    public HourlySensorRollupBucketProcessor(SensorRepository sensorRepository, SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
+        this.sensorRepository = sensorRepository;
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.checkpointRepository = checkpointRepository;
@@ -235,7 +233,7 @@ public class HourlySensorRollupBucketProcessor {
 
         Instant initializedAt = notBefore(clock.instant(), coverageStartedAt);
 
-        Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
+        Sensor sensorReference = sensorRepository.getReferenceById(sensor.getId());
 
         SensorRollupCheckpoint checkpoint =
                 SensorRollupCheckpoint.initialize(
@@ -265,7 +263,7 @@ public class HourlySensorRollupBucketProcessor {
 
             summary.refresh(aggregate,effectiveCompletedAt);
         } else {
-            Sensor sensor = entityManager.getReference(Sensor.class, sensorId);
+            Sensor sensor = sensorRepository.getReferenceById(sensorId);
             summary = HourlySensorSummary.create(sensor, bucketStart, aggregate, effectiveCompletedAt);
         }
 
