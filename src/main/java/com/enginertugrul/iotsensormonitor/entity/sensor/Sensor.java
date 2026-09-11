@@ -75,46 +75,40 @@ public class Sensor {
             String city,
             String district,
             String installationLocation,
-            String timezone
-    ) {
-        this.owner = Objects.requireNonNull(owner, "owner must not be null");
-        this.type = Objects.requireNonNull(type, "type must not be null");
-        this.name = DomainChecks.requireText(name, "name");
-        this.city = DomainChecks.requireText(city, "city");
-        this.district = DomainChecks.requireText(district, "district");
-        this.installationLocation = DomainChecks.requireText(installationLocation, "installationLocation");
+            String timezone,
+            Instant createdAt) {
+        this.owner = Objects.requireNonNull(owner,"owner must not be null");
+        this.type = Objects.requireNonNull(type,"type must not be null");
+        this.name = DomainChecks.requireText(name,"name");
+        this.city = DomainChecks.requireText(city,"city");
+        this.district = DomainChecks.requireText(district,"district");
+        this.installationLocation = DomainChecks.requireText(installationLocation,"installationLocation");
         this.timezone = normalizeTimezone(timezone);
-
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        this.createdAt = Objects.requireNonNull(createdAt,"createdAt must not be null");
+        this.updatedAt = this.createdAt;
     }
 
 
 
 
 
-    public void updateDetails(
-            String name,
-            String city,
-            String district,
-            String installationLocation,
-            String timezone
-    ) {
-
+    public void updateDetails(String name,String city,String district,String installationLocation,String timezone,Instant updatedAt) {
         String normalizedTimezone = normalizeTimezone(timezone);
 
         if (hasRecordedReadings() && !this.timezone.equals(normalizedTimezone)) {
             throw new SensorTimezoneLockedException();
         }
 
-        this.name = DomainChecks.requireText(name, "name");
-        this.city = DomainChecks.requireText(city, "city");
-        this.district = DomainChecks.requireText(district, "district");
-        this.installationLocation = DomainChecks.requireText(installationLocation, "installationLocation");
+
+        this.name = DomainChecks.requireText(name,"name");
+        this.city = DomainChecks.requireText(city,"city");
+        this.district = DomainChecks.requireText(district,"district");
+        this.installationLocation = DomainChecks.requireText(installationLocation,"installationLocation");
         this.timezone = normalizedTimezone;
-        this.updatedAt = Instant.now();
+        this.updatedAt = updatedAt;
     }
+
+
 
 
     public ReadingValueKind getReadingValueKind() {
@@ -122,46 +116,65 @@ public class Sensor {
     }
 
 
-    public void deactivate() {
+
+
+    public void deactivate(Instant updatedAt) {
         if (active) {
             this.active = false;
-            this.updatedAt = Instant.now();
+            this.updatedAt = updatedAt;
         }
     }
 
-    public void activate() {
+
+
+    public void activate(Instant updatedAt) {
         if (!active) {
             this.active = true;
-            this.updatedAt = Instant.now();
+            this.updatedAt = updatedAt;
         }
     }
 
+
+
+
+
+
+
+    public void assignIngestionTokenHash(String ingestionTokenHash,Instant updatedAt) {
+        this.ingestionTokenHash = ingestionTokenHash;
+        this.updatedAt = updatedAt;
+    }
+
+
+
+    public void recordFirstReading(Instant recordedAt,Instant updatedAt) {
+
+        Objects.requireNonNull(recordedAt,"recordedAt must not be null");
+
+        if (firstReadingAt == null) {
+            this.firstReadingAt = recordedAt;
+            this.updatedAt = updatedAt;
+        }
+    }
+
+    public boolean hasRecordedReadings() {
+        return firstReadingAt != null;
+    }
 
 
 
 
     @PrePersist
     void prePersist() {
-        Instant now = Instant.now();
-
-        if (createdAt == null) {
-            createdAt = now;
-        }
-
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
+        validateTimestamps();
     }
-
-
 
 
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = Instant.now();
+        validateTimestamps();
     }
-
 
 
 
@@ -173,26 +186,14 @@ public class Sensor {
 
 
 
-
-    public void assignIngestionTokenHash(String ingestionTokenHash) {
-        this.ingestionTokenHash = ingestionTokenHash;
-        this.updatedAt = Instant.now();
-    }
-
-
-
-
-    public void recordFirstReading(Instant recordedAt) {
-        Instant requiredRecordedAt = Objects.requireNonNull(recordedAt,"recordedAt must not be null");
-
-        if (firstReadingAt == null) {
-            firstReadingAt = requiredRecordedAt;
+    private void validateTimestamps() {
+        if (createdAt == null || updatedAt == null) {
+            throw new IllegalStateException("createdAt and updatedAt must not be null");
         }
-    }
 
-
-    public boolean hasRecordedReadings() {
-        return firstReadingAt != null;
+        if (updatedAt.isBefore(createdAt)) {
+            throw new IllegalStateException("updatedAt must not be before createdAt");
+        }
     }
 
 

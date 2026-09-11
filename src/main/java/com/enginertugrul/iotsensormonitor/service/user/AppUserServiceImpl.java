@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
@@ -30,12 +31,14 @@ public class AppUserServiceImpl implements AppUserService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationService  emailVerificationService;
+    private final Clock clock;
 
 
-    public AppUserServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService) {
+    public AppUserServiceImpl(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder, EmailVerificationService emailVerificationService, Clock clock) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationService = emailVerificationService;
+        this.clock = clock;
     }
 
 
@@ -60,7 +63,8 @@ public class AppUserServiceImpl implements AppUserService {
                 passwordHash,
                 registerUserForm.getPreferredLanguage(),
                 registerUserForm.getPreferredTemperatureUnit(),
-                registerUserForm.getPreferredTimezone()
+                registerUserForm.getPreferredTimezone(),
+                clock.instant()
         );
 
         AppUser savedUser;
@@ -105,7 +109,12 @@ public class AppUserServiceImpl implements AppUserService {
 
         AppUser user = appUserRepository.findById(userId).orElseThrow(()-> new NoSuchElementException("User not found"));
 
-        user.updatePreferences(userPreferencesForm.getPreferredLanguage(), userPreferencesForm.getTemperatureUnit(), userPreferencesForm.getPreferredTimezone());
+        user.updatePreferences(
+                userPreferencesForm.getPreferredLanguage(),
+                userPreferencesForm.getTemperatureUnit(),
+                userPreferencesForm.getPreferredTimezone(),
+                clock.instant()
+        );
 
     }
 

@@ -17,6 +17,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -35,11 +37,13 @@ public class SensorServiceImpl implements SensorService {
     private final SensorRepository sensorRepository;
     private final AppUserRepository appUserRepository;
     private final SensorIngestionTokenGenerator sensorIngestionTokenGenerator;
+    private final Clock clock;
 
-    public SensorServiceImpl(SensorRepository sensorRepository, AppUserRepository appUserRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator) {
+    public SensorServiceImpl(SensorRepository sensorRepository, AppUserRepository appUserRepository, SensorIngestionTokenGenerator sensorIngestionTokenGenerator, Clock clock) {
         this.sensorRepository = sensorRepository;
         this.appUserRepository = appUserRepository;
         this.sensorIngestionTokenGenerator = sensorIngestionTokenGenerator;
+        this.clock = clock;
     }
 
 
@@ -59,6 +63,8 @@ public class SensorServiceImpl implements SensorService {
             throw new DuplicateSensorNameException();
         }
 
+        Instant createdAt = clock.instant();
+
         Sensor sensor = new Sensor(
                 owner,
                 sensorForm.getType(),
@@ -66,11 +72,13 @@ public class SensorServiceImpl implements SensorService {
                 sensorForm.getCity(),
                 sensorForm.getDistrict(),
                 sensorForm.getInstallationLocation(),
-                sensorForm.getTimezone()
+                sensorForm.getTimezone(),
+                createdAt
         );
 
+
         GeneratedSensorIngestionToken generatedToken = sensorIngestionTokenGenerator.generate();
-        sensor.assignIngestionTokenHash(generatedToken.tokenHash());
+        sensor.assignIngestionTokenHash(generatedToken.tokenHash(), createdAt);
 
         Sensor savedSensor;
 
@@ -155,7 +163,8 @@ public class SensorServiceImpl implements SensorService {
                 form.getCity(),
                 form.getDistrict(),
                 form.getInstallationLocation(),
-                form.getTimezone()
+                form.getTimezone(),
+                clock.instant()
         );
 
         try {
@@ -197,14 +206,16 @@ public class SensorServiceImpl implements SensorService {
     @Transactional
     public void activateSensor(Long sensorId, Long ownerId) {
         Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
-        sensor.activate();
+        sensor.activate(clock.instant());
     }
+
+
 
     @Override
     @Transactional
     public void deactivateSensor(Long sensorId, Long ownerId) {
         Sensor sensor = getOwnedSensorForUpdate(sensorId, ownerId);
-        sensor.deactivate();
+        sensor.deactivate(clock.instant());
     }
 
 

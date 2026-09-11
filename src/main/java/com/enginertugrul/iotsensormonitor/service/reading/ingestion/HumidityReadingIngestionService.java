@@ -9,6 +9,7 @@ import com.enginertugrul.iotsensormonitor.service.alert.AlertEvaluationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 
 
@@ -20,12 +21,14 @@ public class HumidityReadingIngestionService {
     private final SensorIngestionAccessService sensorIngestionAccessService;
     private final SensorReadingRepository readingRepository;
     private final AlertEvaluationService alertEvaluationService;
+    private final Clock clock;
 
 
-    public HumidityReadingIngestionService(SensorIngestionAccessService sensorIngestionAccessService, SensorReadingRepository readingRepository, AlertEvaluationService alertEvaluationService) {
+    public HumidityReadingIngestionService(SensorIngestionAccessService sensorIngestionAccessService, SensorReadingRepository readingRepository, AlertEvaluationService alertEvaluationService, Clock clock) {
         this.sensorIngestionAccessService = sensorIngestionAccessService;
         this.readingRepository = readingRepository;
         this.alertEvaluationService = alertEvaluationService;
+        this.clock = clock;
     }
 
     @Transactional
@@ -41,7 +44,7 @@ public class HumidityReadingIngestionService {
             throw new InvalidSensorReadingException(exception.getMessage(), exception);
         }
 
-        sensor.recordFirstReading(recordedAt);
+        sensor.recordFirstReading(recordedAt, clock.instant());
         readingRepository.save(reading);
         alertEvaluationService.evaluateReading(reading);
     }

@@ -162,7 +162,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         }
 
         String passwordHash = passwordEncoder.encode(newPassword);
-        user.updatePasswordHash(passwordHash);
+        user.updatePasswordHash(passwordHash, attemptedAt);
         passwordResetChallengeRepository.delete(challenge);
 
         eventPublisher.publishEvent(new PasswordChangedEvent(user.getId()));
