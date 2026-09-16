@@ -28,7 +28,7 @@ public class SensorRollupCheckpoint {
     @Column(name = "stage", nullable = false, length = 30, updatable = false)
     private RollupStage stage;
 
-    @Column(name = "coverage_started_at", nullable = false, updatable = false)
+    @Column(name = "coverage_started_at", nullable = false)
     private Instant coverageStartedAt;
 
     @Column(name = "covered_until", nullable = false)
@@ -99,7 +99,7 @@ public class SensorRollupCheckpoint {
         }
 
         requireStageBoundary(requiredBucketStart,"bucketStart");
-        touch(requiredAttemptedAt);
+        advanceUpdatedAt(requiredAttemptedAt);
 
         this.lastAttemptedBucketStart = requiredBucketStart;
         this.lastAttemptedAt = requiredAttemptedAt;
@@ -131,7 +131,7 @@ public class SensorRollupCheckpoint {
         }
 
         requireStageBucket(requiredBucketStart,requiredBucketEnd);
-        touch(requiredSuccessfulAt);
+        advanceUpdatedAt(requiredSuccessfulAt);
 
         this.coveredUntil = requiredBucketEnd;
         this.lastSuccessfulBucketStart = requiredBucketStart;
@@ -139,6 +139,40 @@ public class SensorRollupCheckpoint {
         this.lastSuccessfulAt = requiredSuccessfulAt;
         this.lastAdvancedAt = requiredSuccessfulAt;
 
+        validateCheckpointState();
+    }
+
+
+
+    public boolean requiresInvalidationFrom(Instant bucketStart) {
+        Objects.requireNonNull(bucketStart,"bucketStart must not be null");
+        requireStageBoundary(bucketStart,"bucketStart");
+        return bucketStart.isBefore(coveredUntil);
+    }
+
+
+
+    public void invalidateFrom(Instant bucketStart,Instant invalidatedAt) {
+
+        Objects.requireNonNull(bucketStart,"bucketStart must not be null");
+        Objects.requireNonNull(invalidatedAt,"invalidatedAt must not be null");
+
+        if (!requiresInvalidationFrom(bucketStart)) {
+            return;
+        }
+
+
+        advanceUpdatedAt(invalidatedAt.isBefore(updatedAt) ? updatedAt : invalidatedAt);
+        if (bucketStart.isBefore(coverageStartedAt)) {
+            coverageStartedAt = bucketStart;
+        }
+        coveredUntil = bucketStart;
+        lastAttemptedBucketStart = null;
+        lastAttemptedAt = null;
+        lastSuccessfulBucketStart = null;
+        lastSuccessfulBucketEnd = null;
+        lastSuccessfulAt = null;
+        lastAdvancedAt = null;
         validateCheckpointState();
     }
 
@@ -276,7 +310,7 @@ public class SensorRollupCheckpoint {
 
 
 
-    private void touch(Instant timestamp) {
+    private void advanceUpdatedAt(Instant timestamp) {
         if (timestamp.isBefore(createdAt) || timestamp.isBefore(updatedAt)) {
             throw new IllegalArgumentException("Checkpoint operational timestamps must not move backwards");
         }

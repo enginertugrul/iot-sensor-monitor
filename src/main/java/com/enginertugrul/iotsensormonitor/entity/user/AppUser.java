@@ -73,16 +73,9 @@ public class AppUser {
 
 
 
-    public AppUser(String email, String passwordHash) {
-        this(
-                email,
-                passwordHash,
-                DEFAULT_PREFERRED_LANGUAGE,
-                DEFAULT_PREFERRED_TEMPERATURE_UNIT,
-                DEFAULT_PREFERRED_TIMEZONE
-        );
+    public AppUser(String email,String passwordHash,Instant createdAt) {
+        this(email,passwordHash,DEFAULT_PREFERRED_LANGUAGE,DEFAULT_PREFERRED_TEMPERATURE_UNIT,DEFAULT_PREFERRED_TIMEZONE,createdAt);
     }
-
 
 
     public AppUser(
@@ -90,34 +83,28 @@ public class AppUser {
             String passwordHash,
             PreferredLanguage preferredLanguage,
             TemperatureUnit preferredTemperatureUnit,
-            String preferredTimezone
-    ) {
+            String preferredTimezone,
+            Instant createdAt) {
+
         this.email = normalizeEmail(email);
-        this.passwordHash = DomainChecks.requireText(passwordHash, "passwordHash");
-        this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage, DEFAULT_PREFERRED_LANGUAGE);
-        this.preferredTemperatureUnit = Objects.requireNonNullElse(
-                preferredTemperatureUnit,
-                DEFAULT_PREFERRED_TEMPERATURE_UNIT
-        );
-        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE) );
-
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-
-
-
-
-    public void updatePreferences(PreferredLanguage preferredLanguage,TemperatureUnit preferredTemperatureUnit,String preferredTimezone) {
-
-        this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage, DEFAULT_PREFERRED_LANGUAGE);
+        this.passwordHash = DomainChecks.requireText(passwordHash,"passwordHash");
+        this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage,DEFAULT_PREFERRED_LANGUAGE);
         this.preferredTemperatureUnit = Objects.requireNonNullElse(preferredTemperatureUnit,DEFAULT_PREFERRED_TEMPERATURE_UNIT);
-        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone, DEFAULT_PREFERRED_TIMEZONE));
-        this.updatedAt = Instant.now();
+        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone,DEFAULT_PREFERRED_TIMEZONE));
+        this.createdAt = Objects.requireNonNull(createdAt,"createdAt must not be null");
+        this.updatedAt = this.createdAt;
     }
 
+
+
+
+    public void updatePreferences(PreferredLanguage preferredLanguage,TemperatureUnit preferredTemperatureUnit,String preferredTimezone,Instant updatedAt) {
+
+        this.preferredLanguage = Objects.requireNonNullElse(preferredLanguage,DEFAULT_PREFERRED_LANGUAGE);
+        this.preferredTemperatureUnit = Objects.requireNonNullElse(preferredTemperatureUnit,DEFAULT_PREFERRED_TEMPERATURE_UNIT);
+        this.preferredTimezone = normalizeTimezone(Objects.requireNonNullElse(preferredTimezone,DEFAULT_PREFERRED_TIMEZONE));
+        this.updatedAt = updatedAt;
+    }
 
 
     public boolean isEmailVerified() {
@@ -129,7 +116,8 @@ public class AppUser {
 
 
     public void verifyEmail(Instant verifiedAt) {
-        Instant requiredVerifiedAt = Objects.requireNonNull(verifiedAt, "verifiedAt must not be null");
+
+        Objects.requireNonNull(verifiedAt, "verifiedAt must not be null");
 
         if (emailVerifiedAt != null) {
             return;
@@ -139,70 +127,35 @@ public class AppUser {
             throw new IllegalStateException("createdAt must not be null");
         }
 
-        if (requiredVerifiedAt.isBefore(createdAt)) {
+        if (verifiedAt.isBefore(createdAt)) {
             throw new IllegalArgumentException("verifiedAt must not be before createdAt");
         }
 
-        this.emailVerifiedAt = requiredVerifiedAt;
-        this.updatedAt = requiredVerifiedAt;
+        this.emailVerifiedAt = verifiedAt;
+        this.updatedAt = verifiedAt;
     }
 
 
 
 
-    public void updatePasswordHash(String passwordHash) {
-        this.passwordHash = DomainChecks.requireText(passwordHash, "passwordHash");
-        this.updatedAt = Instant.now();
+    public void updatePasswordHash(String passwordHash,Instant updatedAt) {
+        this.passwordHash = DomainChecks.requireText(passwordHash,"passwordHash");
+        this.updatedAt = updatedAt;
     }
 
 
 
-
-    public void disable() {
+    public void disable(Instant updatedAt) {
         this.enabled = false;
-        this.updatedAt = Instant.now();
+        this.updatedAt = updatedAt;
     }
 
 
-
-    public void enable() {
+    public void enable(Instant updatedAt) {
         this.enabled = true;
-        this.updatedAt = Instant.now();
+        this.updatedAt = updatedAt;
     }
 
-
-
-    @PrePersist
-    void prePersist() {
-        Instant now = Instant.now();
-
-        if (createdAt == null) {
-            createdAt = now;
-        }
-
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
-
-        if (preferredLanguage == null) {
-            preferredLanguage = DEFAULT_PREFERRED_LANGUAGE;
-        }
-
-        if (preferredTemperatureUnit == null) {
-            preferredTemperatureUnit = DEFAULT_PREFERRED_TEMPERATURE_UNIT;
-        }
-
-        if (preferredTimezone == null || preferredTimezone.isBlank()) {
-            preferredTimezone = DEFAULT_PREFERRED_TIMEZONE;
-        }
-    }
-
-
-
-    @PreUpdate
-    void preUpdate() {
-        updatedAt = Instant.now();
-    }
 
 
 
@@ -214,9 +167,38 @@ public class AppUser {
 
 
 
+
+    @PrePersist
+    void prePersist() {
+        validateTimestamps();
+    }
+
+
+
+    @PreUpdate
+    void preUpdate() {
+        validateTimestamps();
+    }
+
+
+
+
     private static String normalizeTimezone(String value) {
         String timezone = DomainChecks.requireText(value, "preferredTimezone");
         return ZoneId.of(timezone).getId();
+    }
+
+
+
+
+    private void validateTimestamps() {
+        if (createdAt == null || updatedAt == null) {
+            throw new IllegalStateException("createdAt and updatedAt must not be null");
+        }
+
+        if (updatedAt.isBefore(createdAt)) {
+            throw new IllegalStateException("updatedAt must not be before createdAt");
+        }
     }
 
 

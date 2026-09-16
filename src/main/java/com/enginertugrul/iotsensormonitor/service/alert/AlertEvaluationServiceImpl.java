@@ -36,12 +36,12 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
     @Override
     public void evaluateReading(SensorReading reading) {
 
-        SensorReading requiredReading = Objects.requireNonNull(reading, "reading must not be null");
-        Long sensorId = requiredReading.getSensor().getId();
+        Objects.requireNonNull(reading, "reading must not be null");
+        Long sensorId = reading.getSensor().getId();
 
         alertRuleRepository.findEnabledForEvaluationBySensorId(sensorId).stream()
-                .filter( rule -> rule.isTriggeredBy(requiredReading))
-                .forEach( rule -> triggerIfCooldownAllows(rule,requiredReading));
+                .filter( rule -> rule.isTriggeredBy(reading))
+                .forEach( rule -> triggerIfCooldownAllows(rule,reading));
 
     }
 

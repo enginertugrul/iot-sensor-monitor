@@ -8,7 +8,6 @@ public record DailyRollupRunResult(
         int sensorCount,
         int attemptedBuckets,
         int advancedBuckets,
-        int refreshedBuckets,
         long sourceRowsSummarized,
         long hourlySummaryRowsConsumed,
         long rawBoundaryRowsSummarized,

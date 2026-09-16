@@ -19,7 +19,6 @@ public class SensorDataLifecyclePolicy {
     private final Duration dailyRetention;
     private final Duration hourlyRollupInterval;
     private final Duration hourlyRollupGrace;
-    private final Duration hourlyRollupTrailingWindow;
     private final Duration dailyRollupInterval;
     private final Duration dailyRollupGrace;
     private final Duration purgeInterval;
@@ -35,7 +34,6 @@ public class SensorDataLifecyclePolicy {
             @Value("${app.sensor-data.lifecycle.daily-retention:P730D}") Duration dailyRetention,
             @Value("${app.sensor-data.lifecycle.hourly-rollup-interval:PT5M}") Duration hourlyRollupInterval,
             @Value("${app.sensor-data.lifecycle.hourly-rollup-grace:PT5M}") Duration hourlyRollupGrace,
-            @Value("${app.sensor-data.lifecycle.hourly-rollup-trailing-window:PT6H}") Duration hourlyRollupTrailingWindow,
             @Value("${app.sensor-data.lifecycle.daily-rollup-interval:PT15M}") Duration dailyRollupInterval,
             @Value("${app.sensor-data.lifecycle.daily-rollup-grace:PT15M}") Duration dailyRollupGrace,
             @Value("${app.sensor-data.lifecycle.purge-interval:PT1H}") Duration purgeInterval,
@@ -48,7 +46,6 @@ public class SensorDataLifecyclePolicy {
         this.dailyRetention = requirePositive(dailyRetention,"dailyRetention");
         this.hourlyRollupInterval = requirePositive(hourlyRollupInterval,"hourlyRollupInterval");
         this.hourlyRollupGrace = requirePositive(hourlyRollupGrace,"hourlyRollupGrace");
-        this.hourlyRollupTrailingWindow = requirePositive(hourlyRollupTrailingWindow,"hourlyRollupTrailingWindow");
         this.dailyRollupInterval = requirePositive(dailyRollupInterval,"dailyRollupInterval");
         this.dailyRollupGrace = requirePositive(dailyRollupGrace,"dailyRollupGrace");
         this.purgeInterval = requirePositive(purgeInterval,"purgeInterval");
@@ -63,12 +60,6 @@ public class SensorDataLifecyclePolicy {
 
         if (this.hourlyRollupGrace.compareTo(Duration.ofHours(1)) >= 0) {
             throw new IllegalArgumentException("hourlyRollupGrace must be shorter than one hour");
-        }
-
-        if (this.hourlyRollupTrailingWindow.compareTo(Duration.ofHours(1)) < 0
-                || this.hourlyRollupTrailingWindow.compareTo(this.rawRetention) > 0) {
-
-            throw new IllegalArgumentException("hourlyRollupTrailingWindow must be at least one hour and no longer than rawRetention");
         }
 
         if (this.dailyRollupGrace.compareTo(Duration.ofDays(1)) >= 0) {

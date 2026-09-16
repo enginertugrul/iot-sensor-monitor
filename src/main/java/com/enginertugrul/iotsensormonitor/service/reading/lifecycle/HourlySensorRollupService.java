@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;
-import com.enginertugrul.iotsensormonitor.repository.RollupSensorProjection;
+import com.enginertugrul.iotsensormonitor.repository.RollupCandidateProjection;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.repository.SensorRollupCheckpointRepository;
 import org.slf4j.Logger;
@@ -45,29 +45,26 @@ public class HourlySensorRollupService {
     public HourlyRollupRunResult rollUpClosedHours(Instant eligibleCoveredUntil) {
 
         Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil);
-        List<RollupSensorProjection> sensors = sensorRepository.findSensorsForRollup();
+        List<RollupCandidateProjection> sensors = sensorRepository.findSensorsForRollup();
         RollupRunState run = new RollupRunState(lifecyclePolicy.getMaximumBucketsPerRun());
 
+
+        seedPendingHours(sensors,eligibleCoveredUntil,run);
 
         catchUpClosedHours(sensors, requiredEligibleCoveredUntil, run);
 
 
         run.bounded = run.isBudgetExhausted() && run.hasUnfinishedCatchUp(sensors);
 
-        refreshTrailingCoveredHours(sensors, requiredEligibleCoveredUntil, run);
 
-        Instant oldestCoveredUntil = checkpointRepository.findOldestCoveredUntilByStage(
-                        RollupStage.RAW_TO_HOURLY)
-                .orElse(null);
+        Instant oldestCoveredUntil = checkpointRepository.findOldestCoveredUntilByStage(RollupStage.RAW_TO_HOURLY).orElse(null);
 
-        HourlyRollupRunResult.Status status = determineRunStatus(run);
 
         return new HourlyRollupRunResult(
-                status,
+                determineRunStatus(run),
                 sensors.size(),
                 run.maximumBuckets - run.remainingBudget,
                 run.advancedBuckets,
-                run.refreshedBuckets,
                 run.sourceRowsSummarized,
                 run.failedSensors.size(),
                 run.bounded,
@@ -78,17 +75,32 @@ public class HourlySensorRollupService {
 
 
 
+    private void seedPendingHours(List<RollupCandidateProjection> sensors, Instant eligibleCoveredUntil,  RollupRunState run) {
+
+        for (RollupCandidateProjection sensor : sensors) {
+            Instant nextBucketStart = sensor.getHourlyCoveredUntil();
+            if (nextBucketStart == null) {
+                nextBucketStart = sensor.getFirstReadingAt().truncatedTo(ChronoUnit.HOURS);
+            }
+            if (!nextBucketStart.isBefore(eligibleCoveredUntil)) {
+                run.caughtUpSensors.add(sensor.getId());
+            }
+        }
+
+    }
 
 
 
-    private void catchUpClosedHours(List<RollupSensorProjection> sensors, Instant requiredEligibleCoveredUntil, RollupRunState run) {
+
+
+    private void catchUpClosedHours(List<RollupCandidateProjection> sensors, Instant requiredEligibleCoveredUntil, RollupRunState run) {
 
 
         do {
 
             run.madeProgress = false;
 
-            for (RollupSensorProjection sensor : sensors) {
+            for (RollupCandidateProjection sensor : sensors) {
 
                 if (run.isBudgetExhausted()) {
                     break;
@@ -111,7 +123,7 @@ public class HourlySensorRollupService {
 
 
 
-    private void attemptNextClosedHour(RollupSensorProjection sensor, Instant requiredEligibleCoveredUntil, RollupRunState run) {
+    private void attemptNextClosedHour(RollupCandidateProjection sensor, Instant requiredEligibleCoveredUntil, RollupRunState run) {
 
         Long sensorId = sensor.getId();
 
@@ -128,8 +140,6 @@ public class HourlySensorRollupService {
                 case UP_TO_DATE ->
                         run.recordUpToDate(sensorId,result);
 
-                case REFRESHED, NOT_COVERED ->
-                        throw new IllegalStateException("Unexpected hourly advance result " + result.status());
             }
 
         } catch (RuntimeException exception) {
@@ -151,98 +161,6 @@ public class HourlySensorRollupService {
 
 
 
-    private void refreshTrailingCoveredHours(List<RollupSensorProjection> sensors, Instant requiredEligibleCoveredUntil, RollupRunState run) {
-
-        Instant refreshThreshold = requiredEligibleCoveredUntil.minus(lifecyclePolicy.getHourlyRollupTrailingWindow() );
-
-
-        for (
-                Instant bucketStart = requiredEligibleCoveredUntil.minus(1, ChronoUnit.HOURS);
-
-                bucketStart.plus(1, ChronoUnit.HOURS).isAfter(refreshThreshold);
-
-                bucketStart = bucketStart.minus(1, ChronoUnit.HOURS)
-
-        ) {
-            Instant bucketEnd = bucketStart.plus(1, ChronoUnit.HOURS);
-
-            for (RollupSensorProjection sensor : sensors) {
-
-                if (!run.isRefreshCandidate(sensor.getId(), bucketStart, bucketEnd)) {
-
-                    continue;
-                }
-
-
-                if (run.isBudgetExhausted()) {
-                    run.bounded = true;
-                    return;
-                }
-
-
-                run.recordRefreshAttempt();
-
-                refreshOneCoveredHour(
-                        sensor,
-                        bucketStart,
-                        bucketEnd,
-                        requiredEligibleCoveredUntil,
-                        run);
-
-            }
-
-        }
-
-    }
-
-
-
-
-
-
-    private void refreshOneCoveredHour(
-            RollupSensorProjection sensor,
-            Instant bucketStart,
-            Instant bucketEnd,
-            Instant requiredEligibleCoveredUntil,
-            RollupRunState run
-    ) {
-
-        Long sensorId = sensor.getId();
-
-        try {
-
-            HourlyRollupBucketResult result = bucketProcessor.refreshCoveredHour(sensor, bucketStart, requiredEligibleCoveredUntil);
-
-            switch (result.status()) {
-
-                case REFRESHED ->
-                        run.recordRefreshed(result);
-
-
-                case NOT_COVERED ->
-                        logger.debug(
-                                "Hourly summary refresh skipped sensorId={} bucketStart={} reason={}",
-                                sensorId,
-                                bucketStart,
-                                result.status());
-
-                case ADVANCED, UP_TO_DATE -> throw new IllegalStateException("Unexpected hourly refresh result " + result.status());
-            }
-
-        } catch (RuntimeException exception) {
-
-            run.recordRefreshFailure(sensorId);
-
-            logger.error(
-                    "Hourly rollup refresh failed sensorId={} bucketStart={} bucketEnd={}",
-                    sensorId,
-                    bucketStart,
-                    bucketEnd,
-                    exception);
-        }
-    }
-
 
 
 
@@ -256,8 +174,7 @@ public class HourlySensorRollupService {
             return HourlyRollupRunResult.Status.BOUNDED;
         }
 
-        if (run.advancedBuckets == 0 && run.refreshedBuckets == 0) {
-
+        if (run.advancedBuckets == 0) {
             return HourlyRollupRunResult.Status.NO_WORK;
         }
 
@@ -288,7 +205,6 @@ public class HourlySensorRollupService {
         private int remainingBudget;
 
         private int advancedBuckets;
-        private int refreshedBuckets;
         private long sourceRowsSummarized;
 
         private boolean madeProgress;
@@ -299,7 +215,6 @@ public class HourlySensorRollupService {
 
         private final Map<Long,HourlyRollupBucketResult> latestProgress = new HashMap<>();
 
-        private final Set<SensorHour> advancedThisRun = new HashSet<>();
 
 
         private RollupRunState(int maximumBuckets) {
@@ -328,9 +243,9 @@ public class HourlySensorRollupService {
 
 
 
-        private boolean hasUnfinishedCatchUp(List<RollupSensorProjection> sensors) {
+        private boolean hasUnfinishedCatchUp(List<RollupCandidateProjection> sensors) {
 
-            for (RollupSensorProjection sensor : sensors) {
+            for (RollupCandidateProjection sensor : sensors) {
 
                 if (canAttemptCatchUp(sensor.getId())) {
                     return true;
@@ -350,8 +265,6 @@ public class HourlySensorRollupService {
             sourceRowsSummarized += result.sourceSampleCount();
 
             latestProgress.put(sensorId,result);
-
-            advancedThisRun.add(new SensorHour(sensorId, result.bucketStart()));
 
             madeProgress = true;
 
@@ -392,51 +305,8 @@ public class HourlySensorRollupService {
 
 
 
-        private boolean isRefreshCandidate(Long sensorId, Instant bucketStart, Instant bucketEnd) {
-
-            if (!caughtUpSensors.contains(sensorId)
-                    || failedSensors.contains(sensorId)) {
-
-                return false;
-            }
-
-            HourlyRollupBucketResult progress = latestProgress.get(sensorId);
-
-            return progress != null
-                    && progress.coverageStartedAt() != null
-                    && !bucketStart.isBefore(
-                    progress.coverageStartedAt())
-                    && !bucketEnd.isAfter(
-                    progress.coveredUntil())
-                    && !advancedThisRun.contains(
-                    new SensorHour(sensorId, bucketStart));
-        }
-
-
-
-        private void recordRefreshAttempt() {
-            remainingBudget--;
-        }
-
-
-
-        private void recordRefreshed(HourlyRollupBucketResult result) {
-
-            refreshedBuckets++;
-            sourceRowsSummarized += result.sourceSampleCount();
-        }
-
-
-
-        private void recordRefreshFailure(Long sensorId) {
-            failedSensors.add(sensorId);
-        }
     }
 
-
-
-    private record SensorHour(Long sensorId, Instant bucketStart) {
-    }
 
 
 

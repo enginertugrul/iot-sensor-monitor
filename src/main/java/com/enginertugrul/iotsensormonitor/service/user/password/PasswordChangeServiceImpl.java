@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.NoSuchElementException;
 
 
@@ -24,15 +25,17 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
     private final PasswordResetChallengeRepository passwordResetChallengeRepository;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
 
 
 
-    public PasswordChangeServiceImpl(AppUserRepository appUserRepository,PasswordResetChallengeRepository passwordResetChallengeRepository,PasswordEncoder passwordEncoder,ApplicationEventPublisher eventPublisher) {
+    public PasswordChangeServiceImpl(AppUserRepository appUserRepository,PasswordResetChallengeRepository passwordResetChallengeRepository,PasswordEncoder passwordEncoder,ApplicationEventPublisher eventPublisher, Clock clock) {
         this.appUserRepository = appUserRepository;
         this.passwordResetChallengeRepository = passwordResetChallengeRepository;
         this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
 
@@ -63,7 +66,7 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
         }
 
         passwordResetChallengeRepository.findByUserIdForUpdate(requiredUserId).ifPresent(passwordResetChallengeRepository::delete);
-        user.updatePasswordHash(passwordEncoder.encode(newPassword));
+        user.updatePasswordHash(passwordEncoder.encode(newPassword) , clock.instant());
         eventPublisher.publishEvent(new PasswordChangedEvent(requiredUserId));
 
         return PasswordChangeResult.PASSWORD_CHANGED;

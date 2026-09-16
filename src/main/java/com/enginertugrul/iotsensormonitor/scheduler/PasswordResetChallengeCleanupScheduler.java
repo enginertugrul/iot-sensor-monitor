@@ -5,9 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-
-
+import java.time.Clock;
 
 
 @Component
@@ -16,11 +14,13 @@ public class PasswordResetChallengeCleanupScheduler {
 
 
     private final PasswordResetChallengeRepository passwordResetChallengeRepository;
+    private final Clock clock;
 
 
 
-    public PasswordResetChallengeCleanupScheduler(PasswordResetChallengeRepository passwordResetChallengeRepository) {
+    public PasswordResetChallengeCleanupScheduler(PasswordResetChallengeRepository passwordResetChallengeRepository, Clock clock) {
         this.passwordResetChallengeRepository = passwordResetChallengeRepository;
+        this.clock = clock;
     }
 
 
@@ -29,7 +29,7 @@ public class PasswordResetChallengeCleanupScheduler {
     @Scheduled(fixedDelayString ="${app.security.password-recovery.cleanup-interval:PT1H}")
     @Transactional
     public void purgeExpiredChallenges() {
-        passwordResetChallengeRepository.deleteExpiredAtOrBefore(Instant.now());
+        passwordResetChallengeRepository.deleteExpiredAtOrBefore(clock.instant());
     }
 
 

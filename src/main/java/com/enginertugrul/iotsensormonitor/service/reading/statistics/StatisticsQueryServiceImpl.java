@@ -33,9 +33,10 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
     private final StatisticsResolutionPolicy resolutionPolicy;
     private final StatisticsAggregationPolicy aggregationPolicy;
     private final TemperatureUnitConverter temperatureUnitConverter;
+    private final Clock clock;
 
 
-    public StatisticsQueryServiceImpl(SensorRepository sensorRepository, StatisticsAvailabilityResolver availabilityResolver, StatisticsSeriesMaterializer seriesMaterializer, StatisticsQueryPolicy queryPolicy, StatisticsResolutionPolicy resolutionPolicy, StatisticsAggregationPolicy aggregationPolicy, TemperatureUnitConverter temperatureUnitConverter) {
+    public StatisticsQueryServiceImpl(SensorRepository sensorRepository, StatisticsAvailabilityResolver availabilityResolver, StatisticsSeriesMaterializer seriesMaterializer, StatisticsQueryPolicy queryPolicy, StatisticsResolutionPolicy resolutionPolicy, StatisticsAggregationPolicy aggregationPolicy, TemperatureUnitConverter temperatureUnitConverter, Clock clock) {
         this.sensorRepository = sensorRepository;
         this.availabilityResolver = availabilityResolver;
         this.seriesMaterializer = seriesMaterializer;
@@ -43,6 +44,7 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
         this.resolutionPolicy = resolutionPolicy;
         this.aggregationPolicy = aggregationPolicy;
         this.temperatureUnitConverter = temperatureUnitConverter;
+        this.clock = clock;
     }
 
 
@@ -220,7 +222,7 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
         Sensor sensor = sensorRepository.findByIdAndOwnerId(sensorId,ownerId)
                 .orElseThrow(SensorNotFoundException::new);
 
-        Instant asOf = Instant.now();
+        Instant asOf = clock.instant();
 
         StatisticsResolution effectiveResolution =
                 requestedResolution == null

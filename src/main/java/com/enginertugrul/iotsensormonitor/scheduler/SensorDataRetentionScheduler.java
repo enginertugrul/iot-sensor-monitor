@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -23,10 +24,12 @@ public class SensorDataRetentionScheduler {
 
     private final SensorDataRetentionService retentionService;
     private final SensorDataLifecyclePolicy lifecyclePolicy;
+    private final Clock clock;
 
-    public SensorDataRetentionScheduler(SensorDataRetentionService retentionService, SensorDataLifecyclePolicy lifecyclePolicy) {
+    public SensorDataRetentionScheduler(SensorDataRetentionService retentionService, SensorDataLifecyclePolicy lifecyclePolicy, Clock clock) {
         this.retentionService = retentionService;
         this.lifecyclePolicy = lifecyclePolicy;
+        this.clock = clock;
     }
 
 
@@ -35,7 +38,7 @@ public class SensorDataRetentionScheduler {
     public void purgeExpiredSensorData() {
 
         UUID runId = UUID.randomUUID();
-        Instant startedAt = Instant.now();
+        Instant startedAt = clock.instant();
 
         logger.info(
                 "Sensor data retention started runId={} currentTime={} deleteBatchSize={} maximumDeleteBatchesPerTier={} rawRetention={} hourlyRetention={} dailyRetention={}",
@@ -55,7 +58,7 @@ public class SensorDataRetentionScheduler {
             logTierResult(runId,result.hourlySummaries());
             logTierResult(runId,result.dailySummaries());
 
-            Instant completedAt = Instant.now();
+            Instant completedAt = clock.instant();
 
             logger.info(
                     "Sensor data retention finished runId={} status={} sensors={} operationsAttempted={} deleteBatchesAttempted={} deletionBatches={} rowsDeleted={} oldestExistingRawToHourlyCoveredUntil={} oldestExistingHourlyToDailyCoveredUntil={} duration={}",
@@ -70,7 +73,7 @@ public class SensorDataRetentionScheduler {
                     result.oldestHourlyToDailyCoveredUntil(),
                     nonNegativeDuration(startedAt,completedAt));
         } catch (RuntimeException exception) {
-            Instant failedAt = Instant.now();
+            Instant failedAt = clock.instant();
 
             logger.error(
                     "Sensor data retention failed runId={} duration={} retry=NEXT_SCHEDULED_RUN",

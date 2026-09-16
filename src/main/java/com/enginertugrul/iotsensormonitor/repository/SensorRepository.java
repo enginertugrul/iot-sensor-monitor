@@ -21,16 +21,35 @@ public interface SensorRepository extends JpaRepository<Sensor, Long> {
     List<Sensor> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
 
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-        SELECT sensor.id AS id,
-               sensor.type AS type,
-               sensor.timezone AS timezone,
-               sensor.firstReadingAt AS firstReadingAt
+        SELECT sensor
         FROM Sensor sensor
-        WHERE sensor.firstReadingAt IS NOT NULL
-        ORDER BY sensor.id
+        WHERE sensor.id = :sensorId
         """)
-    List<RollupSensorProjection> findSensorsForRollup();
+    Optional<Sensor> findByIdForUpdate(@Param("sensorId") Long sensorId);
+
+
+
+    @Query("""
+    SELECT sensor.id AS id,
+           sensor.timezone AS timezone,
+           sensor.firstReadingAt AS firstReadingAt,
+           hourlyCheckpoint.coveredUntil AS hourlyCoveredUntil,
+           dailyCheckpoint.coveredUntil AS dailyCoveredUntil
+    FROM Sensor sensor
+    LEFT JOIN SensorRollupCheckpoint hourlyCheckpoint
+        ON hourlyCheckpoint.sensor = sensor
+        AND hourlyCheckpoint.stage = com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage.RAW_TO_HOURLY
+    LEFT JOIN SensorRollupCheckpoint dailyCheckpoint
+        ON dailyCheckpoint.sensor = sensor
+        AND dailyCheckpoint.stage = com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage.HOURLY_TO_DAILY
+    WHERE sensor.firstReadingAt IS NOT NULL
+    ORDER BY sensor.id
+    """)
+    List<RollupCandidateProjection> findSensorsForRollup();
 
 
 

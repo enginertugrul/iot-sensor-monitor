@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,10 +24,12 @@ public class HourlySensorRollupScheduler {
 
     private final HourlySensorRollupService hourlySensorRollupService;
     private final SensorDataLifecyclePolicy lifecyclePolicy;
+    private final Clock clock;
 
-    public HourlySensorRollupScheduler(HourlySensorRollupService hourlySensorRollupService, SensorDataLifecyclePolicy lifecyclePolicy) {
+    public HourlySensorRollupScheduler(HourlySensorRollupService hourlySensorRollupService, SensorDataLifecyclePolicy lifecyclePolicy, Clock clock) {
         this.hourlySensorRollupService = hourlySensorRollupService;
         this.lifecyclePolicy = lifecyclePolicy;
+        this.clock = clock;
     }
 
 
@@ -34,7 +37,7 @@ public class HourlySensorRollupScheduler {
     @Scheduled(fixedDelayString = "${app.sensor-data.lifecycle.hourly-rollup-interval:PT5M}")
     public void rollUpClosedUtcHours() {
 
-        Instant startedAt = Instant.now();
+        Instant startedAt = clock.instant();
 
         Instant eligibleCoveredUntil = startedAt
                 .minus(lifecyclePolicy.getHourlyRollupGrace())
@@ -49,19 +52,18 @@ public class HourlySensorRollupScheduler {
 
             HourlyRollupRunResult result = hourlySensorRollupService.rollUpClosedHours(eligibleCoveredUntil);
 
-            Instant completedAt = Instant.now();
+            Instant completedAt = clock.instant();
 
             Duration duration = nonNegativeDuration(startedAt, completedAt);
 
             Duration rollupLag = calculateRollupLag(result.oldestCoveredUntil(), eligibleCoveredUntil);
 
             logger.info(
-                    "Hourly sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} refreshedBuckets={} sourceRowsSummarized={} failedSensors={} bounded={} eligibleCoveredUntil={} oldestCoveredUntil={} rollupLag={} duration={}",
+                    "Hourly sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} sourceRowsSummarized={} failedSensors={} bounded={} eligibleCoveredUntil={} oldestCoveredUntil={} rollupLag={} duration={}",
                     result.status(),
                     result.sensorCount(),
                     result.attemptedBuckets(),
                     result.advancedBuckets(),
-                    result.refreshedBuckets(),
                     result.sourceRowsSummarized(),
                     result.failedSensors(),
                     result.bounded(),
@@ -70,7 +72,7 @@ public class HourlySensorRollupScheduler {
                     rollupLag,
                     duration);
         } catch (RuntimeException exception) {
-            Instant failedAt = Instant.now();
+            Instant failedAt = clock.instant();
 
             logger.error(
                     "Hourly sensor rollup failed eligibleCoveredUntil={} duration={}",

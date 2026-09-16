@@ -5,14 +5,14 @@ import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorRollupCheckpoint;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
+import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.repository.*;
 import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
@@ -24,18 +24,20 @@ import java.util.Optional;
 @Service
 public class HourlySensorRollupBucketProcessor {
 
-    @PersistenceContext
-    private EntityManager entityManager;
 
+    private final SensorRepository sensorRepository;
     private final SensorReadingRepository sensorReadingRepository;
     private final HourlySensorSummaryRepository hourlySensorSummaryRepository;
     private final SensorRollupCheckpointRepository checkpointRepository;
+    private final Clock clock;
 
 
-    public HourlySensorRollupBucketProcessor( SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository) {
+    public HourlySensorRollupBucketProcessor(SensorRepository sensorRepository, SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, SensorRollupCheckpointRepository checkpointRepository, Clock clock) {
+        this.sensorRepository = sensorRepository;
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.checkpointRepository = checkpointRepository;
+        this.clock = clock;
     }
 
 
@@ -45,149 +47,54 @@ public class HourlySensorRollupBucketProcessor {
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public HourlyRollupBucketResult advanceNextClosedHour(RollupSensorProjection sensor, Instant eligibleCoveredUntil) {
+    public HourlyRollupBucketResult advanceNextClosedHour(RollupCandidateProjection sensorSnapshot, Instant eligibleCoveredUntil) {
 
-        Objects.requireNonNull(sensor,"sensor must not be null");
-        Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil, "eligibleCoveredUntil");
-
+        Sensor sensor = lockSensor(sensorSnapshot);
+        Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil,"eligibleCoveredUntil");
         Long sensorId = sensor.getId();
-
-
         SensorRollupCheckpoint checkpoint = loadOrInitializeCheckpoint(sensor);
 
-
         if (!checkpoint.getCoveredUntil().isBefore(requiredEligibleCoveredUntil)) {
-            return upToDateResult(sensorId, checkpoint);
+            return upToDateResult(sensorId,checkpoint);
         }
-
 
         Instant bucketStart = checkpoint.getCoveredUntil();
         Instant bucketEnd = bucketStart.plus(1,ChronoUnit.HOURS);
-
         if (bucketEnd.isAfter(requiredEligibleCoveredUntil)) {
-            return upToDateResult(sensorId, checkpoint);
+            return upToDateResult(sensorId,checkpoint);
         }
 
-        Instant attemptedAt = notBefore(Instant.now(), checkpoint.getUpdatedAt());
-
+        Instant attemptedAt = notBefore(clock.instant(),checkpoint.getUpdatedAt());
         attemptedAt = notBefore(attemptedAt,bucketEnd);
         checkpoint.recordAttempt(bucketStart,attemptedAt);
 
-        RawSensorReadingAggregateProjection rawAggregate =
-                sensorReadingRepository.aggregateForSummaryRange(
-                        sensorId,
-                        bucketStart,
-                        bucketEnd);
+        RawSensorReadingAggregateProjection rawAggregate = sensorReadingRepository.aggregateForSummaryRange(sensorId,bucketStart,bucketEnd);
 
-        SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
+        SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(sensor.getType(),rawAggregate);
 
+        Instant completedAt = notBefore(clock.instant(),attemptedAt);
+        completedAt = upsertHourlySummaryDuringAdvance(sensorId, bucketStart, aggregate, completedAt);
 
-        Instant completedAt = notBefore(Instant.now(),attemptedAt);
-
-
-        completedAt = upsertHourlySummaryDuringAdvance(
-                sensorId,
-                bucketStart,
-                aggregate,
-                completedAt);
-
-        checkpoint.advanceContiguously(bucketStart, bucketEnd,completedAt);
-
+        checkpoint.advanceContiguously(bucketStart,bucketEnd,completedAt);
         checkpointRepository.saveAndFlush(checkpoint);
 
         return new HourlyRollupBucketResult(
-                HourlyRollupBucketResult.Status.ADVANCED,
-                sensorId,
-                bucketStart,
-                bucketEnd,
-                checkpoint.getCoverageStartedAt(),
-                checkpoint.getCoveredUntil(),
-                aggregate.getSourceSampleCount());
+                HourlyRollupBucketResult.Status.ADVANCED, sensorId, bucketStart, bucketEnd,
+                checkpoint.getCoverageStartedAt(), checkpoint.getCoveredUntil(), aggregate.getSourceSampleCount());
     }
 
 
 
 
 
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public HourlyRollupBucketResult refreshCoveredHour(RollupSensorProjection sensor, Instant bucketStart, Instant eligibleCoveredUntil) {
-
-        Objects.requireNonNull(sensor, "sensor must not be null");
-        Long sensorId = sensor.getId();
-
-
-        Instant requiredBucketStart = requireUtcHourBoundary(bucketStart, "bucketStart");
-        Instant requiredEligibleCoveredUntil = requireUtcHourBoundary(eligibleCoveredUntil, "eligibleCoveredUntil");
-        Instant bucketEnd = requiredBucketStart.plus(1,ChronoUnit.HOURS);
-
-        Optional<SensorRollupCheckpoint> checkpointCandidate =
-                checkpointRepository.findBySensorIdAndStageForUpdate(
-                        sensorId,
-                        RollupStage.RAW_TO_HOURLY);
-
-        if (checkpointCandidate.isEmpty()) {
-            return new HourlyRollupBucketResult(
-                    HourlyRollupBucketResult.Status.NOT_COVERED,
-                    sensorId,
-                    requiredBucketStart,
-                    bucketEnd,
-                    null,
-                    null,
-                    0);
-        }
-
-        SensorRollupCheckpoint checkpoint = checkpointCandidate.get();
-
-        boolean covered = !requiredBucketStart.isBefore(
-                checkpoint.getCoverageStartedAt())
-                && !bucketEnd.isAfter(checkpoint.getCoveredUntil())
-                && !bucketEnd.isAfter(requiredEligibleCoveredUntil);
-
-        if (!covered) {
-            return new HourlyRollupBucketResult(
-                    HourlyRollupBucketResult.Status.NOT_COVERED,
-                    sensorId,
-                    requiredBucketStart,
-                    bucketEnd,
-                    checkpoint.getCoverageStartedAt(),
-                    checkpoint.getCoveredUntil(),
-                    0);
-        }
-
-
-        HourlySensorSummary summary = hourlySensorSummaryRepository
-                .findBySensorIdAndBucketStart(sensorId, requiredBucketStart)
-                .orElseThrow(() -> new IllegalStateException("Checkpoint covers an hourly bucket with no summary row"));
-
-
-        RawSensorReadingAggregateProjection rawAggregate =
-                sensorReadingRepository.aggregateForSummaryRange(
-                        sensorId,
-                        requiredBucketStart,
-                        bucketEnd);
-
-        SensorSummaryAggregate aggregate =
-                SensorSummaryAggregator.fromRawReadings(sensor.getType(), rawAggregate);
-
-
-        Instant refreshedAt = notBefore(Instant.now(),bucketEnd);
-        refreshedAt = notBefore(refreshedAt,checkpoint.getUpdatedAt());
-        refreshedAt = notBefore(refreshedAt,summary.getRefreshedAt());
-
-        summary.refresh(aggregate,refreshedAt);
-        hourlySensorSummaryRepository.saveAndFlush(summary);
-
-
-        return new HourlyRollupBucketResult(
-                HourlyRollupBucketResult.Status.REFRESHED,
-                sensorId,
-                requiredBucketStart,
-                bucketEnd,
-                checkpoint.getCoverageStartedAt(),
-                checkpoint.getCoveredUntil(),
-                aggregate.getSourceSampleCount());
+    private Sensor lockSensor(RollupCandidateProjection sensorSnapshot) {
+        Objects.requireNonNull(sensorSnapshot,"sensor must not be null");
+        return sensorRepository.findByIdForUpdate(sensorSnapshot.getId()).orElseThrow(SensorNotFoundException::new);
     }
+
+
+
+
 
 
 
@@ -212,7 +119,7 @@ public class HourlySensorRollupBucketProcessor {
 
 
 
-    private SensorRollupCheckpoint loadOrInitializeCheckpoint(RollupSensorProjection sensor) {
+    private SensorRollupCheckpoint loadOrInitializeCheckpoint(Sensor sensor) {
 
         return checkpointRepository.findBySensorIdAndStageForUpdate(sensor.getId(), RollupStage.RAW_TO_HOURLY)
                 .orElseGet(() -> initializeCheckpoint(sensor));
@@ -224,15 +131,15 @@ public class HourlySensorRollupBucketProcessor {
 
 
 
-    private SensorRollupCheckpoint initializeCheckpoint(RollupSensorProjection sensor) {
+    private SensorRollupCheckpoint initializeCheckpoint(Sensor sensor) {
 
         Instant firstReadingAt = sensor.getFirstReadingAt();
 
         Instant coverageStartedAt = firstReadingAt.truncatedTo(ChronoUnit.HOURS);
 
-        Instant initializedAt = notBefore(Instant.now(), coverageStartedAt);
+        Instant initializedAt = notBefore(clock.instant(), coverageStartedAt);
 
-        Sensor sensorReference = entityManager.getReference(Sensor.class, sensor.getId());
+        Sensor sensorReference = sensorRepository.getReferenceById(sensor.getId());
 
         SensorRollupCheckpoint checkpoint =
                 SensorRollupCheckpoint.initialize(
@@ -262,7 +169,7 @@ public class HourlySensorRollupBucketProcessor {
 
             summary.refresh(aggregate,effectiveCompletedAt);
         } else {
-            Sensor sensor = entityManager.getReference(Sensor.class, sensorId);
+            Sensor sensor = sensorRepository.getReferenceById(sensorId);
             summary = HourlySensorSummary.create(sensor, bucketStart, aggregate, effectiveCompletedAt);
         }
 
