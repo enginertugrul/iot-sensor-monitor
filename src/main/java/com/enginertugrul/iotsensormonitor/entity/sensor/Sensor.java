@@ -147,15 +147,31 @@ public class Sensor {
 
 
 
+
+
+    public boolean wouldUpdateFirstReading(Instant candidate) {
+        Objects.requireNonNull(candidate,"candidate must not be null");
+        return firstReadingAt == null || candidate.isBefore(firstReadingAt);
+    }
+
+
+
+
     public void recordFirstReading(Instant recordedAt,Instant updatedAt) {
-
         Objects.requireNonNull(recordedAt,"recordedAt must not be null");
-
-        if (firstReadingAt == null) {
+        Objects.requireNonNull(updatedAt,"updatedAt must not be null");
+        if (recordedAt.isBefore(createdAt)) {
+            throw new IllegalArgumentException("recordedAt must not be before sensor creation");
+        }
+        if (wouldUpdateFirstReading(recordedAt)) {
             this.firstReadingAt = recordedAt;
             this.updatedAt = updatedAt;
         }
     }
+
+
+
+
 
     public boolean hasRecordedReadings() {
         return firstReadingAt != null;

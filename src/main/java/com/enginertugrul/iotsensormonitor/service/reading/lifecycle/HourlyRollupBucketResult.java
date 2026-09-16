@@ -15,9 +15,7 @@ public record HourlyRollupBucketResult(
     public enum Status {
 
         ADVANCED,
-        REFRESHED,
         UP_TO_DATE,
-        NOT_COVERED,
     }
 
 }

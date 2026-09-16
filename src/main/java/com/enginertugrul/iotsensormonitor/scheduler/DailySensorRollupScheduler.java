@@ -49,12 +49,11 @@ public class DailySensorRollupScheduler {
             Instant completedAt = clock.instant();
 
             logger.info(
-                    "Daily sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} refreshedBuckets={} sourceRowsSummarized={} hourlySummaryRowsConsumed={} rawBoundaryRowsSummarized={} waitingSensors={} failedSensors={} bounded={} eligibleBucketEnd={} oldestCoveredUntil={} maximumRollupLag={} duration={}",
+                    "Daily sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} sourceRowsSummarized={} hourlySummaryRowsConsumed={} rawBoundaryRowsSummarized={} waitingSensors={} failedSensors={} bounded={} eligibleBucketEnd={} oldestCoveredUntil={} maximumRollupLag={} duration={}",
                     result.status(),
                     result.sensorCount(),
                     result.attemptedBuckets(),
                     result.advancedBuckets(),
-                    result.refreshedBuckets(),
                     result.sourceRowsSummarized(),
                     result.hourlySummaryRowsConsumed(),
                     result.rawBoundaryRowsSummarized(),

@@ -7,7 +7,6 @@ public record HourlyRollupRunResult(
         int sensorCount,
         int attemptedBuckets,
         int advancedBuckets,
-        int refreshedBuckets,
         long sourceRowsSummarized,
         int failedSensors,
         boolean bounded,

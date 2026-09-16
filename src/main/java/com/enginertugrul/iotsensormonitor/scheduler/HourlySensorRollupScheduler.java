@@ -59,12 +59,11 @@ public class HourlySensorRollupScheduler {
             Duration rollupLag = calculateRollupLag(result.oldestCoveredUntil(), eligibleCoveredUntil);
 
             logger.info(
-                    "Hourly sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} refreshedBuckets={} sourceRowsSummarized={} failedSensors={} bounded={} eligibleCoveredUntil={} oldestCoveredUntil={} rollupLag={} duration={}",
+                    "Hourly sensor rollup finished status={} sensors={} attemptedBuckets={} advancedBuckets={} sourceRowsSummarized={} failedSensors={} bounded={} eligibleCoveredUntil={} oldestCoveredUntil={} rollupLag={} duration={}",
                     result.status(),
                     result.sensorCount(),
                     result.attemptedBuckets(),
                     result.advancedBuckets(),
-                    result.refreshedBuckets(),
                     result.sourceRowsSummarized(),
                     result.failedSensors(),
                     result.bounded(),
