@@ -59,6 +59,10 @@ public class SensorReadingIngestionService {
         ingestReading(sensorToken,SensorType.MOTION,recordedAt,(sensor,timestamp) -> SensorReading.motion(sensor,motionDetected,timestamp));
     }
 
+
+
+
+
     private void ingestReading(String sensorToken, SensorType expectedType, Instant recordedAt, BiFunction<Sensor,Instant,SensorReading> readingFactory) {
 
         Sensor sensor = sensorIngestionAccessService.requireActiveSensor(sensorToken,expectedType);
@@ -82,6 +86,8 @@ public class SensorReadingIngestionService {
         readingRepository.save(reading);
         alertEvaluationService.evaluateReading(reading);
     }
+
+
 
 
 

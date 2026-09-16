@@ -140,15 +140,15 @@ public class AlertRule {
 
     public boolean isTriggeredBy(SensorReading reading) {
 
-        SensorReading requiredReading = Objects.requireNonNull(reading,"sensorReading must not be null");
+        Objects.requireNonNull(reading,"sensorReading must not be null");
 
-        if(!belongsToSameSensor(requiredReading)) {
+        if(!belongsToSameSensor(reading)) {
             return false;
         }
 
         return switch (ruleType) {
-            case NUMERIC_THRESHOLD -> matchesNumericReading(requiredReading);
-            case EVENT_DETECTED ->  matchesEventReading(requiredReading);
+            case NUMERIC_THRESHOLD -> matchesNumericReading(reading);
+            case EVENT_DETECTED ->  matchesEventReading(reading);
         };
 
     }
@@ -199,6 +199,7 @@ public class AlertRule {
 
 
     private boolean belongsToSameSensor(SensorReading reading) {
+
         Sensor readingSensor = Objects.requireNonNull(reading.getSensor(), "reading sensor must not be null");
         if (sensor == readingSensor) {
             return true;
@@ -207,7 +208,7 @@ public class AlertRule {
         Long ruleSensorId = sensor.getId();
         Long readingSensorId = readingSensor.getId();
 
-        return ruleSensorId.equals(readingSensorId);
+        return ruleSensorId != null && ruleSensorId.equals(readingSensorId);
     }
 
 
