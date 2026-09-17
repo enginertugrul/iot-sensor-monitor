@@ -10,6 +10,7 @@ import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.repository.DailySensorSummaryRepository;
 import com.enginertugrul.iotsensormonitor.repository.HourlySensorSummaryRepository;
 import com.enginertugrul.iotsensormonitor.repository.SensorReadingRepository;
+import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
@@ -32,19 +33,16 @@ public class StatisticsSeriesMaterializer {
     private final DailySensorSummaryRepository dailySensorSummaryRepository;
     private final StatisticsQueryPolicy queryPolicy;
     private final StatisticsResolutionPolicy resolutionPolicy;
-    private final StatisticsAggregationPolicy aggregationPolicy;
 
 
 
-    public StatisticsSeriesMaterializer(SensorReadingRepository sensorReadingRepository, HourlySensorSummaryRepository hourlySensorSummaryRepository, DailySensorSummaryRepository dailySensorSummaryRepository, StatisticsQueryPolicy queryPolicy, StatisticsResolutionPolicy resolutionPolicy, StatisticsAggregationPolicy aggregationPolicy) {
+    public StatisticsSeriesMaterializer(SensorReadingRepository sensorReadingRepository,HourlySensorSummaryRepository hourlySensorSummaryRepository,DailySensorSummaryRepository dailySensorSummaryRepository,StatisticsQueryPolicy queryPolicy,StatisticsResolutionPolicy resolutionPolicy) {
         this.sensorReadingRepository = sensorReadingRepository;
         this.hourlySensorSummaryRepository = hourlySensorSummaryRepository;
         this.dailySensorSummaryRepository = dailySensorSummaryRepository;
         this.queryPolicy = queryPolicy;
         this.resolutionPolicy = resolutionPolicy;
-        this.aggregationPolicy = aggregationPolicy;
     }
-
 
     StatisticsMaterializedSeries materialize(
             Sensor sensor,
@@ -94,6 +92,9 @@ public class StatisticsSeriesMaterializer {
         };
     }
 
+
+
+
     private StatisticsMaterializedExport materializeSummaryExportAutomatically(
             Sensor sensor,
             StatisticsQueryWindow window,
@@ -103,8 +104,8 @@ public class StatisticsSeriesMaterializer {
         long hourlyRowCount = countHourlyBuckets(window.evaluated());
 
         if (resolutionPolicy.fitsCsvExportRowLimit(hourlyRowCount)) {
-            List<StatisticsDataPoint> hourlyRows =
-                    buildHourlyPoints(sensor,window,availability);
+
+            List<StatisticsDataPoint> hourlyRows = buildHourlyPoints(sensor,window,availability);
 
             requireExpectedExportRowCount(hourlyRows,hourlyRowCount);
 
@@ -114,8 +115,7 @@ public class StatisticsSeriesMaterializer {
 
             if (hourlyTierCoversRange) {
                 return new StatisticsMaterializedExport(
-                        StatisticsResolution.HOURLY,
-                        hourlyRows);
+                        StatisticsResolution.HOURLY, hourlyRows);
             }
         }
 
@@ -126,6 +126,9 @@ public class StatisticsSeriesMaterializer {
                 StatisticsResolution.DAILY,
                 availability);
     }
+
+
+
 
     private StatisticsMaterializedExport materializeSummaryExportAtResolution(
             Sensor sensor,
@@ -155,13 +158,12 @@ public class StatisticsSeriesMaterializer {
         return new StatisticsMaterializedExport(resolution,rows);
     }
 
-    private void requireExpectedExportRowCount(
-            List<StatisticsDataPoint> rows,
-            long expectedRowCount
-    ) {
+
+
+    private void requireExpectedExportRowCount(List<StatisticsDataPoint> rows, long expectedRowCount) {
+
         if (rows.size() != expectedRowCount) {
-            throw new IllegalStateException(
-                    "Materialized summary export row count differs from its projected row count");
+            throw new IllegalStateException("Materialized summary export row count differs from its projected row count");
         }
     }
 
@@ -196,8 +198,7 @@ public class StatisticsSeriesMaterializer {
 
         if (resolutionPolicy.fitsPointBudget(hourlyPointCount)) {
 
-            List<StatisticsDataPoint> hourlyPoints =
-                    buildHourlyPoints(sensor,window,availability);
+            List<StatisticsDataPoint> hourlyPoints = buildHourlyPoints(sensor,window,availability);
 
             boolean hourlyTierCoversRange =
                     !containsStatus(hourlyPoints,StatisticsPointStatus.EXPIRED)
@@ -259,7 +260,7 @@ public class StatisticsSeriesMaterializer {
             points.add(new RawStatisticsDataPoint(
                     reading.getId(),
                     reading.getRecordedAt(),
-                    aggregationPolicy.fromReading(sensor.getType(),reading)));
+                    SensorSummaryAggregator.fromReading(sensor.getType(),reading)));
         }
 
         return new StatisticsMaterializedSeries(
@@ -617,7 +618,7 @@ public class StatisticsSeriesMaterializer {
                     unavailableStatus);
         }
 
-        SensorSummaryAggregate aggregate = aggregationPolicy.combine(
+        SensorSummaryAggregate aggregate = SensorSummaryAggregator.combine(
                 sensor.getType(),
                 parts.stream().map(SourcePart::aggregate).toList());
 
@@ -650,7 +651,7 @@ public class StatisticsSeriesMaterializer {
         StatisticsTierAvailability hourlyAvailability = availability.hourly();
 
         if (history.isKnownEmptyUntil(hour.endExclusive())) {
-            return SourcePart.available(aggregationPolicy.empty(sensor.getType()));
+            return SourcePart.available(SensorSummaryAggregator.empty(sensor.getType()));
         }
 
         if (summary != null && hourlyAvailability.verifies(hour)) {
@@ -723,7 +724,7 @@ public class StatisticsSeriesMaterializer {
     ) {
 
         if (history.isKnownEmptyUntil(requestedSource.endExclusive())) {
-            return SourcePart.available(aggregationPolicy.empty(sensor.getType()));
+            return SourcePart.available(SensorSummaryAggregator.empty(sensor.getType()));
         }
 
         Instant dataStart = history
@@ -740,7 +741,7 @@ public class StatisticsSeriesMaterializer {
                 .orElse(false);
 
         if (rawCoversSource) {
-            SensorSummaryAggregate aggregate = aggregationPolicy.fromRawReadings(
+            SensorSummaryAggregate aggregate = SensorSummaryAggregator.fromRawReadings(
                     sensor.getType(),
                     sensorReadingRepository.aggregateForSummaryRange(
                             sensor.getId(),
@@ -780,7 +781,7 @@ public class StatisticsSeriesMaterializer {
                     localDateEndExclusive,
                     timeZoneId,
                     StatisticsPointStatus.NO_SAMPLES,
-                    aggregationPolicy.empty(sensor.getType()),
+                    SensorSummaryAggregator.empty(sensor.getType()),
                     null,
                     null);
         }

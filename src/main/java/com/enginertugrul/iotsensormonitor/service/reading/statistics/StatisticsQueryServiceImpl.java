@@ -1,8 +1,6 @@
 package com.enginertugrul.iotsensormonitor.service.reading.statistics;
 
 import com.enginertugrul.iotsensormonitor.dto.statistics.*;
-import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
@@ -10,7 +8,7 @@ import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iotsensormonitor.exception.InvalidStatisticsQueryException;
 import com.enginertugrul.iotsensormonitor.exception.SensorNotFoundException;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
-import com.enginertugrul.iotsensormonitor.support.temperature.TemperatureUnitConverter;
+import com.enginertugrul.iotsensormonitor.service.reading.SensorSummaryAggregator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,19 +29,16 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
     private final StatisticsSeriesMaterializer seriesMaterializer;
     private final StatisticsQueryPolicy queryPolicy;
     private final StatisticsResolutionPolicy resolutionPolicy;
-    private final StatisticsAggregationPolicy aggregationPolicy;
-    private final TemperatureUnitConverter temperatureUnitConverter;
+    private final StatisticsResponseMapper responseMapper;
     private final Clock clock;
 
-
-    public StatisticsQueryServiceImpl(SensorRepository sensorRepository, StatisticsAvailabilityResolver availabilityResolver, StatisticsSeriesMaterializer seriesMaterializer, StatisticsQueryPolicy queryPolicy, StatisticsResolutionPolicy resolutionPolicy, StatisticsAggregationPolicy aggregationPolicy, TemperatureUnitConverter temperatureUnitConverter, Clock clock) {
+    public StatisticsQueryServiceImpl(SensorRepository sensorRepository,StatisticsAvailabilityResolver availabilityResolver,StatisticsSeriesMaterializer seriesMaterializer,StatisticsQueryPolicy queryPolicy,StatisticsResolutionPolicy resolutionPolicy,StatisticsResponseMapper responseMapper,Clock clock) {
         this.sensorRepository = sensorRepository;
         this.availabilityResolver = availabilityResolver;
         this.seriesMaterializer = seriesMaterializer;
         this.queryPolicy = queryPolicy;
         this.resolutionPolicy = resolutionPolicy;
-        this.aggregationPolicy = aggregationPolicy;
-        this.temperatureUnitConverter = temperatureUnitConverter;
+        this.responseMapper = responseMapper;
         this.clock = clock;
     }
 
@@ -118,15 +113,11 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
         boolean fullyCovered = rangeConditions.fullyCovered();
 
         List<StatisticsSeriesPointDTO> points = displayPoints.stream()
-                .map(point -> toPointDTO(
-                        sensor.getType(),
-                        point,
-                        displayGranularity,
-                        effectiveTemperatureUnit))
+                .map(point -> responseMapper.toPointDTO(sensor.getType(),point,displayGranularity,effectiveTemperatureUnit))
                 .toList();
 
         return new SensorStatisticsSeriesDTO(
-                toSensorDTO(sensor,effectiveTemperatureUnit),
+                responseMapper.toSensorDTO(sensor,effectiveTemperatureUnit),
                 window.requested().startInclusive(),
                 window.requested().endExclusive(),
                 window.evaluated().startInclusive(),
@@ -139,8 +130,8 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
                 rangeConditions,
                 fullyCovered,
                 queryPolicy.getChartPointBudget(),
-                toCsvExportAvailabilityDTO(materialized),
-                toCoverageDTO(availability),
+                responseMapper.toCsvExportAvailabilityDTO(materialized,queryPolicy.getCsvExportRowLimit()),
+                responseMapper.toCoverageDTO(availability),
                 periodMetrics,
                 points);
     }
@@ -192,19 +183,18 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
                             "Summary export resolved to a non-summary resolution");
                 };
 
-        List<StatisticsSeriesPointDTO> rows =
-                materialized.rows().stream()
-                        .map(point -> toPointDTO(
-                                request.sensor().getType(),
+        List<StatisticsSeriesPointDTO> rows = materialized.rows().stream()
+                .map(point ->
+                        responseMapper.toPointDTO(request.sensor().getType(),
                                 point,
                                 granularity,
                                 request.temperatureUnit()))
-                        .toList();
+                .toList();
 
         StatisticsQueryWindow window = request.window();
 
         return new SensorStatisticsExportDTO(
-                toSensorDTO(request.sensor(),request.temperatureUnit()),
+                responseMapper.toSensorDTO(request.sensor(),request.temperatureUnit()),
                 window.evaluated().startInclusive(),
                 window.evaluated().endExclusive(),
                 resolvedResolution,
@@ -257,84 +247,9 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
 
 
 
-    private StatisticsCsvExportAvailabilityDTO toCsvExportAvailabilityDTO(StatisticsMaterializedSeries materialized) {
-
-        StatisticsResolution resolution = materialized.resolvedResolution();
-
-        boolean summaryResolution = resolution == StatisticsResolution.HOURLY || resolution == StatisticsResolution.DAILY;
-
-        int rowCount = summaryResolution
-                        ? materialized.sourcePoints().size()
-                        : 0;
-
-        int rowLimit = queryPolicy.getCsvExportRowLimit();
-
-        return new StatisticsCsvExportAvailabilityDTO(
-                summaryResolution && rowCount <= rowLimit,
-                rowCount,
-                rowLimit);
-    }
 
 
 
-
-
-    private StatisticsCoverageDTO toCoverageDTO(StatisticsAvailabilitySnapshot availability) {
-
-        return new StatisticsCoverageDTO(
-                toTierCoverageDTO(availability.raw()),
-                toTierCoverageDTO(availability.hourly()),
-                toTierCoverageDTO(availability.daily()));
-    }
-
-
-
-
-    private StatisticsTierCoverageDTO toTierCoverageDTO(StatisticsTierAvailability availability) {
-
-        Instant representedFrom = availability.representedCoverage()
-                .map(InstantRange::startInclusive)
-                .orElse(null);
-
-        Instant representedUntil = availability.representedCoverage()
-                .map(InstantRange::endExclusive)
-                .orElse(null);
-
-        StatisticsRollupProgressDTO rollupProgressDTO = availability
-                .rollupProgress()
-                .map(this::toRollupProgressDTO)
-                .orElse(null);
-
-        return new StatisticsTierCoverageDTO(
-                availability.resolution(),
-                availability.retention().retentionWindow().startInclusive(),
-                representedFrom,
-                representedUntil,
-                rollupProgressDTO);
-    }
-
-
-
-
-    private StatisticsRollupProgressDTO toRollupProgressDTO(StatisticsRollupProgress progress) {
-
-        Instant verifiedFrom = progress.verifiedCoverage()
-                .map(InstantRange::startInclusive)
-                .orElse(null);
-
-        Instant safeThrough = progress.verifiedCoverage()
-                .map(InstantRange::endExclusive)
-                .orElse(null);
-
-        long lagSeconds = progress.lag().getSeconds();
-
-        return new StatisticsRollupProgressDTO(
-                verifiedFrom,
-                safeThrough,
-                progress.rollupDueUntilExclusive(),
-                lagSeconds,
-                lagSeconds > 0);
-    }
 
 
 
@@ -401,7 +316,7 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
 
         SensorSummaryAggregate aggregate = availableAggregates.isEmpty()
                 ? null
-                : aggregationPolicy.combine(sensorType,availableAggregates);
+                : SensorSummaryAggregator.combine(sensorType,availableAggregates);
 
         StatisticsPointStatus status = determineCombinedPointStatus(group,aggregate);
 
@@ -502,47 +417,20 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
 
 
 
-    private StatisticsPeriodMetricsDTO buildPeriodMetrics(
-            SensorType sensorType,
-            List<StatisticsDataPoint> sourcePoints,
-            StatisticsRangeConditionsDTO conditions,
-            TemperatureUnit temperatureUnit
-    ) {
-
+    private StatisticsPeriodMetricsDTO buildPeriodMetrics(SensorType sensorType,List<StatisticsDataPoint> sourcePoints,StatisticsRangeConditionsDTO conditions,TemperatureUnit temperatureUnit) {
         boolean unavailable = conditions.containsExpiredIntervals()
                 || conditions.containsRollupDelayedIntervals();
 
         if (unavailable) {
-            return new StatisticsPeriodMetricsDTO(false,0,null,null);
+            return responseMapper.toPeriodMetricsDTO(sensorType,null,temperatureUnit);
         }
 
         SensorSummaryAggregate periodAggregate = sourcePoints.isEmpty()
-                ? aggregationPolicy.empty(sensorType)
-                : aggregationPolicy.combine(
-                sensorType,
-                sourcePoints.stream()
-                        .map(StatisticsDataPoint::aggregate)
-                        .toList());
+                ? SensorSummaryAggregator.empty(sensorType)
+                : SensorSummaryAggregator.combine(sensorType,sourcePoints.stream().map(StatisticsDataPoint::aggregate).toList());
 
-        StatisticsNumericMetricsDTO numericMetrics = null;
-        StatisticsMotionMetricsDTO motionMetrics = null;
-
-        if (SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)) {
-            numericMetrics = aggregationPolicy.toNumericMetrics(
-                    sensorType,
-                    periodAggregate,
-                    temperatureUnit);
-        } else {
-            motionMetrics = aggregationPolicy.toMotionMetrics(periodAggregate);
-        }
-
-        return new StatisticsPeriodMetricsDTO(
-                true,
-                periodAggregate.getSourceSampleCount(),
-                numericMetrics,
-                motionMetrics);
+        return responseMapper.toPeriodMetricsDTO(sensorType,periodAggregate,temperatureUnit);
     }
-
 
 
 
@@ -591,108 +479,6 @@ public class StatisticsQueryServiceImpl implements StatisticsQueryService {
 
 
 
-    private StatisticsSeriesPointDTO toPointDTO(
-            SensorType sensorType,
-            StatisticsDataPoint point,
-            StatisticsDisplayGranularity displayGranularity,
-            TemperatureUnit temperatureUnit
-    ) {
-
-        SensorSummaryAggregate aggregate = point.aggregate();
-
-        StatisticsNumericMetricsDTO numericMetrics = null;
-        StatisticsMotionMetricsDTO motionMetrics = null;
-        Long sourceSampleCount = null;
-
-        if (aggregate != null) {
-            sourceSampleCount = aggregate.getSourceSampleCount();
-
-            if (SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)) {
-                numericMetrics = aggregationPolicy.toNumericMetrics(
-                        sensorType,
-                        aggregate,
-                        temperatureUnit);
-            } else {
-                motionMetrics = aggregationPolicy.toMotionMetrics(aggregate);
-            }
-        }
-
-        if (point instanceof RawStatisticsDataPoint rawPoint) {
-            return new StatisticsSeriesPointDTO(
-                    StatisticsDisplayGranularity.RAW,
-                    rawPoint.sourceReadingId(),
-                    rawPoint.recordedAt(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    rawPoint.status(),
-                    sourceSampleCount,
-                    numericMetrics,
-                    motionMetrics,
-                    null,
-                    null);
-        }
-
-        IntervalStatisticsDataPoint intervalPoint = (IntervalStatisticsDataPoint) point;
-
-        return new StatisticsSeriesPointDTO(
-                displayGranularity,
-                null,
-                null,
-                intervalPoint.interval().startInclusive(),
-                intervalPoint.interval().endExclusive(),
-                intervalPoint.localDateStart(),
-                intervalPoint.localDateEndExclusive(),
-                intervalPoint.timeZoneId(),
-                intervalPoint.status(),
-                sourceSampleCount,
-                numericMetrics,
-                motionMetrics,
-                intervalPoint.finalizedAt(),
-                intervalPoint.refreshedAt());
-    }
-
-
-
-
-    private StatisticsSensorDTO toSensorDTO(Sensor sensor, TemperatureUnit temperatureUnit) {
-
-        SensorType sensorType = sensor.getType();
-
-        MeasurementUnit canonicalUnit =
-                SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)
-                        ? SensorMeasurementPolicy.requireCanonicalUnit(sensorType)
-                        : null;
-
-        String displayUnit = null;
-        String displayUnitSymbol = null;
-
-        switch (sensorType) {
-            case TEMPERATURE -> {
-                displayUnit = temperatureUnit.name();
-                displayUnitSymbol = temperatureUnitConverter.getSymbol(temperatureUnit);
-            }
-
-            case HUMIDITY -> {
-                displayUnit = canonicalUnit.name();
-                displayUnitSymbol = "% RH";
-            }
-
-            case MOTION -> {
-            }
-        }
-
-        return new StatisticsSensorDTO(
-                sensor.getId(),
-                sensor.getName(),
-                sensorType,
-                sensor.getTimezone(),
-                canonicalUnit,
-                displayUnit,
-                displayUnitSymbol);
-    }
 
 
 
