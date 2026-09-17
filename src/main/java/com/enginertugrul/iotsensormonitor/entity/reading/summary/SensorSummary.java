@@ -1,7 +1,6 @@
 package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
-import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -9,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -18,7 +16,6 @@ import java.util.Objects;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class SensorSummary {
 
-    private static final MathContext AVERAGE_MATH_CONTEXT = MathContext.DECIMAL128;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -96,23 +93,6 @@ public abstract class SensorSummary {
 
 
 
-    public boolean hasSamples() {
-        return sourceSampleCount > 0;
-    }
-
-
-
-    public boolean isNumeric() {
-        return sensor.getReadingValueKind() == ReadingValueKind.NUMERIC;
-    }
-
-
-
-    public boolean isBoolean() {
-        return sensor.getReadingValueKind() == ReadingValueKind.BOOLEAN;
-    }
-
-
 
     public SensorSummaryAggregate toAggregate() {
 
@@ -127,30 +107,6 @@ public abstract class SensorSummary {
     }
 
 
-
-
-    public BigDecimal getNumericAverage() {
-        if (!isNumeric()) {
-            throw new IllegalStateException("Numeric average is only available for numeric summaries");
-        }
-
-        if (!hasSamples()) {
-            return null;
-        }
-
-        return numericSum.divide(BigDecimal.valueOf(sourceSampleCount),AVERAGE_MATH_CONTEXT);
-    }
-
-
-
-
-    public long getFalseSampleCount() {
-        if (!isBoolean()) {
-            throw new IllegalStateException("False sample count is only available for boolean summaries");
-        }
-
-        return sourceSampleCount - trueSampleCount;
-    }
 
 
 
