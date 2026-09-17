@@ -33,7 +33,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsSensorDTO toSensorDTO(Sensor sensor,TemperatureUnit temperatureUnit) {
+    StatisticsSensorDTO toSensorDTO(Sensor sensor,TemperatureUnit temperatureUnit) {
         SensorType sensorType = sensor.getType();
 
         MeasurementUnit canonicalUnit = SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)
@@ -62,7 +62,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsSeriesPointDTO toPointDTO(SensorType sensorType,StatisticsDataPoint point, StatisticsDisplayGranularity displayGranularity, TemperatureUnit temperatureUnit) {
+    StatisticsSeriesPointDTO toPointDTO(SensorType sensorType,StatisticsDataPoint point, StatisticsDisplayGranularity displayGranularity, TemperatureUnit temperatureUnit) {
         SensorSummaryAggregate aggregate = point.aggregate();
 
         StatisticsNumericMetricsDTO numericMetrics = null;
@@ -119,7 +119,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsPeriodMetricsDTO toPeriodMetricsDTO(SensorType sensorType,SensorSummaryAggregate aggregate,TemperatureUnit temperatureUnit) {
+    StatisticsPeriodMetricsDTO toPeriodMetricsDTO(SensorType sensorType,SensorSummaryAggregate aggregate,TemperatureUnit temperatureUnit) {
         if (aggregate == null) {
             return new StatisticsPeriodMetricsDTO(false,0,null,null);
         }
@@ -141,7 +141,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsCsvExportAvailabilityDTO toCsvExportAvailabilityDTO(StatisticsMaterializedSeries materialized,int rowLimit) {
+    StatisticsCsvExportAvailabilityDTO toCsvExportAvailabilityDTO(StatisticsMaterializedSeries materialized,int rowLimit) {
         StatisticsResolution resolution = materialized.resolvedResolution();
         boolean summaryResolution = resolution == StatisticsResolution.HOURLY || resolution == StatisticsResolution.DAILY;
         int rowCount = summaryResolution ? materialized.sourcePoints().size() : 0;
@@ -152,7 +152,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsCoverageDTO toCoverageDTO(StatisticsAvailabilitySnapshot availability) {
+    StatisticsCoverageDTO toCoverageDTO(StatisticsAvailabilitySnapshot availability) {
         return new StatisticsCoverageDTO(toTierCoverageDTO(availability.raw()),toTierCoverageDTO(availability.hourly()),toTierCoverageDTO(availability.daily()));
     }
 
@@ -201,7 +201,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsNumericMetricsDTO toNumericMetrics(SensorType sensorType,SensorSummaryAggregate aggregate,TemperatureUnit temperatureUnit) {
+    private StatisticsNumericMetricsDTO toNumericMetrics(SensorType sensorType,SensorSummaryAggregate aggregate,TemperatureUnit temperatureUnit) {
         if (!SensorMeasurementPolicy.supportsNumericMeasurements(sensorType)) {
             throw new IllegalArgumentException("Numeric metrics require a numeric sensor");
         }
@@ -236,7 +236,7 @@ public class StatisticsResponseMapper {
 
 
 
-    public StatisticsMotionMetricsDTO toMotionMetrics(SensorSummaryAggregate aggregate) {
+    private StatisticsMotionMetricsDTO toMotionMetrics(SensorSummaryAggregate aggregate) {
         if (!aggregate.isBoolean()) {
             throw new IllegalArgumentException("Motion metrics require a boolean aggregate");
         }
