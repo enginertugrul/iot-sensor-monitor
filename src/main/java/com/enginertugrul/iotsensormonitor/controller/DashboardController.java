@@ -20,7 +20,7 @@ import java.util.List;
 
 
 @Controller
-public class SensorReadingController {
+public class DashboardController {
 
 
 
@@ -30,7 +30,7 @@ public class SensorReadingController {
 
 
 
-    public SensorReadingController(SensorReadingService sensorReadingService, SensorService sensorService, AppUserService appUserService) {
+    public DashboardController(SensorReadingService sensorReadingService, SensorService sensorService, AppUserService appUserService) {
         this.sensorReadingService = sensorReadingService;
         this.sensorService = sensorService;
         this.appUserService = appUserService;

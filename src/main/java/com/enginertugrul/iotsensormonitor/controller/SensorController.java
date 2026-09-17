@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.controller;
 
 import com.enginertugrul.iotsensormonitor.dto.sensor.CreatedSensorDTO;
-import com.enginertugrul.iotsensormonitor.dto.sensor.SensorForm;
+import com.enginertugrul.iotsensormonitor.dto.sensor.SensorCreateForm;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorUpdateForm;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
@@ -44,7 +44,7 @@ public class SensorController {
         Long ownerId = authenticatedUser.getAppUserId();
 
         if (!model.containsAttribute("form")) {
-            SensorForm form = new SensorForm();
+            SensorCreateForm form = new SensorCreateForm();
             form.setTimezone(sensorService.getDefaultTimezoneForUser(ownerId));
             model.addAttribute("form", form);
         }
@@ -60,7 +60,7 @@ public class SensorController {
     @PostMapping
     public String createSensor(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @Valid @ModelAttribute("form") SensorForm form,
+            @Valid @ModelAttribute("form") SensorCreateForm form,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {

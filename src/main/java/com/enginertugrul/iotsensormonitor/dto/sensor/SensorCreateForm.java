@@ -11,7 +11,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SensorForm {
+public class SensorCreateForm {
 
     @NotNull
     private SensorType type = SensorType.TEMPERATURE;
