@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.entity.reading;
+package com.enginertugrul.iotsensormonitor.entity.measurement;
 
 import lombok.Getter;
 

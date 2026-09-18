@@ -2,7 +2,7 @@ package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
 import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import lombok.Getter;

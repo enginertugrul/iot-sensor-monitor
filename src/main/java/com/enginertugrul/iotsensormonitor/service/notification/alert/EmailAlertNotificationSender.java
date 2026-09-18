@@ -1,6 +1,6 @@
 package com.enginertugrul.iotsensormonitor.service.notification.alert;
 
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.service.alert.AlertTriggeredEvent;
 import com.enginertugrul.iotsensormonitor.service.alert.AlertTriggeredEvent.Context;

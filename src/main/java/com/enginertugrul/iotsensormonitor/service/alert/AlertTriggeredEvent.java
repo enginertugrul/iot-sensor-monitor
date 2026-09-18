@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.alert;
 
 import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;

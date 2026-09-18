@@ -6,7 +6,7 @@ import com.enginertugrul.iotsensormonitor.dto.alert.NumericThresholdAlertRuleFor
 import com.enginertugrul.iotsensormonitor.entity.alert.AlertRule;
 import com.enginertugrul.iotsensormonitor.entity.alert.AlertRuleType;
 import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
