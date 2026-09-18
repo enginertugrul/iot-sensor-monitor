@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.controller;
 
 import com.enginertugrul.iotsensormonitor.dto.sensor.CreatedSensorDTO;
-import com.enginertugrul.iotsensormonitor.dto.sensor.SensorForm;
+import com.enginertugrul.iotsensormonitor.dto.sensor.SensorCreateForm;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorUpdateForm;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
@@ -9,6 +9,7 @@ import com.enginertugrul.iotsensormonitor.exception.DuplicateSensorNameException
 import com.enginertugrul.iotsensormonitor.exception.SensorTimezoneLockedException;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
 import com.enginertugrul.iotsensormonitor.service.sensor.SensorService;
+import com.enginertugrul.iotsensormonitor.service.user.AppUserService;
 import com.enginertugrul.iotsensormonitor.support.timezone.TimezoneCatalog;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,14 +29,17 @@ public class SensorController {
 
 
     private final SensorService sensorService;
+    private final AppUserService appUserService;
     private final TimezoneCatalog timezoneCatalog;
 
 
-
-    public SensorController(SensorService sensorService, TimezoneCatalog timezoneCatalog) {
+    public SensorController(SensorService sensorService, AppUserService appUserService, TimezoneCatalog timezoneCatalog) {
         this.sensorService = sensorService;
+        this.appUserService = appUserService;
         this.timezoneCatalog = timezoneCatalog;
     }
+
+
 
 
 
@@ -44,8 +48,8 @@ public class SensorController {
         Long ownerId = authenticatedUser.getAppUserId();
 
         if (!model.containsAttribute("form")) {
-            SensorForm form = new SensorForm();
-            form.setTimezone(sensorService.getDefaultTimezoneForUser(ownerId));
+            SensorCreateForm form = new SensorCreateForm();
+            form.setTimezone(appUserService.getPreferredTimezone(ownerId));
             model.addAttribute("form", form);
         }
 
@@ -60,7 +64,7 @@ public class SensorController {
     @PostMapping
     public String createSensor(
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
-            @Valid @ModelAttribute("form") SensorForm form,
+            @Valid @ModelAttribute("form") SensorCreateForm form,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {

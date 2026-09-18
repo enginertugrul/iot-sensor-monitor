@@ -132,13 +132,25 @@ public class AppUserServiceImpl implements AppUserService {
 
 
 
-
+    @Override
     @Transactional(readOnly = true)
+    public String getPreferredTimezone(Long userId) {
+        return appUserRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"))
+                .getPreferredTimezone();
+    }
+
+
+
+
+
     protected void ensureEmailIsAvailable(String normalizedEmail) {
         if (appUserRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyRegisteredException();
         }
     }
+
+
 
 
     private RuntimeException translateAppUserPersistenceException(DataIntegrityViolationException exception) {

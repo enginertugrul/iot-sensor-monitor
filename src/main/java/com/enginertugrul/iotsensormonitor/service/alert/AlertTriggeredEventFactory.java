@@ -44,7 +44,7 @@ public class AlertTriggeredEventFactory {
 
         return new  AlertTriggeredEvent.SensorSnapshot(sensor.getId(), sensor.getType(),
                 sensor.getName(),sensor.getInstallationLocation(),
-                sensor.getCity(),sensor.getDistrict());
+                sensor.getCity(),sensor.getDistrict(), ZoneId.of(sensor.getTimezone()));
     }
 
 

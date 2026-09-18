@@ -1,0 +1,109 @@
+package com.enginertugrul.iotsensormonitor.service.notification.recovery;
+
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryCodeDelivery;
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryService;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Locale;
+import java.util.Objects;
+
+
+
+
+
+@Service
+public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotificationDispatcher {
+
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final MessageSource messageSource;
+    private final PasswordRecoveryService passwordRecoveryService;
+    private final boolean passwordRecoveryEmailsEnabled;
+    private final String fromAddress;
+    private final Clock clock;
+
+
+
+
+    public PasswordRecoveryNotificationSender(
+            ObjectProvider<JavaMailSender> mailSenderProvider,
+            MessageSource messageSource,
+            PasswordRecoveryService passwordRecoveryService,
+            @Value("${app.mail.password-recovery.enabled:true}") boolean passwordRecoveryEmailsEnabled,
+            @Value("${spring.mail.username}") String fromAddress,
+            Clock clock
+    ) {
+        this.mailSenderProvider = mailSenderProvider;
+        this.messageSource = messageSource;
+        this.passwordRecoveryService = passwordRecoveryService;
+        this.passwordRecoveryEmailsEnabled = passwordRecoveryEmailsEnabled;
+        this.fromAddress = requireText(fromAddress,"fromAddress");
+        this.clock = clock;
+    }
+
+
+
+
+    @Override
+    public void send(PasswordRecoveryCodeDelivery delivery) {
+        PasswordRecoveryCodeDelivery requiredDelivery = Objects.requireNonNull(delivery,"delivery must not be null");
+
+        if (!passwordRecoveryEmailsEnabled || !passwordRecoveryService.canDeliverCode(requiredDelivery)) {
+            return;
+        }
+
+        long remainingMinutes = calculateRemainingMinutes(requiredDelivery.expiresAt());
+
+        if (remainingMinutes < 1) {
+            return;
+        }
+
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+
+        if (mailSender == null) {
+            throw new IllegalStateException("JavaMailSender is unavailable");
+        }
+
+        Locale locale = requiredDelivery.preferredLanguage().toLocale();
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(requiredDelivery.recipientEmail());
+        message.setSubject(messageSource.getMessage("email.passwordRecovery.subject",null,locale));
+        message.setText(messageSource.getMessage("email.passwordRecovery.body",new Object[]{requiredDelivery.rawCode(),remainingMinutes},locale));
+
+        mailSender.send(message);
+    }
+
+
+
+
+
+    private long calculateRemainingMinutes(Instant expiresAt) {
+        long remainingSeconds = Duration.between(clock.instant(), expiresAt).getSeconds();
+
+        if (remainingSeconds <= 0) {
+            return 0;
+        }
+
+        return (remainingSeconds + 59) / 60;
+    }
+
+
+
+
+    private String requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+
+        return value.trim();
+    }
+}

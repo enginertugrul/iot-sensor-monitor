@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.alert;
 
 import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
@@ -55,8 +55,7 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
 
 
 
-    public record SensorSnapshot(long id, SensorType type, String name, String installationLocation, String city,
-                                 String district) {
+    public record SensorSnapshot(long id, SensorType type, String name, String installationLocation, String city, String district, ZoneId timezone) {
 
         public SensorSnapshot{
 
@@ -65,6 +64,8 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
             Objects.requireNonNull(installationLocation, "installationLocation must not be null");
             Objects.requireNonNull(city, "city must not be null");
             Objects.requireNonNull(district, "district must not be null");
+            Objects.requireNonNull(timezone,"timezone must not be null");
+
         }
 
     }

@@ -1,7 +1,6 @@
 package com.enginertugrul.iotsensormonitor.entity.measurement;
 
 import com.enginertugrul.iotsensormonitor.entity.DomainChecks;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.ReadingValueKind;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
 

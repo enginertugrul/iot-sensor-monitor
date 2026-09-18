@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.sensor;
 
 import com.enginertugrul.iotsensormonitor.dto.sensor.CreatedSensorDTO;
-import com.enginertugrul.iotsensormonitor.dto.sensor.SensorForm;
+import com.enginertugrul.iotsensormonitor.dto.sensor.SensorCreateForm;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorListItemDTO;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorUpdateForm;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface SensorService {
 
-    CreatedSensorDTO createSensor(Long ownerId, SensorForm sensorForm);
+    CreatedSensorDTO createSensor(Long ownerId, SensorCreateForm sensorCreateForm);
 
     List<SensorListItemDTO> getSensorsForUser(Long ownerId);
 
@@ -21,8 +21,6 @@ public interface SensorService {
     void updateSensor(Long sensorId, Long ownerId, SensorUpdateForm sensorUpdateForm);
 
     void deleteSensor(Long sensorId,Long ownerId);
-
-    String getDefaultTimezoneForUser(Long ownerId);
 
     void activateSensor(Long sensorId, Long ownerId);
 

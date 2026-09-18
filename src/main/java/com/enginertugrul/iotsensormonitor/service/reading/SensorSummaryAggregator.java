@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.reading;
 
 import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorSummaryAggregate;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;

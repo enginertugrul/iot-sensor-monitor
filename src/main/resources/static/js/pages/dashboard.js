@@ -39,6 +39,7 @@
 
     const connectionTimeoutMilliseconds = 60000;
     const locale = panel.dataset.locale || document.documentElement.lang || 'en';
+    const preferredTimezone = panel.dataset.preferredTimezone;
 
     const messages = {
         connecting: connectionStatus.dataset.connectingMessage,
@@ -49,6 +50,7 @@
 
     let streamUrl;
     let numberFormatter;
+    let preferredTimestampFormatter;
     let activeSource = null;
     let connectionTimer = null;
     let lastPresentation = null;
@@ -143,6 +145,25 @@
         if (numberFormatter.resolvedOptions().roundingMode !== 'halfEven') {
             throw new Error('The required number formatting is unavailable.');
         }
+
+        if (!preferredTimezone) {
+            throw new Error('The preferred timezone is unavailable.');
+        }
+
+        preferredTimestampFormatter = new Intl.DateTimeFormat('en-GB',{
+            timeZone: preferredTimezone,
+            calendar: 'iso8601',
+            numberingSystem: 'latn',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23',
+            timeZoneName: 'longOffset'
+        });
+
     } catch {
         stopWithUnavailableStatus();
         return;
@@ -161,6 +182,23 @@
 
         return `${parts[3]}-${parts[2]}-${parts[1]} ${parts[4]}:${parts[5]}:${parts[6]}`;
     }
+
+
+    function formatPreferredTimestamp(timestamp) {
+        const instant = new Date(timestamp);
+
+        if (Number.isNaN(instant.getTime())) {
+            throw new Error('The reading timestamp is invalid.');
+        }
+
+        const parts = Object.fromEntries(
+            preferredTimestampFormatter.formatToParts(instant).map(part => [part.type,part.value])
+        );
+        const offset = parts.timeZoneName === 'GMT' ? 'Z' : parts.timeZoneName.replace(/^GMT/,'');
+
+        return `${parts.day}-${parts.month}-${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${offset}`;
+    }
+
 
     function toPresentation(reading) {
         if (!isObject(reading)
@@ -211,7 +249,8 @@
             value,
             valueClass,
             timestamp: formatTimestamp(reading.timestamp,reading.offset),
-            timezone: `${reading.offset}[${reading.timeZoneId}]`
+            timezone: `${reading.offset}[${reading.timeZoneId}]`,
+            preferredTimestamp: formatPreferredTimestamp(reading.timestamp)
         };
     }
 
@@ -236,21 +275,24 @@
         return cell;
     }
 
+
     function createRow(reading) {
         const row = document.createElement('tr');
         const locationCell = createCell('reading-location',reading.location);
         const valueCell = createCell('reading-value','');
         const timestampCell = createCell('reading-timestamp',reading.timestamp);
         const timezoneCell = createCell('reading-timezone',reading.timezone);
+        const preferredTimestampCell = createCell('reading-timestamp reading-preferred-timestamp',reading.preferredTimestamp);
         const value = document.createElement('span');
 
         value.className = reading.valueClass;
         value.textContent = reading.value;
         valueCell.append(value);
-        row.append(locationCell,valueCell,timestampCell,timezoneCell);
+        row.append(locationCell,valueCell,timestampCell,timezoneCell,preferredTimestampCell);
 
         return row;
     }
+
 
     function renderSnapshot(readings) {
         const presentation = JSON.stringify(readings);

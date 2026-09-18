@@ -1,6 +1,6 @@
 package com.enginertugrul.iotsensormonitor.entity.reading.summary;
 
-import com.enginertugrul.iotsensormonitor.entity.reading.MeasurementUnit;
+import com.enginertugrul.iotsensormonitor.entity.measurement.MeasurementUnit;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

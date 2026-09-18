@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.service.sensor;
 
 import com.enginertugrul.iotsensormonitor.dto.sensor.CreatedSensorDTO;
-import com.enginertugrul.iotsensormonitor.dto.sensor.SensorForm;
+import com.enginertugrul.iotsensormonitor.dto.sensor.SensorCreateForm;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorListItemDTO;
 import com.enginertugrul.iotsensormonitor.dto.sensor.SensorUpdateForm;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
@@ -53,11 +53,11 @@ public class SensorServiceImpl implements SensorService {
 
     @Override
     @Transactional
-    public CreatedSensorDTO createSensor(Long ownerId, SensorForm sensorForm) {
+    public CreatedSensorDTO createSensor(Long ownerId, SensorCreateForm sensorCreateForm) {
         AppUser owner = appUserRepository.findById(ownerId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        String requestedName = sensorForm.getName().trim();
+        String requestedName = sensorCreateForm.getName().trim();
 
         if (sensorRepository.existsByOwnerIdAndNameIgnoreCase(ownerId, requestedName)) {
             throw new DuplicateSensorNameException();
@@ -67,12 +67,12 @@ public class SensorServiceImpl implements SensorService {
 
         Sensor sensor = new Sensor(
                 owner,
-                sensorForm.getType(),
+                sensorCreateForm.getType(),
                 requestedName,
-                sensorForm.getCity(),
-                sensorForm.getDistrict(),
-                sensorForm.getInstallationLocation(),
-                sensorForm.getTimezone(),
+                sensorCreateForm.getCity(),
+                sensorCreateForm.getDistrict(),
+                sensorCreateForm.getInstallationLocation(),
+                sensorCreateForm.getTimezone(),
                 createdAt
         );
 
@@ -191,13 +191,6 @@ public class SensorServiceImpl implements SensorService {
 
 
 
-    @Override
-    @Transactional(readOnly = true)
-    public String getDefaultTimezoneForUser(Long ownerId) {
-        return appUserRepository.findById(ownerId)
-                .orElseThrow(() -> new NoSuchElementException("User not found"))
-                .getPreferredTimezone();
-    }
 
 
 

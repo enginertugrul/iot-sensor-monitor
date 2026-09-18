@@ -163,6 +163,7 @@
              th:data-sensor-id="${selectedSensorId}"
              th:data-stream-url="${selectedSensorId != null} ? @{/api/sensors/{sensorId}/readings/stream(sensorId=${selectedSensorId})} : null"
              th:data-locale="${#locale.toLanguageTag()}"
+             th:data-preferred-timezone="${preferredTimezone.id}"
              th:data-motion-detected="#{dashboard.motion.detected}"
              th:data-motion-clear="#{dashboard.motion.clear}">
         <header class="dashboard-panel__header">
@@ -247,6 +248,12 @@
                     <th scope="col" th:text="#{dashboard.timezone}">
                         Timezone
                     </th>
+
+                    <th scope="col"
+                        th:text="#{dashboard.preferredTimestamp(${preferredTimezone.id})}">
+                        Your time
+                    </th>
+
                 </tr>
                 </thead>
 
@@ -317,6 +324,12 @@
                                 + ']'}">
                         +03:00[Europe/Istanbul]
                     </td>
+
+                    <td class="reading-timestamp reading-preferred-timestamp"
+                        th:text="${#temporals.format(recentRecord.timestamp.withZoneSameInstant(preferredTimezone),'dd-MM-yyyy HH:mm:ss XXX')}">
+                        17-09-2026 12:30:00 +03:00
+                    </td>
+
                 </tr>
                 </tbody>
             </table>
