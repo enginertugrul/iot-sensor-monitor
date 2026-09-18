@@ -55,8 +55,7 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
 
 
 
-    public record SensorSnapshot(long id, SensorType type, String name, String installationLocation, String city,
-                                 String district) {
+    public record SensorSnapshot(long id, SensorType type, String name, String installationLocation, String city, String district, ZoneId timezone) {
 
         public SensorSnapshot{
 
@@ -65,6 +64,8 @@ public record AlertTriggeredEvent(Context context , Trigger trigger) {
             Objects.requireNonNull(installationLocation, "installationLocation must not be null");
             Objects.requireNonNull(city, "city must not be null");
             Objects.requireNonNull(district, "district must not be null");
+            Objects.requireNonNull(timezone,"timezone must not be null");
+
         }
 
     }

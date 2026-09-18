@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.ZoneId;
 import java.util.List;
 
 
@@ -46,6 +47,8 @@ public class DashboardController {
             Model model) {
 
         Long ownerId = authenticatedUser.getAppUserId();
+        ZoneId preferredTimezone = ZoneId.of(appUserService.getPreferredTimezone(ownerId));
+        model.addAttribute("preferredTimezone", preferredTimezone);
         List<SensorListItemDTO> sensors = sensorService.getSensorsForUser(ownerId);
         SensorListItemDTO selectedSensor = findSensor(sensors,sensorId);
         List<SensorReadingViewDTO> recentRecords = List.of();

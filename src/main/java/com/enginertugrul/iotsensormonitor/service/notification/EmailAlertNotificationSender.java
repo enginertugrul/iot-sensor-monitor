@@ -15,6 +15,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.text.NumberFormat;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
@@ -46,6 +47,10 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
         this.alertsEnabled = alertsEnabled;
         this.fromAddress = fromAddress;
     }
+
+
+
+
 
     @Override
     public void send(AlertTriggeredEvent event) {
@@ -82,6 +87,8 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
                 locale );
     }
 
+
+
     private String buildBody(AlertTriggeredEvent event,Locale locale) {
 
         return switch (event.trigger()) {
@@ -94,11 +101,11 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
         };
     }
 
-    private String buildNumericBody(Context context, NumericThresholdTrigger trigger, Locale locale) {
 
-        DisplayValues displayValues = toDisplayValues(context, trigger, locale);
 
-        String comparison = messageSource.getMessage("comparisonOperator." + trigger.comparisonOperator().name(),null, locale);
+    private String buildNumericBody(Context context,NumericThresholdTrigger trigger,Locale locale) {
+        DisplayValues displayValues = toDisplayValues(context,trigger,locale);
+        String comparison = messageSource.getMessage("comparisonOperator." + trigger.comparisonOperator().name(),null,locale);
 
         return messageSource.getMessage("email.alert." + sensorMessageSegment(context.sensor().type()) + ".body",
                 new Object[]{
@@ -110,11 +117,13 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
                         formatNumber(displayValues.reading(),locale),
                         formatNumber(displayValues.threshold(),locale),
                         displayValues.unitSymbol(),
-                        formatTimestamp(context, locale),
+                        formatTimestamp(context,context.sensor().timezone(),locale),
+                        formatTimestamp(context,context.recipient().timezone(),locale),
                         context.cooldownMinutes()
-                },
-                locale);
+                },locale);
     }
+
+
 
     private DisplayValues toDisplayValues(Context context, NumericThresholdTrigger trigger, Locale locale) {
 
@@ -141,25 +150,21 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
 
 
 
-    private String buildMotionBody( Context context, Locale locale) {
+    private String buildMotionBody(Context context,Locale locale) {
+        String eventDescription = messageSource.getMessage("alertEventType.MOTION_DETECTED",null,locale);
 
-        String eventDescription = messageSource.getMessage("alertEventType.MOTION_DETECTED", null,locale);
-
-        return messageSource.getMessage(
-                "email.alert.motion.body",
+        return messageSource.getMessage("email.alert.motion.body",
                 new Object[]{
                         context.sensor().name(),
                         context.sensor().installationLocation(),
                         context.sensor().city(),
                         context.sensor().district(),
                         eventDescription,
-                        formatTimestamp(context, locale),
+                        formatTimestamp(context,context.sensor().timezone(),locale),
+                        formatTimestamp(context,context.recipient().timezone(),locale),
                         context.cooldownMinutes()
-                },
-                locale
-        );
+                },locale);
     }
-
 
 
     private String sensorMessageSegment(SensorType sensorType) {
@@ -180,13 +185,9 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
 
 
 
-    private String formatTimestamp(Context context,Locale locale) {
-
-        return DateTimeFormatter
-                .ofPattern("dd-MM-yyyy HH:mm:ss z")
-                .withLocale(locale)
-                .format(context.recordedAt()
-                        .atZone(context.recipient().timezone()));
+    private String formatTimestamp(Context context, ZoneId timezone, Locale locale) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss XXX '['VV']'",locale);
+        return formatter.format(context.recordedAt().atZone(timezone));
     }
 
 

@@ -191,13 +191,6 @@ public class SensorServiceImpl implements SensorService {
 
 
 
-    @Override
-    @Transactional(readOnly = true)
-    public String getDefaultTimezoneForUser(Long ownerId) {
-        return appUserRepository.findById(ownerId)
-                .orElseThrow(() -> new NoSuchElementException("User not found"))
-                .getPreferredTimezone();
-    }
 
 
 

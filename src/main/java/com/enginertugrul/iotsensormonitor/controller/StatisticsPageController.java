@@ -143,6 +143,12 @@ public class StatisticsPageController {
         return "statistics";
     }
 
+
+
+
+
+
+
     private ResolvedStatisticsRange resolveRange(
             StatisticsPageQuery query,
             StatisticsRangePreset preset,
@@ -166,6 +172,10 @@ public class StatisticsPageController {
         };
     }
 
+
+
+
+
     private ResolvedStatisticsRange exactRange(StatisticsPageQuery query,ZoneId sensorTimeZone) {
         Instant startInclusive = query.getStartInclusive();
         Instant endExclusive = query.getEndExclusive();
@@ -183,6 +193,9 @@ public class StatisticsPageController {
 
         return new ResolvedStatisticsRange(startInclusive,endExclusive,startDate,endDate);
     }
+
+
+
 
     private ResolvedStatisticsRange calendarRange(LocalDate startDate,LocalDate endDate,ZoneId sensorTimeZone) {
         if (startDate == null || endDate == null) {
@@ -203,9 +216,14 @@ public class StatisticsPageController {
         return new ResolvedStatisticsRange(startInclusive,endExclusive,startDate,endDate);
     }
 
+
+
+
     private StatisticsRangePreset defaultPreset(StatisticsRangePreset preset) {
         return preset == null ? StatisticsRangePreset.LAST_7_DAYS : preset;
     }
+
+
 
     private SensorListItemDTO findSensor(List<SensorListItemDTO> sensors,Long sensorId) {
         return sensors.stream()
@@ -213,6 +231,9 @@ public class StatisticsPageController {
                 .findFirst()
                 .orElse(null);
     }
+
+
+
 
     private void initializeModel(Model model,List<SensorListItemDTO> sensors) {
         model.addAttribute("sensors",sensors);
@@ -227,10 +248,16 @@ public class StatisticsPageController {
         model.addAttribute("statisticsQueryInvalid",false);
     }
 
+
+
+
     private void addSelectedSensorModel(Model model,SensorListItemDTO selectedSensor) {
         model.addAttribute("selectedSensor",selectedSensor);
         model.addAttribute("selectedSensorId",selectedSensor.id());
     }
+
+
+
 
     private void markSensorNotFound(Model model) {
         model.addAttribute("selectedSensor",null);
@@ -241,6 +268,7 @@ public class StatisticsPageController {
         model.addAttribute("statisticsSensorNotFound",true);
         model.addAttribute("statisticsQueryInvalid",false);
     }
+
 
     private record ResolvedStatisticsRange(
             Instant startInclusive,

@@ -1,6 +1,7 @@
 package com.enginertugrul.iotsensormonitor.config;
 
 import com.enginertugrul.iotsensormonitor.repository.AppUserRepository;
+import com.enginertugrul.iotsensormonitor.support.web.UserPreferenceLocaleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;

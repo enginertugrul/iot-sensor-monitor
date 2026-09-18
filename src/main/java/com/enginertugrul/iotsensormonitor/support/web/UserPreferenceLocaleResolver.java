@@ -1,8 +1,7 @@
-package com.enginertugrul.iotsensormonitor.config;
+package com.enginertugrul.iotsensormonitor.support.web;
 
 import com.enginertugrul.iotsensormonitor.repository.AppUserRepository;
 import com.enginertugrul.iotsensormonitor.security.AuthenticatedUser;
-import com.enginertugrul.iotsensormonitor.support.web.PublicLocaleSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;

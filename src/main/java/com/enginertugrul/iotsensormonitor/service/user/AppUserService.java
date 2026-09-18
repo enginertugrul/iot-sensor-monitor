@@ -16,4 +16,6 @@ public interface AppUserService {
 
     TemperatureUnit getPreferredTemperatureUnit(Long userId);
 
+    String getPreferredTimezone(Long userId);
+
 }

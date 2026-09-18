@@ -22,8 +22,6 @@ public interface SensorService {
 
     void deleteSensor(Long sensorId,Long ownerId);
 
-    String getDefaultTimezoneForUser(Long ownerId);
-
     void activateSensor(Long sensorId, Long ownerId);
 
     void deactivateSensor(Long sensorId, Long ownerId);
