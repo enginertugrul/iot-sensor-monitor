@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.retry;
 
 import jakarta.mail.AuthenticationFailedException;
 import jakarta.mail.SendFailedException;

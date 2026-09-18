@@ -1,7 +1,7 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.recovery;
 
-import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationCodeDelivery;
-import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationService;
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryCodeDelivery;
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -17,42 +17,49 @@ import java.util.Objects;
 
 
 
+
+
 @Service
-public class EmailVerificationNotificationSender implements EmailVerificationNotificationDispatcher {
+public class PasswordRecoveryNotificationSender implements PasswordRecoveryNotificationDispatcher {
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final MessageSource messageSource;
-    private final EmailVerificationService emailVerificationService;
-    private final boolean verificationEmailsEnabled;
+    private final PasswordRecoveryService passwordRecoveryService;
+    private final boolean passwordRecoveryEmailsEnabled;
     private final String fromAddress;
     private final Clock clock;
 
 
-    public EmailVerificationNotificationSender(
+
+
+    public PasswordRecoveryNotificationSender(
             ObjectProvider<JavaMailSender> mailSenderProvider,
             MessageSource messageSource,
-            EmailVerificationService emailVerificationService,
-            @Value("${app.mail.email-verification.enabled:true}") boolean verificationEmailsEnabled,
+            PasswordRecoveryService passwordRecoveryService,
+            @Value("${app.mail.password-recovery.enabled:true}") boolean passwordRecoveryEmailsEnabled,
             @Value("${spring.mail.username}") String fromAddress,
             Clock clock
     ) {
         this.mailSenderProvider = mailSenderProvider;
         this.messageSource = messageSource;
-        this.emailVerificationService = emailVerificationService;
-        this.verificationEmailsEnabled = verificationEmailsEnabled;
+        this.passwordRecoveryService = passwordRecoveryService;
+        this.passwordRecoveryEmailsEnabled = passwordRecoveryEmailsEnabled;
         this.fromAddress = requireText(fromAddress,"fromAddress");
         this.clock = clock;
     }
 
-    @Override
-    public void send(EmailVerificationCodeDelivery delivery) {
-        Objects.requireNonNull(delivery,"delivery must not be null");
 
-        if (!verificationEmailsEnabled || !emailVerificationService.canDeliverCode(delivery)) {
+
+
+    @Override
+    public void send(PasswordRecoveryCodeDelivery delivery) {
+        PasswordRecoveryCodeDelivery requiredDelivery = Objects.requireNonNull(delivery,"delivery must not be null");
+
+        if (!passwordRecoveryEmailsEnabled || !passwordRecoveryService.canDeliverCode(requiredDelivery)) {
             return;
         }
 
-        long remainingMinutes = calculateRemainingMinutes(delivery.expiresAt());
+        long remainingMinutes = calculateRemainingMinutes(requiredDelivery.expiresAt());
 
         if (remainingMinutes < 1) {
             return;
@@ -64,16 +71,20 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
             throw new IllegalStateException("JavaMailSender is unavailable");
         }
 
-        Locale locale = delivery.preferredLanguage().toLocale();
+        Locale locale = requiredDelivery.preferredLanguage().toLocale();
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromAddress);
-        message.setTo(delivery.recipientEmail());
-        message.setSubject(messageSource.getMessage("email.verification.subject",null, locale));
-        message.setText(messageSource.getMessage("email.verification.body",new Object[]{delivery.rawCode(), remainingMinutes}, locale));
+        message.setTo(requiredDelivery.recipientEmail());
+        message.setSubject(messageSource.getMessage("email.passwordRecovery.subject",null,locale));
+        message.setText(messageSource.getMessage("email.passwordRecovery.body",new Object[]{requiredDelivery.rawCode(),remainingMinutes},locale));
 
         mailSender.send(message);
     }
+
+
+
+
 
     private long calculateRemainingMinutes(Instant expiresAt) {
         long remainingSeconds = Duration.between(clock.instant(), expiresAt).getSeconds();
@@ -84,6 +95,9 @@ public class EmailVerificationNotificationSender implements EmailVerificationNot
 
         return (remainingSeconds + 59) / 60;
     }
+
+
+
 
     private String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {

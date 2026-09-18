@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.retry;
 
 import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;

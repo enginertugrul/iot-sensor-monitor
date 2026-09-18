@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.verification;
 
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationCodeDelivery;
 

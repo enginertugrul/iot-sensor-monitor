@@ -1,7 +1,8 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.alert;
 
 import com.enginertugrul.iotsensormonitor.config.EmailAlertMailConfig;
 import com.enginertugrul.iotsensormonitor.service.alert.AlertTriggeredEvent;
+import com.enginertugrul.iotsensormonitor.service.notification.retry.EmailDeliveryRetryService;
 import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
@@ -9,6 +10,8 @@ import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+
 
 @Component
 public class EmailAlertNotificationListener {

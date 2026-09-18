@@ -1,6 +1,7 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.verification;
 
 import com.enginertugrul.iotsensormonitor.config.EmailVerificationMailConfig;
+import com.enginertugrul.iotsensormonitor.service.notification.retry.EmailDeliveryRetryService;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationCodeDelivery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

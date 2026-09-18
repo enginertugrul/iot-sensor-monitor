@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.alert;
 
 import com.enginertugrul.iotsensormonitor.service.alert.AlertTriggeredEvent;
 

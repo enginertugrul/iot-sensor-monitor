@@ -1,6 +1,7 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.recovery;
 
 import com.enginertugrul.iotsensormonitor.config.PasswordRecoveryMailConfig;
+import com.enginertugrul.iotsensormonitor.service.notification.retry.EmailDeliveryRetryService;
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryCodeDelivery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

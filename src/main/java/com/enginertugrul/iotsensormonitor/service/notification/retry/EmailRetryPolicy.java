@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.notification;
+package com.enginertugrul.iotsensormonitor.service.notification.retry;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
