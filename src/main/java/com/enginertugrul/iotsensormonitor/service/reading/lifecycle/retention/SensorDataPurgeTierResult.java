@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention;
 
 import java.time.Instant;
 import java.util.Objects;

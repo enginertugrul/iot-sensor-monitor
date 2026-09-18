@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.hourly;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.HourlySensorSummary;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;

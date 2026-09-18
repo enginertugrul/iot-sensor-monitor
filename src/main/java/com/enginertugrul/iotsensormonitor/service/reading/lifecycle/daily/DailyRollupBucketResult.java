@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.daily;
 
 import java.time.Instant;
 import java.time.LocalDate;

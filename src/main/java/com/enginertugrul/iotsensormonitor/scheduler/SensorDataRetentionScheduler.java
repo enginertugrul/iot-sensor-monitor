@@ -1,9 +1,9 @@
 package com.enginertugrul.iotsensormonitor.scheduler;
 
 import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataLifecyclePolicy;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataPurgeTierResult;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataRetentionRunResult;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataRetentionService;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention.SensorDataPurgeTierResult;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention.SensorDataRetentionRunResult;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention.SensorDataRetentionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;

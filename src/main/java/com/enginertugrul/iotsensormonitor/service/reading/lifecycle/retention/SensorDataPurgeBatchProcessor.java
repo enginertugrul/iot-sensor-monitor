@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.SensorRollupCheckpoint;

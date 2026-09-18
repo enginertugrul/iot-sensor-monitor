@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.hourly;
 
 import java.time.Instant;
 

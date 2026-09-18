@@ -1,4 +1,4 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.daily;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.DailySensorSummary;
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.HourlySensorSummary;

@@ -1,10 +1,11 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention;
 
 import com.enginertugrul.iotsensormonitor.entity.reading.summary.RollupStage;
 import com.enginertugrul.iotsensormonitor.repository.SensorRepository;
 import com.enginertugrul.iotsensormonitor.repository.SensorRollupCheckpointRepository;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataPurgeBatchResult.CoverageBlocker;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataPurgeTierResult.Tier;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataLifecyclePolicy;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention.SensorDataPurgeBatchResult.CoverageBlocker;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.retention.SensorDataPurgeTierResult.Tier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

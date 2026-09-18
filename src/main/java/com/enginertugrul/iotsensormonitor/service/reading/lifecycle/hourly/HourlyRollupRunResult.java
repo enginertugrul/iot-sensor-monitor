@@ -1,27 +1,23 @@
-package com.enginertugrul.iotsensormonitor.service.reading.lifecycle;
+package com.enginertugrul.iotsensormonitor.service.reading.lifecycle.hourly;
 
-import java.time.Duration;
 import java.time.Instant;
 
-public record DailyRollupRunResult(
+public record HourlyRollupRunResult(
         Status status,
         int sensorCount,
         int attemptedBuckets,
         int advancedBuckets,
         long sourceRowsSummarized,
-        long hourlySummaryRowsConsumed,
-        long rawBoundaryRowsSummarized,
-        int waitingSensors,
         int failedSensors,
         boolean bounded,
-        Duration maximumRollupLag,
         Instant oldestCoveredUntil
 ) {
+
     public enum Status {
+
         NO_WORK,
         SUCCEEDED,
         BOUNDED,
-        WAITING_FOR_HOURLY,
         PARTIAL_FAILURE
     }
 }

@@ -1,7 +1,7 @@
 package com.enginertugrul.iotsensormonitor.scheduler;
 
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.DailyRollupRunResult;
-import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.DailySensorRollupService;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.daily.DailyRollupRunResult;
+import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.daily.DailySensorRollupService;
 import com.enginertugrul.iotsensormonitor.service.reading.lifecycle.SensorDataLifecyclePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
