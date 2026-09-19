@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.FutureTask;
-
-
-
+import java.util.function.LongSupplier;
 
 
 @Service
@@ -41,6 +39,8 @@ public class SensorReadingStreamService {
     private final SensorReadingStreamPolicy policy;
     private final ThreadPoolTaskExecutor streamExecutor;
     private final SessionRegistry sessionRegistry;
+    private final LongSupplier nanoTimeSource;
+    private final SensorReadingStreamEmitterFactory emitterFactory;
 
     private final Object registryMonitor = new Object();
     private final Map<UUID,Subscription> subscriptions = new LinkedHashMap<>();
@@ -49,17 +49,21 @@ public class SensorReadingStreamService {
 
     public SensorReadingStreamService(SensorReadingService readingService,SensorReadingStreamPolicy policy,
                                       SessionRegistry sessionRegistry,
-                                      @Qualifier(SensorReadingStreamConfig.STREAM_EXECUTOR) ThreadPoolTaskExecutor streamExecutor) {
+                                      @Qualifier(SensorReadingStreamConfig.STREAM_EXECUTOR) ThreadPoolTaskExecutor streamExecutor,
+                                      @Qualifier(SensorReadingStreamConfig.STREAM_NANO_TIME_SOURCE) LongSupplier nanoTimeSource,
+                                      SensorReadingStreamEmitterFactory emitterFactory) {
         this.readingService = readingService;
         this.policy = policy;
         this.sessionRegistry = sessionRegistry;
         this.streamExecutor = streamExecutor;
+        this.nanoTimeSource = Objects.requireNonNull(nanoTimeSource,"nanoTimeSource must not be null");
+        this.emitterFactory = Objects.requireNonNull(emitterFactory,"emitterFactory must not be null");
     }
 
 
 
 
-    public SseEmitter subscribe(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit,String sessionId) {
+    public SseEmitter subscribe(Long sensorId, Long ownerId, TemperatureUnit temperatureUnit, String sessionId) {
         Objects.requireNonNull(sensorId,"sensorId must not be null");
         Objects.requireNonNull(ownerId,"ownerId must not be null");
         requireActiveSession(sessionId,ownerId);
@@ -72,8 +76,9 @@ public class SensorReadingStreamService {
         RecentSensorReadingsDTO initialSnapshot = readingService.getRecentReadingsSnapshot(sensorId,ownerId,displayUnit);
         requireActiveSession(sessionId,ownerId);
 
-        Subscription subscription = new Subscription(sensorId,ownerId,displayUnit,sessionId,initialSnapshot,
-                policy.getConnectionLifetime().toMillis());
+        long createdAt = nanoTimeSource.getAsLong();
+        SseEmitter emitter = emitterFactory.create(policy.getConnectionLifetime().toMillis());
+        Subscription subscription = new Subscription(sensorId,ownerId,displayUnit,sessionId,initialSnapshot,emitter,createdAt);
 
         subscription.emitter.onCompletion(() -> detach(subscription,false));
         subscription.emitter.onTimeout(() -> detach(subscription,false));
@@ -116,7 +121,7 @@ public class SensorReadingStreamService {
                     continue;
                 }
 
-                expired = isExpired(subscription,System.nanoTime());
+                expired = isExpired(subscription, nanoTimeSource.getAsLong());
             }
 
             if (expired) {
@@ -210,7 +215,7 @@ public class SensorReadingStreamService {
                 return false;
             }
 
-            long now = System.nanoTime();
+            long now = nanoTimeSource.getAsLong();
 
             if (subscription.task != null || now - subscription.nextRefreshAt < 0) {
                 return true;
@@ -276,7 +281,7 @@ public class SensorReadingStreamService {
                     return;
                 }
 
-                long now = System.nanoTime();
+                long now = nanoTimeSource.getAsLong();
                 expired = isExpired(subscription,now);
                 changed = !snapshot.equals(subscription.lastSnapshot);
                 heartbeatDue = now - subscription.lastSentAt >= policy.getHeartbeatInterval().toNanos();
@@ -302,7 +307,7 @@ public class SensorReadingStreamService {
                     subscription.lastSnapshot = snapshot;
 
                     if (changed || heartbeatDue) {
-                        subscription.lastSentAt = System.nanoTime();
+                        subscription.lastSentAt = nanoTimeSource.getAsLong();
                     }
                 }
             }
@@ -342,7 +347,7 @@ public class SensorReadingStreamService {
         synchronized (subscription) {
             subscription.running = false;
             subscription.task = null;
-            subscription.nextRefreshAt = System.nanoTime() + policy.getRefreshInterval().toNanos();
+            subscription.nextRefreshAt = nanoTimeSource.getAsLong() + policy.getRefreshInterval().toNanos();
             complete = subscription.completeOnExit;
             subscription.completeOnExit = false;
         }
@@ -473,14 +478,14 @@ public class SensorReadingStreamService {
         private final String sessionId;
         private StreamEndReason terminalReason;
         private final SseEmitter emitter;
-        private final long createdAt = System.nanoTime();
+        private final long createdAt;
 
         private RecentSensorReadingsDTO initialSnapshot;
         private RecentSensorReadingsDTO lastSnapshot;
         private FutureTask<Void> task;
         private long taskQueuedAt;
-        private long nextRefreshAt = createdAt;
-        private long lastSentAt = createdAt;
+        private long nextRefreshAt;
+        private long lastSentAt;
         private boolean running;
         private boolean closed;
         private boolean containerManaged;
@@ -488,13 +493,16 @@ public class SensorReadingStreamService {
 
 
         private Subscription(Long sensorId,Long ownerId,TemperatureUnit temperatureUnit,String sessionId,
-                             RecentSensorReadingsDTO initialSnapshot,long timeoutMillis) {
+                             RecentSensorReadingsDTO initialSnapshot,SseEmitter emitter,long createdAt) {
             this.sensorId = sensorId;
             this.ownerId = ownerId;
             this.temperatureUnit = temperatureUnit;
             this.sessionId = sessionId;
             this.initialSnapshot = initialSnapshot;
-            this.emitter = new SseEmitter(timeoutMillis);
+            this.emitter = Objects.requireNonNull(emitter,"emitter must not be null");
+            this.createdAt = createdAt;
+            this.nextRefreshAt = createdAt;
+            this.lastSentAt = createdAt;
         }
     }
 
