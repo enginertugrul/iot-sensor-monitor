@@ -5,14 +5,12 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
 
-@Component
 public class SensorReadingStreamScheduler {
 
     private final Logger logger = LoggerFactory.getLogger(SensorReadingStreamScheduler.class);
