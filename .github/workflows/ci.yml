@@ -1,0 +1,81 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-tests:
+    name: Fast tests (Java 21)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: |
+            pom.xml
+            .mvn/wrapper/maven-wrapper.properties
+
+      - name: Run fast tests
+        run: sh ./mvnw --batch-mode --no-transfer-progress test
+
+      - name: Upload fast test reports on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: fast-test-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+  integration-tests:
+    name: Integration tests (Java 21, PostgreSQL 17)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: |
+            pom.xml
+            .mvn/wrapper/maven-wrapper.properties
+
+      - name: Run integration tests and verify results
+        run: sh ./mvnw --batch-mode --no-transfer-progress test-compile failsafe:integration-test failsafe:verify
+
+      - name: Upload integration test reports on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: integration-test-reports
+          path: target/failsafe-reports/
+          if-no-files-found: warn
+          retention-days: 14
