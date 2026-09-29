@@ -1,0 +1,161 @@
+package com.enginertugrul.iotsensormonitor.service.notification.recovery;
+
+import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
+import com.enginertugrul.iotsensormonitor.service.notification.retry.EmailDeliveryRetryService;
+import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryCodeDelivery;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
+import org.springframework.mail.MailSendException;
+
+import java.util.stream.Stream;
+
+import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.CREATED_AT;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
+
+
+@ExtendWith(MockitoExtension.class)
+class PasswordRecoveryNotificationListenerTest {
+
+    private static final long USER_ID = 42L;
+
+    @Mock
+    private PasswordRecoveryNotificationDispatcher notificationDispatcher;
+
+    @Mock
+    private EmailDeliveryRetryService retryService;
+
+    @Mock
+    private TaskExecutor mailExecutor;
+
+    @Captor
+    private ArgumentCaptor<Runnable> taskCaptor;
+
+    @Captor
+    private ArgumentCaptor<Runnable> operationCaptor;
+
+    private final PasswordRecoveryCodeDelivery delivery =
+            new PasswordRecoveryCodeDelivery(USER_ID,"owner@example.com",PreferredLanguage.ENGLISH,"00876543",CREATED_AT.plusSeconds(600));
+
+    private PasswordRecoveryNotificationListener listener;
+
+
+    @BeforeEach
+    void setUp() {
+        listener = new PasswordRecoveryNotificationListener(notificationDispatcher,retryService,mailExecutor);
+    }
+
+
+
+    @Test
+    void defersDeliveryAndDelegatesARepeatableOperationToRetryService() {
+        listener.onPasswordRecoveryCodeIssued(delivery);
+
+        Runnable task = submittedTask();
+        verifyNoInteractions(retryService,notificationDispatcher);
+
+        assertThatCode(task::run).doesNotThrowAnyException();
+
+        verify(retryService).send(eq("PASSWORD_RECOVERY"),eq(USER_ID),operationCaptor.capture());
+        verifyNoInteractions(notificationDispatcher);
+
+        Runnable operation = operationCaptor.getValue();
+        assertThatCode(operation::run).doesNotThrowAnyException();
+        assertThatCode(operation::run).doesNotThrowAnyException();
+
+        verify(notificationDispatcher,times(2)).send(same(delivery));
+        verifyNoMoreInteractions(mailExecutor,retryService,notificationDispatcher);
+    }
+
+
+
+    @Test
+    void containsExecutorRejectionWithoutAttemptingDelivery() {
+        doThrow(new TaskRejectedException("Mail executor is full")).when(mailExecutor).execute(any(Runnable.class));
+
+        assertThatCode(() -> listener.onPasswordRecoveryCodeIssued(delivery)).doesNotThrowAnyException();
+
+        verify(mailExecutor).execute(any(Runnable.class));
+        verifyNoInteractions(retryService,notificationDispatcher);
+        verifyNoMoreInteractions(mailExecutor);
+    }
+
+
+
+    @ParameterizedTest
+    @MethodSource("deliveryFailures")
+    void containsFailureReportedByRetryService(RuntimeException failure) {
+        doThrow(failure).when(retryService).send(eq("PASSWORD_RECOVERY"),eq(USER_ID),any(Runnable.class));
+
+        listener.onPasswordRecoveryCodeIssued(delivery);
+
+        Runnable task = submittedTask();
+        verifyNoInteractions(retryService,notificationDispatcher);
+
+        assertThatCode(task::run).doesNotThrowAnyException();
+
+        verify(retryService).send(eq("PASSWORD_RECOVERY"),eq(USER_ID),any(Runnable.class));
+        verifyNoInteractions(notificationDispatcher);
+        verifyNoMoreInteractions(mailExecutor,retryService);
+    }
+
+
+
+    @ParameterizedTest
+    @MethodSource("deliveryFailures")
+    void exposesDispatcherFailureToRetryServiceAndContainsTheFinalFailure(RuntimeException failure) {
+        doThrow(failure).when(notificationDispatcher).send(same(delivery));
+        doAnswer(invocation -> {
+            Runnable operation = invocation.getArgument(2,Runnable.class);
+            assertThatThrownBy(operation::run).isSameAs(failure);
+            throw failure;
+        }).when(retryService).send(eq("PASSWORD_RECOVERY"),eq(USER_ID),any(Runnable.class));
+
+        listener.onPasswordRecoveryCodeIssued(delivery);
+
+        Runnable task = submittedTask();
+        verifyNoInteractions(retryService,notificationDispatcher);
+
+        assertThatCode(task::run).doesNotThrowAnyException();
+
+        verify(retryService).send(eq("PASSWORD_RECOVERY"),eq(USER_ID),any(Runnable.class));
+        verify(notificationDispatcher).send(same(delivery));
+        verifyNoMoreInteractions(mailExecutor,retryService,notificationDispatcher);
+    }
+
+
+
+    private Runnable submittedTask() {
+        verify(mailExecutor).execute(taskCaptor.capture());
+        verifyNoMoreInteractions(mailExecutor);
+        return taskCaptor.getValue();
+    }
+
+
+
+    private static Stream<RuntimeException> deliveryFailures() {
+        return Stream.of(
+                new MailSendException("Mail delivery failed"),
+                new IllegalStateException("Unexpected delivery failure")
+        );
+    }
+}
