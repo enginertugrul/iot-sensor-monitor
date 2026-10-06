@@ -1,0 +1,14 @@
+.git
+.github
+.agents
+.idea
+.vscode
+**/target
+out
+**/*.iml
+.env
+.env.*
+firmware
+mcu-simulator
+src/test
+src/main/resources/application.properties
