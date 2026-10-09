@@ -35,3 +35,9 @@ build/
 /src/main/resources/application.properties
 
 /out
+
+
+### Docker environment ###
+/.env
+/.env.*
+!/.env.example

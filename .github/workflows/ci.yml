@@ -4,14 +4,18 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
 
 jobs:
   fast-tests:
@@ -79,3 +83,31 @@ jobs:
           path: target/failsafe-reports/
           if-no-files-found: warn
           retention-days: 14
+
+
+  docker-build:
+    name: Docker build (AMD64 and ARM64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Validate image builds
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha,scope=iot-sensor-monitor
+          cache-to: type=gha,mode=max,scope=iot-sensor-monitor
