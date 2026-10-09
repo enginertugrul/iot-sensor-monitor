@@ -1,4 +1,4 @@
-name: iot-sensor-monitor
+name: iot-sensor-monitor-dist
 
 services:
   db:
@@ -19,16 +19,14 @@ services:
     stop_grace_period: 60s
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: iot-sensor-monitor:local
+    image: enginertugrul/iot-sensor-monitor:latest
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME:-iot_sensor_monitor}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-ism}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
@@ -40,6 +38,7 @@ services:
 
       EMAIL_VERIFICATION_HMAC_SECRET_BASE64: ${EMAIL_VERIFICATION_HMAC_SECRET_BASE64:?Set EMAIL_VERIFICATION_HMAC_SECRET_BASE64 in .env}
       PASSWORD_RECOVERY_HMAC_SECRET_BASE64: ${PASSWORD_RECOVERY_HMAC_SECRET_BASE64:?Set PASSWORD_RECOVERY_HMAC_SECRET_BASE64 in .env}
+
     ports:
       - "${APP_BIND_ADDRESS:?Set APP_BIND_ADDRESS in .env}:${APP_PORT:-8080}:8080"
     stop_grace_period: 60s
