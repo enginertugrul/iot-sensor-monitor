@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.DateTimeException;
 import java.time.ZoneId;
 
 
@@ -82,10 +81,6 @@ public class AuthController {
         try {
             registeredUser = appUserService.createUser(form);
 
-        } catch (DateTimeException ex) {
-            bindingResult.rejectValue("preferredTimezone", "timezone.invalid");
-            addRegistrationOptions(model);
-            return "register";
         } catch (EmailAlreadyRegisteredException ex) {
             bindingResult.rejectValue("email", "auth.alreadyRegistered");
             addRegistrationOptions(model);

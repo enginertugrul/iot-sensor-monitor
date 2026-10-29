@@ -7,15 +7,13 @@ import java.util.Locale;
 @Getter
 public enum PreferredLanguage {
 
-    ENGLISH("en", "English"),
-    TURKISH("tr", "Turkish");
+    ENGLISH("en"),
+    TURKISH("tr");
 
     private final String localeTag;
-    private final String displayName;
 
-    PreferredLanguage(String localeTag, String displayName) {
+    PreferredLanguage(String localeTag) {
         this.localeTag = localeTag;
-        this.displayName = displayName;
     }
 
     public Locale toLocale() {
