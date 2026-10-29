@@ -50,7 +50,7 @@ public class StatisticsResponseMapper {
             }
             case HUMIDITY -> {
                 displayUnit = canonicalUnit.name();
-                displayUnitSymbol = "% RH";
+                displayUnitSymbol = SensorMeasurementPolicy.RELATIVE_HUMIDITY_SYMBOL;
             }
             case MOTION -> {
             }

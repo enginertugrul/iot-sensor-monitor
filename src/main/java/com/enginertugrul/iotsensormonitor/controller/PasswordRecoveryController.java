@@ -6,6 +6,7 @@ import com.enginertugrul.iotsensormonitor.entity.user.AppUser;
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryResult;
 import com.enginertugrul.iotsensormonitor.service.user.recovery.PasswordRecoveryService;
 import com.enginertugrul.iotsensormonitor.support.web.BindingResultSanitizer;
+import com.enginertugrul.iotsensormonitor.support.web.EmailMasker;
 import com.enginertugrul.iotsensormonitor.support.web.PendingPasswordRecoverySession;
 import com.enginertugrul.iotsensormonitor.support.web.PublicLocaleSession;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,7 +58,7 @@ public class PasswordRecoveryController {
 
         Optional<String> pendingEmail = PendingPasswordRecoverySession.findEmail(request);
         model.addAttribute("pendingRecovery",pendingEmail.isPresent());
-        pendingEmail.ifPresent(email -> model.addAttribute("maskedEmail",maskEmail(email)));
+        pendingEmail.ifPresent(email -> model.addAttribute("maskedEmail", EmailMasker.mask(email)));
 
         return VIEW_NAME;
     }
@@ -192,31 +193,6 @@ public class PasswordRecoveryController {
     }
 
 
-
-
-
-
-
-
-
-    private String maskEmail(String email) {
-        int separatorIndex = email.lastIndexOf('@');
-
-        if (separatorIndex < 1) {
-            return "***";
-        }
-
-        String localPart = email.substring(0,separatorIndex);
-        String domainPart = email.substring(separatorIndex);
-
-        if (localPart.length() == 1) {
-            return localPart.charAt(0) + "***" + domainPart;
-        }
-
-        return localPart.charAt(0) + "***"
-                + localPart.charAt(localPart.length() - 1)
-                + domainPart;
-    }
 
 
 

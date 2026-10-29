@@ -6,6 +6,7 @@ import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iotsensormonitor.exception.EmailAlreadyRegisteredException;
 import com.enginertugrul.iotsensormonitor.service.user.AppUserService;
+import com.enginertugrul.iotsensormonitor.support.timezone.TimezoneCatalog;
 import com.enginertugrul.iotsensormonitor.support.web.PendingEmailVerificationSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,8 +18,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.DateTimeException;
-import java.time.ZoneId;
 
 
 
@@ -28,10 +27,12 @@ public class AuthController {
 
 
     private final AppUserService appUserService;
+    private final TimezoneCatalog timezoneCatalog;
 
 
-    public AuthController(AppUserService appUserService) {
+    public AuthController(AppUserService appUserService, TimezoneCatalog timezoneCatalog) {
         this.appUserService = appUserService;
+        this.timezoneCatalog = timezoneCatalog;
     }
 
 
@@ -82,10 +83,6 @@ public class AuthController {
         try {
             registeredUser = appUserService.createUser(form);
 
-        } catch (DateTimeException ex) {
-            bindingResult.rejectValue("preferredTimezone", "timezone.invalid");
-            addRegistrationOptions(model);
-            return "register";
         } catch (EmailAlreadyRegisteredException ex) {
             bindingResult.rejectValue("email", "auth.alreadyRegistered");
             addRegistrationOptions(model);
@@ -107,9 +104,8 @@ public class AuthController {
     private void addRegistrationOptions(Model model) {
         model.addAttribute("languages", PreferredLanguage.values());
         model.addAttribute("temperatureUnits", TemperatureUnit.values());
-        model.addAttribute("timezones", ZoneId.getAvailableZoneIds().stream().sorted().toList());
+        model.addAttribute("timezoneOptions", timezoneCatalog.getTimezoneOptions());
     }
-
 
 
 

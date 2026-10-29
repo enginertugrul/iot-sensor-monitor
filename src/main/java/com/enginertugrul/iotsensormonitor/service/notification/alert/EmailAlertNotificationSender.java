@@ -38,7 +38,7 @@ public class EmailAlertNotificationSender implements AlertNotificationDispatcher
             ObjectProvider<JavaMailSender> mailSenderProvider,
             MessageSource messageSource,
             TemperatureUnitConverter temperatureUnitConverter,
-            @Value("${app.mail.alerts.enabled}") boolean alertsEnabled,
+            @Value("${app.mail.alerts.enabled:true}") boolean alertsEnabled,
             @Value("${spring.mail.username}") String fromAddress
     ) {
         this.mailSenderProvider = mailSenderProvider;

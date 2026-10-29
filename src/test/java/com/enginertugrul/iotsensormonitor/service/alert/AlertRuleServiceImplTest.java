@@ -29,6 +29,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +50,7 @@ class AlertRuleServiceImplTest {
     private static final Long SENSOR_ID = 100L;
     private static final Long RULE_ID = 200L;
     private static final int COOLDOWN_MINUTES = 37;
+    private static final Instant NOW = TestFixtures.CREATED_AT.plusSeconds(3600);
 
     @Mock
     private AlertRuleRepository alertRuleRepository;
@@ -58,7 +62,7 @@ class AlertRuleServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new AlertRuleServiceImpl(alertRuleRepository,sensorService,new TemperatureUnitConverter());
+        service = new AlertRuleServiceImpl(alertRuleRepository,sensorService,new TemperatureUnitConverter(), Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
 
@@ -93,6 +97,8 @@ class AlertRuleServiceImplTest {
         assertThat(saved.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         assertThat(saved.isEnabled()).isTrue();
         assertThat(saved.getLastTriggeredAt()).isNull();
+        assertThat(saved.getCreatedAt()).isEqualTo(NOW);
+        assertThat(saved.getUpdatedAt()).isEqualTo(NOW);
         assertThat(form.getThresholdValue()).isEqualTo(submitted);
         verify(sensorService).getSensorForUser(SENSOR_ID,OWNER_ID);
     }
@@ -117,6 +123,8 @@ class AlertRuleServiceImplTest {
         assertThat(saved.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         assertThat(saved.isEnabled()).isTrue();
         assertThat(saved.getLastTriggeredAt()).isNull();
+        assertThat(saved.getCreatedAt()).isEqualTo(NOW);
+        assertThat(saved.getUpdatedAt()).isEqualTo(NOW);
         verify(sensorService).getSensorForUser(SENSOR_ID,OWNER_ID);
     }
 
@@ -197,15 +205,17 @@ class AlertRuleServiceImplTest {
             "false,false"
     })
     void appliesRequestedEnabledStateToOwnedRule(boolean initiallyEnabled,boolean requestedEnabled) {
-        AlertRule rule = AlertRule.motionDetected(ownedSensor(SensorType.MOTION,SENSOR_ID),COOLDOWN_MINUTES);
+        AlertRule rule = AlertRule.motionDetected(ownedSensor(SensorType.MOTION,SENSOR_ID),COOLDOWN_MINUTES,TestFixtures.CREATED_AT);
         if (!initiallyEnabled) {
-            rule.disable();
+            rule.disable(TestFixtures.UPDATED_AT);
         }
         when(alertRuleRepository.findByIdAndOwnerId(RULE_ID,OWNER_ID)).thenReturn(Optional.of(rule));
 
         service.setAlertRuleEnabled(OWNER_ID,RULE_ID,requestedEnabled);
 
         assertThat(rule.isEnabled()).isEqualTo(requestedEnabled);
+        assertThat(rule.getCreatedAt()).isEqualTo(TestFixtures.CREATED_AT);
+        assertThat(rule.getUpdatedAt()).isEqualTo(NOW);
         assertThat(rule.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         assertThat(rule.getEventType()).isEqualTo(AlertEventType.MOTION_DETECTED);
         verify(alertRuleRepository).findByIdAndOwnerId(RULE_ID,OWNER_ID);
@@ -216,7 +226,7 @@ class AlertRuleServiceImplTest {
 
     @Test
     void deletesTheRuleReturnedByOwnedLookup() {
-        AlertRule rule = AlertRule.motionDetected(ownedSensor(SensorType.MOTION,SENSOR_ID),COOLDOWN_MINUTES);
+        AlertRule rule = AlertRule.motionDetected(ownedSensor(SensorType.MOTION,SENSOR_ID),COOLDOWN_MINUTES,TestFixtures.CREATED_AT);
         when(alertRuleRepository.findByIdAndOwnerId(RULE_ID,OWNER_ID)).thenReturn(Optional.of(rule));
 
         service.deleteAlertRule(OWNER_ID,RULE_ID);
@@ -258,10 +268,10 @@ class AlertRuleServiceImplTest {
         Sensor motion = ownedSensor(SensorType.MOTION,103L);
         temperature.deactivate(TestFixtures.UPDATED_AT);
 
-        AlertRule temperatureRule = identifiedRule(AlertRule.numericThreshold(temperature,ComparisonOperator.ABOVE,20.0,37),201L);
-        AlertRule humidityRule = identifiedRule(AlertRule.numericThreshold(humidity,ComparisonOperator.BELOW,45.5,17),202L);
-        AlertRule motionRule = identifiedRule(AlertRule.motionDetected(motion,29),203L);
-        motionRule.disable();
+        AlertRule temperatureRule = identifiedRule(AlertRule.numericThreshold(temperature,ComparisonOperator.ABOVE,20.0,37,TestFixtures.CREATED_AT),201L);
+        AlertRule humidityRule = identifiedRule(AlertRule.numericThreshold(humidity,ComparisonOperator.BELOW,45.5,17,TestFixtures.CREATED_AT),202L);
+        AlertRule motionRule = identifiedRule(AlertRule.motionDetected(motion,29,TestFixtures.CREATED_AT),203L);
+        motionRule.disable(TestFixtures.UPDATED_AT);
 
         when(alertRuleRepository.findByOwnerIdOrderByCreatedAtDesc(OWNER_ID))
                 .thenReturn(List.of(motionRule,temperatureRule,humidityRule));

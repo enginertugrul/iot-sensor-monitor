@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class EmailDeliveryRetryService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmailDeliveryRetryService.class);
+    private static final Logger logger = LoggerFactory.getLogger(EmailDeliveryRetryService.class);
 
     private final EmailRetryPolicy policy;
 
@@ -31,7 +31,7 @@ public class EmailDeliveryRetryService {
         retryTemplate.setRetryListener(new RetryListener() {
             @Override
             public void beforeRetry(RetryPolicy retryPolicy,Retryable<?> retryable,RetryState retryState) {
-                LOGGER.warn("Retrying email delivery. notificationType={}, referenceId={}, attempt={}/{}, failureType={}",
+                logger.warn("Retrying email delivery. notificationType={}, referenceId={}, attempt={}/{}, failureType={}",
                         notificationType,referenceId,retryState.getRetryCount() + 1,policy.getMaximumAttempts(),retryState.getLastException().getClass().getSimpleName());
             }
         });

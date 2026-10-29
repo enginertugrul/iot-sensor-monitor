@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.NoSuchElementException;
 
@@ -19,7 +20,7 @@ import java.util.NoSuchElementException;
 public class PasswordChangeServiceImpl implements PasswordChangeService {
 
     private static final int MINIMUM_PASSWORD_LENGTH = 8;
-    private static final int MAXIMUM_PASSWORD_LENGTH = 72;
+    private static final int MAXIMUM_PASSWORD_BYTES = 72;
 
     private final AppUserRepository appUserRepository;
     private final PasswordResetChallengeRepository passwordResetChallengeRepository;
@@ -91,7 +92,7 @@ public class PasswordChangeServiceImpl implements PasswordChangeService {
         return password != null
                 && !password.isBlank()
                 && password.length() >= MINIMUM_PASSWORD_LENGTH
-                && password.length() <= MAXIMUM_PASSWORD_LENGTH;
+                && password.getBytes(StandardCharsets.UTF_8).length <= MAXIMUM_PASSWORD_BYTES;
     }
 
 }

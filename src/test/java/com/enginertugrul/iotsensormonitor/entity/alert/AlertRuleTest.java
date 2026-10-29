@@ -15,11 +15,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.CREATED_AT;
-import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.sensor;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +37,7 @@ class AlertRuleTest {
     void createsEnabledNumericRuleWithCanonicalThreshold(SensorType type,double threshold,MeasurementUnit expectedUnit) {
         Sensor sensor = sensor(type);
 
-        AlertRule rule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,threshold,15);
+        AlertRule rule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,threshold,15, CREATED_AT);
 
         assertThat(rule.getSensor()).isSameAs(sensor);
         assertThat(rule.getOwner()).isSameAs(sensor.getOwner());
@@ -52,8 +49,8 @@ class AlertRuleTest {
         assertThat(rule.getCooldownMinutes()).isEqualTo(15);
         assertThat(rule.getLastTriggeredAt()).isNull();
         assertThat(rule.isEnabled()).isTrue();
-        assertThat(rule.getCreatedAt()).isNotNull();
-        assertThat(rule.getUpdatedAt()).isEqualTo(rule.getCreatedAt());
+        assertThat(rule.getCreatedAt()).isEqualTo(CREATED_AT);
+        assertThat(rule.getUpdatedAt()).isEqualTo(CREATED_AT);
     }
 
 
@@ -63,7 +60,7 @@ class AlertRuleTest {
     void createsEnabledMotionRuleWithoutThresholdFields() {
         Sensor sensor = sensor(SensorType.MOTION);
 
-        AlertRule rule = AlertRule.motionDetected(sensor,15);
+        AlertRule rule = AlertRule.motionDetected(sensor,15, CREATED_AT);
 
         assertThat(rule.getSensor()).isSameAs(sensor);
         assertThat(rule.getOwner()).isSameAs(sensor.getOwner());
@@ -75,8 +72,8 @@ class AlertRuleTest {
         assertThat(rule.getCooldownMinutes()).isEqualTo(15);
         assertThat(rule.getLastTriggeredAt()).isNull();
         assertThat(rule.isEnabled()).isTrue();
-        assertThat(rule.getCreatedAt()).isNotNull();
-        assertThat(rule.getUpdatedAt()).isEqualTo(rule.getCreatedAt());
+        assertThat(rule.getCreatedAt()).isEqualTo(CREATED_AT);
+        assertThat(rule.getUpdatedAt()).isEqualTo(CREATED_AT);
     }
 
 
@@ -84,11 +81,11 @@ class AlertRuleTest {
     @Test
     void rejectsMissingSensorsInBothFactories() {
         assertThatNullPointerException()
-                .isThrownBy(() -> AlertRule.numericThreshold(null,ComparisonOperator.ABOVE,25.0,60))
+                .isThrownBy(() -> AlertRule.numericThreshold(null,ComparisonOperator.ABOVE,25.0,60, CREATED_AT))
                 .withMessage("sensor must not be null");
 
         assertThatNullPointerException()
-                .isThrownBy(() -> AlertRule.motionDetected(null,60))
+                .isThrownBy(() -> AlertRule.motionDetected(null,60, CREATED_AT))
                 .withMessage("sensor must not be null");
     }
 
@@ -99,7 +96,7 @@ class AlertRuleTest {
         Sensor sensor = sensor(SensorType.TEMPERATURE);
 
         assertThatNullPointerException()
-                .isThrownBy(() -> AlertRule.numericThreshold(sensor,null,25.0,60))
+                .isThrownBy(() -> AlertRule.numericThreshold(sensor,null,25.0,60, CREATED_AT))
                 .withMessage("comparisonOperator must not be null");
     }
 
@@ -113,11 +110,11 @@ class AlertRuleTest {
         Sensor humiditySensor = sensor(SensorType.HUMIDITY);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.ABOVE,threshold,60))
+                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.ABOVE,threshold,60, CREATED_AT))
                 .withMessage("canonicalThresholdValue must be a finite number");
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.ABOVE,threshold,60))
+                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.ABOVE,threshold,60, CREATED_AT))
                 .withMessage("canonicalThresholdValue must be a finite number");
     }
 
@@ -129,15 +126,15 @@ class AlertRuleTest {
         Sensor humiditySensor = sensor(SensorType.HUMIDITY);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.BELOW,Math.nextDown(-273.15),60))
+                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.BELOW,Math.nextDown(-273.15),60, CREATED_AT))
                 .withMessage("canonicalThresholdValue is outside the valid range for TEMPERATURE");
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.BELOW,Math.nextDown(0.0),60))
+                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.BELOW,Math.nextDown(0.0),60, CREATED_AT))
                 .withMessage("canonicalThresholdValue is outside the valid range for HUMIDITY");
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.ABOVE,Math.nextUp(100.0),60))
+                .isThrownBy(() -> AlertRule.numericThreshold(humiditySensor,ComparisonOperator.ABOVE,Math.nextUp(100.0),60, CREATED_AT))
                 .withMessage("canonicalThresholdValue is outside the valid range for HUMIDITY");
     }
 
@@ -148,7 +145,7 @@ class AlertRuleTest {
         Sensor sensor = sensor(SensorType.MOTION);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,1.0,60))
+                .isThrownBy(() -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,1.0,60, CREATED_AT))
                 .withMessage("MOTION does not support numeric measurements");
     }
 
@@ -160,7 +157,7 @@ class AlertRuleTest {
         Sensor sensor = sensor(type);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.motionDetected(sensor,60))
+                .isThrownBy(() -> AlertRule.motionDetected(sensor,60, CREATED_AT))
                 .withMessage("Motion rules require a motion sensor type");
     }
 
@@ -174,10 +171,10 @@ class AlertRuleTest {
         Sensor motionSensor = sensor(SensorType.MOTION);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.ABOVE,25.0,cooldownMinutes));
+                .isThrownBy(() -> AlertRule.numericThreshold(temperatureSensor,ComparisonOperator.ABOVE,25.0, cooldownMinutes, CREATED_AT));
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> AlertRule.motionDetected(motionSensor,cooldownMinutes));
+                .isThrownBy(() -> AlertRule.motionDetected(motionSensor, cooldownMinutes, CREATED_AT));
     }
 
 
@@ -186,8 +183,8 @@ class AlertRuleTest {
     @EnumSource(value = SensorType.class,names = {"TEMPERATURE","HUMIDITY"})
     void matchesStrictNumericBoundariesForTheSameTransientSensor(SensorType type) {
         Sensor sensor = sensor(type);
-        AlertRule aboveRule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,50.0,60);
-        AlertRule belowRule = AlertRule.numericThreshold(sensor,ComparisonOperator.BELOW,50.0,60);
+        AlertRule aboveRule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,50.0,60, CREATED_AT);
+        AlertRule belowRule = AlertRule.numericThreshold(sensor,ComparisonOperator.BELOW,50.0,60, CREATED_AT);
         SensorReading below = numericReading(sensor,Math.nextDown(50.0));
         SensorReading equal = numericReading(sensor,50.0);
         SensorReading above = numericReading(sensor,Math.nextUp(50.0));
@@ -218,7 +215,7 @@ class AlertRuleTest {
         Sensor readingSensor = sensor(SensorType.TEMPERATURE);
         ReflectionTestUtils.setField(ruleSensor,"id",ruleSensorId);
         ReflectionTestUtils.setField(readingSensor,"id",readingSensorId);
-        AlertRule rule = AlertRule.numericThreshold(ruleSensor,ComparisonOperator.ABOVE,25.0,60);
+        AlertRule rule = AlertRule.numericThreshold(ruleSensor,ComparisonOperator.ABOVE,25.0,60, CREATED_AT);
         SensorReading reading = SensorReading.temperature(readingSensor,30.0,RECORDED_AT);
 
         assertThat(readingSensor).isNotSameAs(ruleSensor);
@@ -237,7 +234,7 @@ class AlertRuleTest {
     },nullValues = "null")
     void rejectsNumericReadingsWithMissingValuesMixedShapesOrWrongUnits(Double numericValue,Boolean booleanValue,MeasurementUnit unit) {
         Sensor sensor = sensor(SensorType.TEMPERATURE);
-        AlertRule rule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,25.0,60);
+        AlertRule rule = AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,25.0,60, CREATED_AT);
         SensorReading reading = readingWithShape(sensor,numericValue,booleanValue,unit);
 
         assertThat(rule.isTriggeredBy(reading)).isFalse();
@@ -249,7 +246,7 @@ class AlertRuleTest {
     void matchesDetectedMotionOnlyForItsSensor() {
         Sensor sensor = sensor(SensorType.MOTION);
         Sensor otherSensor = sensor(SensorType.MOTION);
-        AlertRule rule = AlertRule.motionDetected(sensor,60);
+        AlertRule rule = AlertRule.motionDetected(sensor,60, CREATED_AT);
 
         assertThat(rule.isTriggeredBy(SensorReading.motion(sensor,true,RECORDED_AT))).isTrue();
         assertThat(rule.isTriggeredBy(SensorReading.motion(sensor,false,RECORDED_AT))).isFalse();
@@ -268,7 +265,7 @@ class AlertRuleTest {
     },nullValues = "null")
     void rejectsMotionReadingsWithMissingBooleanOrNumericFields(Double numericValue,Boolean booleanValue,MeasurementUnit unit) {
         Sensor sensor = sensor(SensorType.MOTION);
-        AlertRule rule = AlertRule.motionDetected(sensor,60);
+        AlertRule rule = AlertRule.motionDetected(sensor,60, CREATED_AT);
         SensorReading reading = readingWithShape(sensor,numericValue,booleanValue,unit);
 
         assertThat(rule.isTriggeredBy(reading)).isFalse();
@@ -278,7 +275,7 @@ class AlertRuleTest {
 
     @Test
     void rejectsMissingReadingOrReadingSensor() {
-        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60);
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60, CREATED_AT);
         SensorReading readingWithoutSensor = mock(SensorReading.class);
 
         assertThatNullPointerException()
@@ -295,22 +292,25 @@ class AlertRuleTest {
     @Test
     void enabledStateControlsEligibilityWhileReadingMatchingRemainsIndependent() {
         Sensor sensor = sensor(SensorType.MOTION);
-        AlertRule rule = AlertRule.motionDetected(sensor,60);
+        AlertRule rule = AlertRule.motionDetected(sensor,60, CREATED_AT);
         SensorReading reading = SensorReading.motion(sensor,true,RECORDED_AT);
 
         assertThat(rule.isCooldownActiveAt(RECORDED_AT)).isFalse();
         assertThat(rule.canTriggerAt(RECORDED_AT)).isTrue();
 
-        rule.disable();
+        rule.disable(UPDATED_AT);
 
         assertThat(rule.isEnabled()).isFalse();
+        assertThat(rule.getUpdatedAt()).isEqualTo(UPDATED_AT);
         assertThat(rule.isTriggeredBy(reading)).isTrue();
         assertThat(rule.canTriggerAt(RECORDED_AT)).isFalse();
 
-        rule.enable();
+        rule.enable(UPDATED_AT.plusSeconds(60));
 
         assertThat(rule.isEnabled()).isTrue();
+        assertThat(rule.getUpdatedAt()).isEqualTo(UPDATED_AT.plusSeconds(60));
         assertThat(rule.canTriggerAt(RECORDED_AT)).isTrue();
+
         assertThat(rule.getLastTriggeredAt()).isNull();
     }
 
@@ -319,10 +319,10 @@ class AlertRuleTest {
     @ParameterizedTest
     @ValueSource(ints = {1,60,10080})
     void cooldownExpiresExactlyAtItsBoundary(int cooldownMinutes) {
-        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),cooldownMinutes);
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),cooldownMinutes, CREATED_AT);
         Instant cooldownEndsAt = TRIGGERED_AT.plus(Duration.ofMinutes(cooldownMinutes));
 
-        rule.markTriggered(TRIGGERED_AT);
+        rule.markTriggered(TRIGGERED_AT, UPDATED_AT);
 
         assertThat(rule.getLastTriggeredAt()).isEqualTo(TRIGGERED_AT);
         assertThat(rule.isCooldownActiveAt(TRIGGERED_AT.minusNanos(1))).isTrue();
@@ -342,20 +342,20 @@ class AlertRuleTest {
     @Test
     void disablingAndEnablingPreserveExistingCooldown() {
         Sensor sensor = sensor(SensorType.MOTION);
-        AlertRule rule = AlertRule.motionDetected(sensor,60);
+        AlertRule rule = AlertRule.motionDetected(sensor,60, CREATED_AT);
         Instant cooldownEndsAt = TRIGGERED_AT.plus(Duration.ofMinutes(60));
         SensorReading reading = SensorReading.motion(sensor,true,TRIGGERED_AT.plusSeconds(1));
-        rule.markTriggered(TRIGGERED_AT);
+        rule.markTriggered(TRIGGERED_AT, UPDATED_AT);
 
         assertThat(rule.isTriggeredBy(reading)).isTrue();
         assertThat(rule.canTriggerAt(reading.getRecordedAt())).isFalse();
 
-        rule.disable();
+        rule.disable(UPDATED_AT);
 
         assertThat(rule.canTriggerAt(cooldownEndsAt)).isFalse();
         assertThat(rule.getLastTriggeredAt()).isEqualTo(TRIGGERED_AT);
 
-        rule.enable();
+        rule.enable(UPDATED_AT);
 
         assertThat(rule.getLastTriggeredAt()).isEqualTo(TRIGGERED_AT);
         assertThat(rule.isCooldownActiveAt(cooldownEndsAt.minusNanos(1))).isTrue();
@@ -367,13 +367,13 @@ class AlertRuleTest {
 
     @Test
     void markingAnotherTriggerStartsCooldownFromTheNewTimestamp() {
-        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60);
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60, CREATED_AT);
         Instant nextTriggeredAt = TRIGGERED_AT.plus(Duration.ofMinutes(60));
-        rule.markTriggered(TRIGGERED_AT);
+        rule.markTriggered(TRIGGERED_AT, UPDATED_AT);
 
         assertThat(rule.canTriggerAt(nextTriggeredAt)).isTrue();
 
-        rule.markTriggered(nextTriggeredAt);
+        rule.markTriggered(nextTriggeredAt, UPDATED_AT.plusSeconds(3600));
 
         Instant nextCooldownEndsAt = nextTriggeredAt.plus(Duration.ofMinutes(60));
 
@@ -387,7 +387,7 @@ class AlertRuleTest {
 
     @Test
     void rejectsMissingCooldownCheckTimestamp() {
-        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60);
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60, CREATED_AT);
 
         assertThatNullPointerException()
                 .isThrownBy(() -> rule.isCooldownActiveAt(null))
@@ -401,15 +401,81 @@ class AlertRuleTest {
 
 
     @Test
-    void rejectingMissingTriggerTimestampPreservesPreviousTrigger() {
-        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60);
-        rule.markTriggered(TRIGGERED_AT);
+    void rejectingMissingTriggerTimestampsPreservesPreviousTrigger() {
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60,CREATED_AT);
+        rule.markTriggered(TRIGGERED_AT,UPDATED_AT);
 
         assertThatNullPointerException()
-                .isThrownBy(() -> rule.markTriggered(null))
+                .isThrownBy(() -> rule.markTriggered(null,UPDATED_AT.plusSeconds(60)))
                 .withMessage("triggeredAt must not be null");
 
+        assertThatNullPointerException()
+                .isThrownBy(() -> rule.markTriggered(TRIGGERED_AT.plusSeconds(60),null))
+                .withMessage("updatedAt must not be null");
+
         assertThat(rule.getLastTriggeredAt()).isEqualTo(TRIGGERED_AT);
+        assertThat(rule.getUpdatedAt()).isEqualTo(UPDATED_AT);
+    }
+
+
+
+    @Test
+    void markingTriggerKeepsReadingTimeAndStampsTheGivenUpdateTime() {
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60,CREATED_AT);
+        Instant processedAt = TRIGGERED_AT.plusSeconds(30);
+
+        rule.markTriggered(TRIGGERED_AT,processedAt);
+
+        assertThat(rule.getLastTriggeredAt()).isEqualTo(TRIGGERED_AT);
+        assertThat(rule.getUpdatedAt()).isEqualTo(processedAt);
+        assertThat(rule.getCreatedAt()).isEqualTo(CREATED_AT);
+    }
+
+
+
+    @Test
+    void rejectsMissingCreationAndUpdateTimestamps() {
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60,CREATED_AT);
+
+        assertThatNullPointerException()
+                .isThrownBy(() -> AlertRule.numericThreshold(sensor(SensorType.TEMPERATURE),ComparisonOperator.ABOVE,25.0,60,null))
+                .withMessage("createdAt must not be null");
+
+        assertThatNullPointerException()
+                .isThrownBy(() -> AlertRule.motionDetected(sensor(SensorType.MOTION),60,null))
+                .withMessage("createdAt must not be null");
+
+        assertThatNullPointerException()
+                .isThrownBy(() -> rule.disable(null))
+                .withMessage("updatedAt must not be null");
+
+        assertThatNullPointerException()
+                .isThrownBy(() -> rule.enable(null))
+                .withMessage("updatedAt must not be null");
+
+        assertThat(rule.isEnabled()).isTrue();
+        assertThat(rule.getUpdatedAt()).isEqualTo(CREATED_AT);
+    }
+
+
+
+    @Test
+    void lifecycleChecksRejectMissingTimestampsAndUpdatesBeforeCreation() {
+        AlertRule rule = AlertRule.motionDetected(sensor(SensorType.MOTION),60,CREATED_AT);
+
+        assertThatNoException().isThrownBy(rule::prePersist);
+
+        rule.disable(CREATED_AT.minusNanos(1));
+
+        assertThatIllegalStateException()
+                .isThrownBy(rule::preUpdate)
+                .withMessage("updatedAt must not be before createdAt");
+
+        ReflectionTestUtils.setField(rule,"updatedAt",null);
+
+        assertThatIllegalStateException()
+                .isThrownBy(rule::prePersist)
+                .withMessage("createdAt and updatedAt must not be null");
     }
 
 

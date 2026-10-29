@@ -19,9 +19,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 
+import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.CREATED_AT;
+import static com.enginertugrul.iotsensormonitor.testsupport.TestFixtures.UPDATED_AT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
@@ -39,6 +43,7 @@ class AlertEvaluationServiceImplTest {
     private static final Long RULE_ID = 200L;
     private static final int COOLDOWN_MINUTES = 10;
     private static final Instant RECORDED_AT = TestFixtures.CREATED_AT.plusSeconds(3600).plusNanos(123456000);
+    private static final Instant NOW = TestFixtures.CREATED_AT.plusSeconds(7200);
 
     @Mock
     private AlertRuleRepository alertRuleRepository;
@@ -56,7 +61,7 @@ class AlertEvaluationServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new AlertEvaluationServiceImpl(alertRuleRepository,eventPublisher,eventFactory);
+        service = new AlertEvaluationServiceImpl(alertRuleRepository,eventPublisher,eventFactory, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
 
@@ -76,11 +81,13 @@ class AlertEvaluationServiceImplTest {
         when(alertRuleRepository.findEnabledForEvaluationBySensorId(SENSOR_ID)).thenReturn(List.of(rule));
         when(eventFactory.from(rule,reading)).thenAnswer(invocation -> {
             assertThat(rule.getLastTriggeredAt()).isEqualTo(RECORDED_AT);
+            assertThat(rule.getUpdatedAt()).isEqualTo(NOW);
             return event;
         });
 
         service.evaluateReading(reading);
 
+        assertThat(rule.getUpdatedAt()).isEqualTo(NOW);
         assertThat(rule.getLastTriggeredAt()).isEqualTo(RECORDED_AT);
         verify(alertRuleRepository).findEnabledForEvaluationBySensorId(SENSOR_ID);
         InOrder order = inOrder(eventFactory,eventPublisher);
@@ -111,6 +118,7 @@ class AlertEvaluationServiceImplTest {
 
         service.evaluateReading(reading);
 
+        assertThat(rule.getUpdatedAt()).isEqualTo(TestFixtures.CREATED_AT);
         assertThat(rule.getLastTriggeredAt()).isNull();
         verifyNoInteractions(eventFactory,eventPublisher);
     }
@@ -128,7 +136,7 @@ class AlertEvaluationServiceImplTest {
     void usesRecordedTimeForOlderDuplicateAndCooldownBoundaryReadings(long nanosSinceLastTrigger,boolean expectedTrigger) {
         Sensor sensor = identifiedSensor(SensorType.TEMPERATURE);
         AlertRule rule = rule(sensor,ComparisonOperator.ABOVE);
-        rule.markTriggered(RECORDED_AT);
+        rule.markTriggered(RECORDED_AT, RECORDED_AT);
         Instant nextRecordedAt = RECORDED_AT.plusNanos(nanosSinceLastTrigger);
         SensorReading reading = SensorReading.temperature(sensor,25.0,nextRecordedAt);
         when(alertRuleRepository.findEnabledForEvaluationBySensorId(SENSOR_ID)).thenReturn(List.of(rule));
@@ -139,10 +147,12 @@ class AlertEvaluationServiceImplTest {
         service.evaluateReading(reading);
 
         if (expectedTrigger) {
+            assertThat(rule.getUpdatedAt()).isEqualTo(NOW);
             assertThat(rule.getLastTriggeredAt()).isEqualTo(nextRecordedAt);
             verify(eventFactory).from(rule,reading);
             verify(eventPublisher).publishEvent(event);
         } else {
+            assertThat(rule.getUpdatedAt()).isEqualTo(RECORDED_AT);
             assertThat(rule.getLastTriggeredAt()).isEqualTo(RECORDED_AT);
             verifyNoInteractions(eventFactory,eventPublisher);
         }
@@ -154,7 +164,7 @@ class AlertEvaluationServiceImplTest {
     void suppressesDisabledMatchingRuleEvenIfRepositoryReturnsIt() {
         Sensor sensor = identifiedSensor(SensorType.MOTION);
         AlertRule rule = rule(sensor,null);
-        rule.disable();
+        rule.disable(UPDATED_AT);
         SensorReading reading = SensorReading.motion(sensor,true,RECORDED_AT);
         when(alertRuleRepository.findEnabledForEvaluationBySensorId(SENSOR_ID)).thenReturn(List.of(rule));
 
@@ -228,9 +238,9 @@ class AlertEvaluationServiceImplTest {
 
     private static AlertRule rule(Sensor sensor,ComparisonOperator operator) {
         AlertRule rule = switch (sensor.getType()) {
-            case TEMPERATURE -> AlertRule.numericThreshold(sensor,operator,20.0,COOLDOWN_MINUTES);
-            case HUMIDITY -> AlertRule.numericThreshold(sensor,operator,50.0,COOLDOWN_MINUTES);
-            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES);
+            case TEMPERATURE -> AlertRule.numericThreshold(sensor,operator,20.0,COOLDOWN_MINUTES, CREATED_AT);
+            case HUMIDITY -> AlertRule.numericThreshold(sensor,operator,50.0,COOLDOWN_MINUTES, CREATED_AT);
+            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES, CREATED_AT);
         };
         ReflectionTestUtils.setField(rule,"id",RULE_ID);
         return rule;

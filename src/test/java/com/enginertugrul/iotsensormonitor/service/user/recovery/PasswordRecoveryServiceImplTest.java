@@ -528,12 +528,12 @@ class PasswordRecoveryServiceImplTest {
 
 
     private static Stream<String> invalidPasswords() {
-        return Stream.of(null,""," ".repeat(8),"a".repeat(7),"a".repeat(73));
+        return Stream.of(null,""," ".repeat(8),"a".repeat(7),"a".repeat(73),"ş".repeat(37));
     }
 
 
 
     private static Stream<String> validPasswords() {
-        return Stream.of("a".repeat(8),"a".repeat(72),"  replacement-password  ");
+        return Stream.of("a".repeat(8),"a".repeat(72),"  replacement-password  ","ş".repeat(36));
     }
 }

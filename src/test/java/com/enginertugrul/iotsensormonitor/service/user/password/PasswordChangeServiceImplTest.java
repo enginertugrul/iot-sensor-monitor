@@ -240,7 +240,7 @@ class PasswordChangeServiceImplTest {
 
 
     private static Stream<String> invalidPasswords() {
-        return Stream.of(null,""," ".repeat(8)," \t\n ".repeat(3),"a".repeat(7),"a".repeat(73));
+        return Stream.of(null,""," ".repeat(8)," \t\n ".repeat(3),"a".repeat(7),"a".repeat(73),"ş".repeat(37));
     }
 
 
@@ -249,6 +249,7 @@ class PasswordChangeServiceImplTest {
         return Stream.of(
                 Arguments.of("c".repeat(8),"n".repeat(72),true),
                 Arguments.of("c".repeat(72),"n".repeat(8),false),
-                Arguments.of("  current-password  ","  replacement-password  ",true));
+                Arguments.of("  current-password  ","  replacement-password  ",true),
+                Arguments.of(CURRENT_PASSWORD,"ş".repeat(36),false));
     }
 }

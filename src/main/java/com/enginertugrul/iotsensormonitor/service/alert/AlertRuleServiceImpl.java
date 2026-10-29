@@ -18,6 +18,7 @@ import com.enginertugrul.iotsensormonitor.support.temperature.TemperatureUnitCon
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.List;
 
 
@@ -30,11 +31,13 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     private final AlertRuleRepository alertRuleRepository;
     private final SensorService sensorService;
     private final TemperatureUnitConverter temperatureUnitConverter;
+    private final Clock clock;
 
-    public AlertRuleServiceImpl(AlertRuleRepository alertRuleRepository, SensorService sensorService, TemperatureUnitConverter temperatureUnitConverter) {
+    public AlertRuleServiceImpl(AlertRuleRepository alertRuleRepository, SensorService sensorService, TemperatureUnitConverter temperatureUnitConverter, Clock clock) {
         this.alertRuleRepository = alertRuleRepository;
         this.sensorService = sensorService;
         this.temperatureUnitConverter = temperatureUnitConverter;
+        this.clock = clock;
     }
 
 
@@ -65,7 +68,8 @@ public class AlertRuleServiceImpl implements AlertRuleService {
         AlertRule rule = AlertRule.numericThreshold(sensor,
                 form.getComparisonOperator(),
                 canonicalThreshold,
-                form.getCooldownMinutes());
+                form.getCooldownMinutes(),
+                clock.instant());
 
         alertRuleRepository.save( rule);
 
@@ -87,7 +91,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
             throw new InvalidAlertRuleException("Motion-detected rules require a motion sensor");
         }
 
-        AlertRule rule = AlertRule.motionDetected(sensor,form.getCooldownMinutes());
+        AlertRule rule = AlertRule.motionDetected(sensor,form.getCooldownMinutes(),clock.instant());
 
         alertRuleRepository.save(rule);
 
@@ -99,11 +103,12 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     @Override
     @Transactional
     public void setAlertRuleEnabled(Long ownerId, Long alertRuleId, Boolean enabled) {
+
         AlertRule alertRule = getOwnedAlertRule(alertRuleId, ownerId);
         if (enabled) {
-            alertRule.enable();
+            alertRule.enable(clock.instant());
         } else {
-            alertRule.disable();
+            alertRule.disable(clock.instant());
         }
 
     }

@@ -1,5 +1,6 @@
 package com.enginertugrul.iotsensormonitor.dto.auth;
 
+import com.enginertugrul.iotsensormonitor.validation.MaxUtf8Bytes;
 import com.enginertugrul.iotsensormonitor.validation.PasswordConfirmation;
 import com.enginertugrul.iotsensormonitor.validation.PasswordsMatch;
 import jakarta.validation.constraints.NotBlank;
@@ -21,7 +22,8 @@ public class PasswordResetForm implements PasswordConfirmation {
     private String code;
 
     @NotBlank(message = "{passwordRecovery.passwordRequired}")
-    @Size(min = 8, max = 72, message = "{passwordRecovery.passwordLength}")
+    @Size(min = 8, message = "{passwordRecovery.passwordTooShort}")
+    @MaxUtf8Bytes(value = 72, message = "{passwordRecovery.passwordTooLong}")
     private String password;
 
     @NotBlank(message = "{passwordRecovery.confirmPasswordRequired}")

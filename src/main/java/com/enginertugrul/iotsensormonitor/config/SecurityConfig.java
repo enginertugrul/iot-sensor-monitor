@@ -63,7 +63,7 @@ public class SecurityConfig {
                                 "/forgot-password/resend",
                                 "/forgot-password/change-address"
                         ).permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/readings/temperature" , "/readings/humidity" , "/readings/motion").permitAll()
                         .anyRequest().authenticated()
                 )

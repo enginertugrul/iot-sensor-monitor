@@ -7,6 +7,7 @@ import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationResult;
 import com.enginertugrul.iotsensormonitor.service.user.verification.EmailVerificationService;
 import com.enginertugrul.iotsensormonitor.support.web.BindingResultSanitizer;
+import com.enginertugrul.iotsensormonitor.support.web.EmailMasker;
 import com.enginertugrul.iotsensormonitor.support.web.PendingEmailVerificationSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -55,7 +56,7 @@ public class EmailVerificationController {
 
         Optional<String> pendingEmail = PendingEmailVerificationSession.findEmail(request);
         model.addAttribute("pendingVerification",pendingEmail.isPresent());
-        pendingEmail.ifPresent(email -> model.addAttribute("maskedEmail",maskEmail(email)));
+        pendingEmail.ifPresent(email -> model.addAttribute("maskedEmail", EmailMasker.mask(email)));
 
         return VIEW_NAME;
     }
@@ -195,28 +196,6 @@ public class EmailVerificationController {
         return PreferredLanguage.ENGLISH;
     }
 
-
-
-
-
-    private String maskEmail(String email) {
-        int separatorIndex = email.lastIndexOf('@');
-
-        if (separatorIndex < 1) {
-            return "***";
-        }
-
-        String localPart = email.substring(0,separatorIndex);
-        String domainPart = email.substring(separatorIndex);
-
-        if (localPart.length() == 1) {
-            return localPart.charAt(0) + "***" + domainPart;
-        }
-
-        return localPart.charAt(0) + "***"
-                + localPart.charAt(localPart.length() - 1)
-                + domainPart;
-    }
 
 
 

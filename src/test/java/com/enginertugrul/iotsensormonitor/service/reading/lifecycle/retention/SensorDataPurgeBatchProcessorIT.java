@@ -325,10 +325,7 @@ class SensorDataPurgeBatchProcessorIT {
                     .existsBySensorIdAndBucketEndLessThanEqual(sensor.getId(),CUTOFF);
         }
 
-        assertThatThrownBy(() -> purge(tier,sensor,CUTOFF,10))
-                .isInstanceOf(InvalidDataAccessApiUsageException.class)
-                .hasMessage("Forced post-delete failure")
-                .cause().isSameAs(failure);
+        assertThatThrownBy(() -> purge(tier,sensor,CUTOFF,10)).isSameAs(failure);
 
         resetRepositories();
 
