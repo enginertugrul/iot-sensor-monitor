@@ -189,10 +189,10 @@ class AlertEvaluationIT {
         AppUser otherOwner = persistUser(true);
         Sensor target = persistSensor(owner,SensorType.TEMPERATURE,"Target");
         AlertRule first = persistRule(target);
-        AlertRule second = alertRuleRepository.saveAndFlush(AlertRule.numericThreshold(target,ComparisonOperator.ABOVE,24.0,COOLDOWN_MINUTES));
-        AlertRule nonMatching = alertRuleRepository.saveAndFlush(AlertRule.numericThreshold(target,ComparisonOperator.ABOVE,30.0,COOLDOWN_MINUTES));
+        AlertRule second = alertRuleRepository.saveAndFlush(AlertRule.numericThreshold(target,ComparisonOperator.ABOVE,24.0,COOLDOWN_MINUTES, CREATED_AT));
+        AlertRule nonMatching = alertRuleRepository.saveAndFlush(AlertRule.numericThreshold(target,ComparisonOperator.ABOVE,30.0,COOLDOWN_MINUTES, CREATED_AT));
         AlertRule disabled = persistRule(target);
-        disabled.disable();
+        disabled.disable(TEST_INSTANT);
         alertRuleRepository.saveAndFlush(disabled);
         AlertRule sibling = persistRule(persistSensor(owner,SensorType.TEMPERATURE,"Sibling"));
         AlertRule foreign = persistRule(persistSensor(otherOwner,SensorType.TEMPERATURE,"Foreign"));
@@ -203,6 +203,10 @@ class AlertEvaluationIT {
                 .containsExactly(first.getId(),second.getId());
         assertThat(lastTriggeredAt(first.getId())).isEqualTo(RECORDED_AT);
         assertThat(lastTriggeredAt(second.getId())).isEqualTo(RECORDED_AT);
+        assertThat(updatedAt(first.getId())).isEqualTo(TEST_INSTANT);
+        assertThat(updatedAt(second.getId())).isEqualTo(TEST_INSTANT);
+        assertThat(updatedAt(nonMatching.getId())).isEqualTo(CREATED_AT);
+
         for (AlertRule untouched : List.of(nonMatching,disabled,sibling,foreign)) {
             assertThat(lastTriggeredAt(untouched.getId())).isNull();
         }
@@ -217,7 +221,7 @@ class AlertEvaluationIT {
         AlertRule rule = persistRule(sensor);
         Instant previousTrigger = RECORDED_AT.minusSeconds(600);
         transactions.executeWithoutResult(status ->
-                alertRuleRepository.findById(rule.getId()).orElseThrow().markTriggered(previousTrigger));
+                alertRuleRepository.findById(rule.getId()).orElseThrow().markTriggered(previousTrigger, TEST_INSTANT));
         IllegalStateException failure = new IllegalStateException("Abort evaluation transaction");
 
         assertThatThrownBy(() -> transactions.executeWithoutResult(status -> {
@@ -261,7 +265,7 @@ class AlertEvaluationIT {
             managedOwner.updatePreferences(PreferredLanguage.ENGLISH,TemperatureUnit.KELVIN,"Asia/Tokyo",TEST_INSTANT);
             Sensor managedSensor = sensorRepository.findById(sensor.getId()).orElseThrow();
             managedSensor.updateDetails("Renamed","Ankara","Cankaya","Door","UTC",TEST_INSTANT);
-            alertRuleRepository.findById(rule.getId()).orElseThrow().disable();
+            alertRuleRepository.findById(rule.getId()).orElseThrow().disable(TEST_INSTANT);
         });
 
         assertThat(sensorRepository.findById(sensor.getId()).orElseThrow().getName()).isEqualTo("Renamed");
@@ -356,9 +360,9 @@ class AlertEvaluationIT {
 
     private AlertRule persistRule(Sensor sensor) {
         AlertRule rule = switch (sensor.getType()) {
-            case TEMPERATURE -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES);
-            case HUMIDITY -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,50.0,COOLDOWN_MINUTES);
-            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES);
+            case TEMPERATURE -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES, CREATED_AT);
+            case HUMIDITY -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,50.0,COOLDOWN_MINUTES, CREATED_AT);
+            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES, CREATED_AT);
         };
         return alertRuleRepository.saveAndFlush(rule);
     }
@@ -367,6 +371,12 @@ class AlertEvaluationIT {
 
     private Instant lastTriggeredAt(Long ruleId) {
         return alertRuleRepository.findById(ruleId).orElseThrow().getLastTriggeredAt();
+    }
+
+
+
+    private Instant updatedAt(Long ruleId) {
+        return alertRuleRepository.findById(ruleId).orElseThrow().getUpdatedAt();
     }
 
 

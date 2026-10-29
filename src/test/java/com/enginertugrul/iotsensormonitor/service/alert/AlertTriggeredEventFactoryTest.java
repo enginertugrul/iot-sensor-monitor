@@ -43,7 +43,7 @@ class AlertTriggeredEventFactoryTest {
     })
     void copiesNumericTriggerAndCompleteContextWithoutConvertingCanonicalValues(SensorType type,ComparisonOperator operator,double readingValue,double threshold,MeasurementUnit unit) {
         Sensor sensor = sensor(type);
-        AlertRule rule = identifiedRule(AlertRule.numericThreshold(sensor,operator,threshold,COOLDOWN_MINUTES));
+        AlertRule rule = identifiedRule(AlertRule.numericThreshold(sensor,operator,threshold,COOLDOWN_MINUTES, CREATED_AT));
         SensorReading reading = type == SensorType.TEMPERATURE
                 ? SensorReading.temperature(sensor,readingValue,RECORDED_AT)
                 : SensorReading.humidity(sensor,readingValue,RECORDED_AT);
@@ -60,7 +60,7 @@ class AlertTriggeredEventFactoryTest {
     @Test
     void copiesMotionTriggerAndCompleteContext() {
         Sensor sensor = sensor(SensorType.MOTION);
-        AlertRule rule = identifiedRule(AlertRule.motionDetected(sensor,COOLDOWN_MINUTES));
+        AlertRule rule = identifiedRule(AlertRule.motionDetected(sensor,COOLDOWN_MINUTES, CREATED_AT));
         SensorReading reading = SensorReading.motion(sensor,true,RECORDED_AT);
 
         AlertTriggeredEvent event = factory.from(rule,reading);
@@ -73,15 +73,15 @@ class AlertTriggeredEventFactoryTest {
     @Test
     void keepsExistingSnapshotIndependentOfLaterEntityChanges() {
         Sensor sensor = sensor(SensorType.TEMPERATURE);
-        AlertRule rule = identifiedRule(AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES));
+        AlertRule rule = identifiedRule(AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES, CREATED_AT));
         SensorReading reading = SensorReading.temperature(sensor,25.0,RECORDED_AT);
         AlertTriggeredEvent event = factory.from(rule,reading);
         Instant changedAt = RECORDED_AT.plusSeconds(60);
 
         sensor.getOwner().updatePreferences(PreferredLanguage.ENGLISH,TemperatureUnit.KELVIN,"Asia/Tokyo",changedAt);
         sensor.updateDetails("Renamed sensor","Ankara","Cankaya","Door","UTC",changedAt);
-        rule.disable();
-        rule.markTriggered(changedAt);
+        rule.disable(changedAt);
+        rule.markTriggered(changedAt,changedAt);
 
         AlertTriggeredEvent expected = new AlertTriggeredEvent(expectedContext(SensorType.TEMPERATURE),
                 new AlertTriggeredEvent.NumericThresholdTrigger(ComparisonOperator.ABOVE,25.0,20.0,MeasurementUnit.C));
@@ -101,7 +101,7 @@ class AlertTriggeredEventFactoryTest {
     @Test
     void rejectsMissingRuleAndReading() {
         Sensor sensor = sensor(SensorType.MOTION);
-        AlertRule rule = identifiedRule(AlertRule.motionDetected(sensor,COOLDOWN_MINUTES));
+        AlertRule rule = identifiedRule(AlertRule.motionDetected(sensor,COOLDOWN_MINUTES, CREATED_AT));
         SensorReading reading = SensorReading.motion(sensor,true,RECORDED_AT);
 
         assertThatThrownBy(() -> factory.from(null,reading))

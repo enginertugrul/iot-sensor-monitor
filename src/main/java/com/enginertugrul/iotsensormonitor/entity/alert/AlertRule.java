@@ -71,28 +71,27 @@ public class AlertRule {
     private Instant lastTriggeredAt;
 
 
-    private AlertRule(Sensor sensor,int cooldownMinutes) {
+    private AlertRule(Sensor sensor,int cooldownMinutes,Instant createdAt) {
 
         this.sensor = Objects.requireNonNull(sensor, "sensor must not be null");
         this.owner = Objects.requireNonNull(sensor.getOwner(), "sensor owner must not be null");
         this.cooldownMinutes = cooldownMinutes;
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
+        this.updatedAt = createdAt;
     }
 
 
-    private AlertRule(Sensor sensor, AlertEventType eventType, int cooldownMinutes) {
+    private AlertRule(Sensor sensor, AlertEventType eventType, int cooldownMinutes, Instant createdAt) {
 
-        this(sensor, cooldownMinutes);
+        this(sensor, cooldownMinutes, createdAt);
         this.ruleType = AlertRuleType.EVENT_DETECTED;
         this.eventType = Objects.requireNonNull(eventType, "eventType must not be null");
     }
 
 
-    private AlertRule(Sensor sensor, ComparisonOperator comparisonOperator, double thresholdValue, MeasurementUnit thresholdUnit, int cooldownMinutes) {
+    private AlertRule(Sensor sensor, ComparisonOperator comparisonOperator, double thresholdValue, MeasurementUnit thresholdUnit, int cooldownMinutes, Instant createdAt) {
 
-        this(sensor, cooldownMinutes);
+        this(sensor, cooldownMinutes, createdAt);
         this.ruleType = AlertRuleType.NUMERIC_THRESHOLD;
         this.comparisonOperator = Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null");
         this.thresholdValue = thresholdValue;
@@ -102,26 +101,27 @@ public class AlertRule {
 
 
 
-    public static AlertRule numericThreshold(Sensor sensor, ComparisonOperator comparisonOperator, Double canonicalThresholdValue, Integer cooldownMinutes) {
+    public static AlertRule numericThreshold(Sensor sensor, ComparisonOperator comparisonOperator, Double canonicalThresholdValue, Integer cooldownMinutes, Instant createdAt) {
 
         Sensor requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
 
         double validThreshold = SensorMeasurementPolicy.requireValidNumericValue(
                 requiredSensor.getType(),
-                                canonicalThresholdValue,
-                                "canonicalThresholdValue");
+                canonicalThresholdValue,
+                "canonicalThresholdValue");
 
         return new AlertRule(
                 requiredSensor,
                 Objects.requireNonNull(comparisonOperator, "comparisonOperator must not be null"),
                 validThreshold,
                 SensorMeasurementPolicy.requireCanonicalUnit(requiredSensor.getType()),
-                AlertCooldownPolicy.requireValid(cooldownMinutes)
+                AlertCooldownPolicy.requireValid(cooldownMinutes),
+                createdAt
         );
     }
 
 
-    public static AlertRule motionDetected(Sensor sensor, Integer cooldownMinutes) {
+    public static AlertRule motionDetected(Sensor sensor, Integer cooldownMinutes, Instant createdAt) {
 
         Sensor requiredSensor = Objects.requireNonNull(sensor,"sensor must not be null");
 
@@ -131,7 +131,8 @@ public class AlertRule {
 
         return new AlertRule( requiredSensor,
                 AlertEventType.MOTION_DETECTED,
-                AlertCooldownPolicy.requireValid(cooldownMinutes)
+                AlertCooldownPolicy.requireValid(cooldownMinutes),
+                createdAt
         );
 
     }
@@ -156,14 +157,17 @@ public class AlertRule {
 
 
 
-    public void enable() {
+    public void enable(Instant updatedAt) {
+        Objects.requireNonNull(updatedAt, "updatedAt must not be null");
         this.enabled = true;
-        this.updatedAt = Instant.now();
+        this.updatedAt = updatedAt;
     }
 
-    public void disable() {
+
+    public void disable(Instant updatedAt) {
+        Objects.requireNonNull(updatedAt, "updatedAt must not be null");
         this.enabled = false;
-        this.updatedAt = Instant.now();
+        this.updatedAt = updatedAt;
     }
 
 
@@ -191,11 +195,12 @@ public class AlertRule {
 
 
 
-    public void markTriggered(Instant triggeredAt) {
-        this.lastTriggeredAt = Objects.requireNonNull(triggeredAt, "triggeredAt must not be null");
-        this.updatedAt = Instant.now();
+    public void markTriggered(Instant triggeredAt, Instant updatedAt) {
+        Objects.requireNonNull(triggeredAt, "triggeredAt must not be null");
+        Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        this.lastTriggeredAt = triggeredAt;
+        this.updatedAt = updatedAt;
     }
-
 
 
     private boolean belongsToSameSensor(SensorReading reading) {
@@ -248,23 +253,26 @@ public class AlertRule {
 
     @PrePersist
     void prePersist() {
-        Instant now = Instant.now();
-
         validateRuleShape();
-
-        if (createdAt == null) {
-            createdAt = now;
-        }
-
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
+        validateTimestamps();
     }
 
     @PreUpdate
     void preUpdate() {
         validateRuleShape();
-        updatedAt = Instant.now();
+        validateTimestamps();
+    }
+
+
+
+    private void validateTimestamps() {
+        if (createdAt == null || updatedAt == null) {
+            throw new IllegalStateException("createdAt and updatedAt must not be null");
+        }
+
+        if (updatedAt.isBefore(createdAt)) {
+            throw new IllegalStateException("updatedAt must not be before createdAt");
+        }
     }
 
 

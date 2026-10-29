@@ -110,6 +110,8 @@ class AlertRuleServiceIT {
         assertThat(stored.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         assertThat(stored.isEnabled()).isTrue();
         assertThat(stored.getLastTriggeredAt()).isNull();
+        assertThat(stored.getCreatedAt()).isEqualTo(TEST_INSTANT);
+        assertThat(stored.getUpdatedAt()).isEqualTo(TEST_INSTANT);
 
         List<AlertRuleListItemDTO> items = service.getAlertRulesForUser(owner.getId(),preferredUnit);
         assertThat(items).hasSize(1);
@@ -141,6 +143,8 @@ class AlertRuleServiceIT {
         assertThat(stored.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         assertThat(stored.isEnabled()).isTrue();
         assertThat(stored.getLastTriggeredAt()).isNull();
+        assertThat(stored.getCreatedAt()).isEqualTo(TEST_INSTANT);
+        assertThat(stored.getUpdatedAt()).isEqualTo(TEST_INSTANT);
     }
 
 
@@ -258,12 +262,15 @@ class AlertRuleServiceIT {
             assertThat(reloaded.getSensor().getId()).isEqualTo(sensor.getId());
             assertThat(reloaded.getRuleType()).isEqualTo(target.getRuleType());
             assertThat(reloaded.getComparisonOperator()).isEqualTo(target.getComparisonOperator());
+            assertThat(reloaded.getCreatedAt()).isEqualTo(CREATED_AT);
+            assertThat(reloaded.getUpdatedAt()).isEqualTo(TEST_INSTANT);
             assertThat(reloaded.getThresholdValue()).isEqualTo(target.getThresholdValue());
             assertThat(reloaded.getThresholdUnit()).isEqualTo(target.getThresholdUnit());
             assertThat(reloaded.getEventType()).isEqualTo(target.getEventType());
             assertThat(reloaded.getCooldownMinutes()).isEqualTo(COOLDOWN_MINUTES);
         }
 
+        assertThat(reload(sibling.getId()).getUpdatedAt()).isEqualTo(CREATED_AT);
         assertThat(reload(sibling.getId()).isEnabled()).isTrue();
         assertThat(reload(foreign.getId()).isEnabled()).isTrue();
         assertThat(sensorRepository.findById(sensor.getId()).orElseThrow().isActive()).isTrue();
@@ -361,9 +368,9 @@ class AlertRuleServiceIT {
 
     private AlertRule persistRule(Sensor sensor) {
         AlertRule rule = switch (sensor.getType()) {
-            case TEMPERATURE -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES);
-            case HUMIDITY -> AlertRule.numericThreshold(sensor,ComparisonOperator.BELOW,45.5,COOLDOWN_MINUTES);
-            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES);
+            case TEMPERATURE -> AlertRule.numericThreshold(sensor,ComparisonOperator.ABOVE,20.0,COOLDOWN_MINUTES, CREATED_AT);
+            case HUMIDITY -> AlertRule.numericThreshold(sensor,ComparisonOperator.BELOW,45.5,COOLDOWN_MINUTES, CREATED_AT);
+            case MOTION -> AlertRule.motionDetected(sensor,COOLDOWN_MINUTES, CREATED_AT);
         };
         return alertRuleRepository.saveAndFlush(rule);
     }
