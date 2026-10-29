@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public final class SensorMeasurementPolicy {
 
-
+    public static final String RELATIVE_HUMIDITY_SYMBOL = "% RH";
 
     private static final Map<SensorType, NumericSpecification>
             NUMERIC_SPECIFICATIONS = Map.of(

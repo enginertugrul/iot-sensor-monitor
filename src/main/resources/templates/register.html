@@ -224,9 +224,9 @@
                                  : null}"
                                  required>
 
-                            <option th:each="timezone : ${timezones}"
-                                    th:value="${timezone}"
-                                    th:text="${timezone}">
+                            <option th:each="timezoneOption : ${timezoneOptions}"
+                                    th:value="${timezoneOption.id}"
+                                    th:text="${timezoneOption.displayName}">
                                 Europe/Istanbul
                             </option>
                         </select>

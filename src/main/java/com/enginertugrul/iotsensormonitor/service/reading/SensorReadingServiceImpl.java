@@ -3,6 +3,7 @@ package com.enginertugrul.iotsensormonitor.service.reading;
 import com.enginertugrul.iotsensormonitor.dto.reading.RecentSensorReadingsDTO;
 import com.enginertugrul.iotsensormonitor.dto.reading.SensorReadingSnapshotDTO;
 import com.enginertugrul.iotsensormonitor.dto.reading.SensorReadingViewDTO;
+import com.enginertugrul.iotsensormonitor.entity.measurement.SensorMeasurementPolicy;
 import com.enginertugrul.iotsensormonitor.entity.reading.SensorReading;
 import com.enginertugrul.iotsensormonitor.entity.sensor.Sensor;
 import com.enginertugrul.iotsensormonitor.entity.sensor.SensorType;
@@ -116,7 +117,7 @@ public class SensorReadingServiceImpl implements SensorReadingService {
 
         return switch (sensorType) {
             case TEMPERATURE ->temperatureUnitConverter.getSymbol(temperatureUnit);
-            case HUMIDITY -> "% RH";
+            case HUMIDITY -> SensorMeasurementPolicy.RELATIVE_HUMIDITY_SYMBOL;
             case MOTION -> "";
         };
     }
