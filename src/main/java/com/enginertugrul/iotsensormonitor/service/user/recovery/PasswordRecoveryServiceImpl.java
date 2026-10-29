@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -26,7 +27,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
 
     private static final int MAXIMUM_EMAIL_LENGTH = 320;
     private static final int MINIMUM_PASSWORD_LENGTH = 8;
-    private static final int MAXIMUM_PASSWORD_LENGTH = 72;
+    private static final int MAXIMUM_PASSWORD_BYTES = 72;
     private static final String INVALID_ADDRESS_RATE_LIMIT_KEY = "[invalid-address]";
 
 
@@ -274,7 +275,7 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService {
         return newPassword != null
                 && !newPassword.isBlank()
                 && newPassword.length() >= MINIMUM_PASSWORD_LENGTH
-                && newPassword.length() <= MAXIMUM_PASSWORD_LENGTH;
+                && newPassword.getBytes(StandardCharsets.UTF_8).length <= MAXIMUM_PASSWORD_BYTES;
     }
 
 

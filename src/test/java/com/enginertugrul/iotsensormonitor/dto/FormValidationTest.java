@@ -15,6 +15,7 @@ import com.enginertugrul.iotsensormonitor.entity.alert.ComparisonOperator;
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
 import com.enginertugrul.iotsensormonitor.validation.IsFiniteDouble;
+import com.enginertugrul.iotsensormonitor.validation.MaxUtf8Bytes;
 import com.enginertugrul.iotsensormonitor.validation.PasswordsMatch;
 import com.enginertugrul.iotsensormonitor.validation.ValidZoneId;
 import jakarta.validation.ConstraintViolation;
@@ -107,6 +108,22 @@ class FormValidationTest {
         }
 
         assertValueViolation(formType,property,"x".repeat(maximum + 1),Size.class);
+    }
+
+
+
+    @ParameterizedTest
+    @MethodSource("passwordLengthFields")
+    void limitsPasswordsInCharactersBelowAndUtf8BytesAboveWithTheCorrectMessages(Class<?> formType,String property,String tooShortTemplate,String tooLongTemplate) {
+        assertOnlyValueViolation(formType,property,"a".repeat(7),Size.class,tooShortTemplate);
+
+        for (String password : new String[]{"a".repeat(8),"a".repeat(72),"ş".repeat(36)}) {
+            assertThat(validator.validateValue(formType,property,password)).isEmpty();
+        }
+
+        for (String password : new String[]{"a".repeat(73),"ş".repeat(37)}) {
+            assertOnlyValueViolation(formType,property,password, MaxUtf8Bytes.class,tooLongTemplate);
+        }
     }
 
 
@@ -290,10 +307,6 @@ class FormValidationTest {
                 Arguments.of(RegisterUserForm.class,"email",0,320),
                 Arguments.of(EmailVerificationRequestForm.class,"email",0,320),
                 Arguments.of(PasswordRecoveryRequestForm.class,"email",0,320),
-                Arguments.of(RegisterUserForm.class,"password",8,72),
-                Arguments.of(PasswordResetForm.class,"password",8,72),
-                Arguments.of(PasswordChangeForm.class,"currentPassword",8,72),
-                Arguments.of(PasswordChangeForm.class,"password",8,72),
                 Arguments.of(RegisterUserForm.class,"preferredTimezone",0,64),
                 Arguments.of(UserPreferencesForm.class,"preferredTimezone",0,64),
                 Arguments.of(SensorCreateForm.class,"timezone",0,64),
@@ -306,6 +319,16 @@ class FormValidationTest {
                 Arguments.of(SensorUpdateForm.class,"city",0,100),
                 Arguments.of(SensorUpdateForm.class,"district",0,100),
                 Arguments.of(SensorUpdateForm.class,"installationLocation",0,100));
+    }
+
+
+
+    private static Stream<Arguments> passwordLengthFields() {
+        return Stream.of(
+                Arguments.of(RegisterUserForm.class,"password","{auth.passwordTooShort}","{auth.passwordTooLong}"),
+                Arguments.of(PasswordResetForm.class,"password","{passwordRecovery.passwordTooShort}","{passwordRecovery.passwordTooLong}"),
+                Arguments.of(PasswordChangeForm.class,"currentPassword","{passwordChange.currentPasswordTooShort}","{passwordChange.currentPasswordTooLong}"),
+                Arguments.of(PasswordChangeForm.class,"password","{passwordChange.newPasswordTooShort}","{passwordChange.newPasswordTooLong}"));
     }
 
 
@@ -444,6 +467,16 @@ class FormValidationTest {
 
         assertThat(violations).hasSize(1);
         assertViolation(violations,property,constraint);
+    }
+
+
+
+    private static void assertOnlyValueViolation(Class<?> formType,String property,Object value,Class<? extends Annotation> constraint,String messageTemplate) {
+        assertThat(validator.validateValue(formType,property,value)).singleElement().satisfies(violation -> {
+            assertThat(violation.getPropertyPath().toString()).isEqualTo(property);
+            assertThat(violation.getConstraintDescriptor().getAnnotation().annotationType()).isEqualTo(constraint);
+            assertThat(violation.getMessageTemplate()).isEqualTo(messageTemplate);
+        });
     }
 
 

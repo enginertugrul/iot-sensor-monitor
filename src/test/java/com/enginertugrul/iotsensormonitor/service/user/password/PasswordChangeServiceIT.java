@@ -264,6 +264,21 @@ class PasswordChangeServiceIT {
 
 
 
+    @Test
+    void storesMultiByteNewPasswordAtTheBcryptByteLimit() {
+        AppUser user = createUser();
+        String newPassword = "ş".repeat(36);
+
+        assertThat(service.changePassword(user.getId(),CURRENT_PASSWORD,newPassword)).isEqualTo(PasswordChangeResult.PASSWORD_CHANGED);
+
+        AppUser changed = readUser(user.getId());
+        assertThat(passwordEncoder.matches(newPassword,changed.getPasswordHash())).isTrue();
+        assertThat(passwordEncoder.matches(CURRENT_PASSWORD,changed.getPasswordHash())).isFalse();
+        assertThat(passwordChanges(user.getId())).containsExactly(new PasswordChangedEvent(user.getId()));
+    }
+
+
+
     @ParameterizedTest
     @ValueSource(booleans = {false,true})
     void recoveryExpiresOwnersSessionsOnlyWhenPasswordResetCommits(boolean commit) {
@@ -416,7 +431,9 @@ class PasswordChangeServiceIT {
         return Stream.of(
                 Arguments.of("incorrect-password",NEW_PASSWORD,PasswordChangeResult.CURRENT_PASSWORD_INVALID),
                 Arguments.of("short",NEW_PASSWORD,PasswordChangeResult.CURRENT_PASSWORD_INVALID),
+                Arguments.of("ş".repeat(37),NEW_PASSWORD,PasswordChangeResult.CURRENT_PASSWORD_INVALID),
                 Arguments.of(CURRENT_PASSWORD,"short",PasswordChangeResult.NEW_PASSWORD_INVALID),
+                Arguments.of(CURRENT_PASSWORD,"ş".repeat(37),PasswordChangeResult.NEW_PASSWORD_INVALID),
                 Arguments.of(CURRENT_PASSWORD,CURRENT_PASSWORD,PasswordChangeResult.NEW_PASSWORD_UNCHANGED));
     }
 }

@@ -3,6 +3,7 @@ package com.enginertugrul.iotsensormonitor.dto.auth;
 
 import com.enginertugrul.iotsensormonitor.entity.user.PreferredLanguage;
 import com.enginertugrul.iotsensormonitor.entity.user.TemperatureUnit;
+import com.enginertugrul.iotsensormonitor.validation.MaxUtf8Bytes;
 import com.enginertugrul.iotsensormonitor.validation.PasswordConfirmation;
 import com.enginertugrul.iotsensormonitor.validation.PasswordsMatch;
 import com.enginertugrul.iotsensormonitor.validation.ValidZoneId;
@@ -28,7 +29,8 @@ public class RegisterUserForm implements PasswordConfirmation {
 
 
     @NotBlank
-    @Size(min = 8 , max = 72)
+    @Size(min = 8, message = "{auth.passwordTooShort}")
+    @MaxUtf8Bytes(value = 72, message = "{auth.passwordTooLong}")
     private String password;
 
 

@@ -342,6 +342,38 @@ class PasswordRecoveryServiceIT {
 
 
 
+    @Test
+    void storesMultiByteNewPasswordAtTheBcryptByteLimit() {
+        AppUser user = createUser();
+        PasswordRecoveryCodeDelivery delivery = issueCode(user);
+        String newPassword = "ş".repeat(36);
+
+        assertThat(service.resetPassword(user.getEmail(),delivery.rawCode(),newPassword,clientKey)).isEqualTo(PasswordRecoveryResult.PASSWORD_RESET);
+
+        AppUser changed = readUser(user.getId());
+        assertThat(passwordEncoder.matches(newPassword,changed.getPasswordHash())).isTrue();
+        assertThat(passwordEncoder.matches(OLD_PASSWORD,changed.getPasswordHash())).isFalse();
+        assertThat(challengeCount(user.getId())).isZero();
+        assertThat(passwordChanges(user.getId())).containsExactly(new PasswordChangedEvent(user.getId()));
+    }
+
+
+
+    @Test
+    void rejectsMultiByteNewPasswordOverTheBcryptByteLimitWithoutConsumingTheCode() {
+        AppUser user = createUser();
+        PasswordRecoveryCodeDelivery delivery = issueCode(user);
+
+        assertThat(service.resetPassword(user.getEmail(),delivery.rawCode(),"ş".repeat(37),clientKey)).isEqualTo(PasswordRecoveryResult.INVALID);
+
+        assertThat(readUser(user.getId()).getPasswordHash()).isEqualTo(user.getPasswordHash());
+        assertThat(readChallenge(user.getId()).getFailedAttempts()).isZero();
+        assertThat(service.canDeliverCode(delivery)).isTrue();
+        assertThat(passwordChanges(user.getId())).isEmpty();
+    }
+
+
+
     @ParameterizedTest
     @CsvSource({
             "false,true,true",

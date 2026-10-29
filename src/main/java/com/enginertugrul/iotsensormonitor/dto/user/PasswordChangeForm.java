@@ -1,5 +1,6 @@
 package com.enginertugrul.iotsensormonitor.dto.user;
 
+import com.enginertugrul.iotsensormonitor.validation.MaxUtf8Bytes;
 import com.enginertugrul.iotsensormonitor.validation.PasswordConfirmation;
 import com.enginertugrul.iotsensormonitor.validation.PasswordsMatch;
 import jakarta.validation.constraints.NotBlank;
@@ -15,11 +16,13 @@ import lombok.Setter;
 public class PasswordChangeForm implements PasswordConfirmation {
 
     @NotBlank(message = "{passwordChange.currentPasswordRequired}")
-    @Size(min = 8,max = 72,message = "{passwordChange.currentPasswordLength}")
+    @Size(min = 8,message = "{passwordChange.currentPasswordTooShort}")
+    @MaxUtf8Bytes(value = 72,message = "{passwordChange.currentPasswordTooLong}")
     private String currentPassword;
 
     @NotBlank(message = "{passwordChange.newPasswordRequired}")
-    @Size(min = 8,max = 72,message = "{passwordChange.newPasswordLength}")
+    @Size(min = 8,message = "{passwordChange.newPasswordTooShort}")
+    @MaxUtf8Bytes(value = 72,message = "{passwordChange.newPasswordTooLong}")
     private String password;
 
     @NotBlank(message = "{passwordChange.confirmPasswordRequired}")
