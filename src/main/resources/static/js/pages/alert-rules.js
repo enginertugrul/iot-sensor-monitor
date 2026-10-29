@@ -1,21 +1,20 @@
-const numericRuleForm = document.getElementById('numericRuleForm');
+(() => {
+    'use strict';
 
-if (numericRuleForm) {
+    const numericRuleForm = document.getElementById('numericRuleForm');
+
+    if (!numericRuleForm) {
+        return;
+    }
 
     const sensorSelect = numericRuleForm.querySelector('[name="sensorId"]');
-
     const thresholdInput = numericRuleForm.querySelector('[name="thresholdValue"]');
-
     const unitWrapper = document.getElementById('numericThresholdUnitWrapper');
-
     const unitLabel = document.getElementById('numericThresholdUnit');
 
     function updateThresholdPresentation() {
-
-        const selectedOption =sensorSelect.options[sensorSelect.selectedIndex];
-
+        const selectedOption = sensorSelect.options[sensorSelect.selectedIndex];
         const sensorType = selectedOption?.dataset.sensorType ?? '';
-
         const unit = selectedOption?.dataset.unit ?? '';
 
         unitWrapper.hidden = unit === '';
@@ -31,6 +30,5 @@ if (numericRuleForm) {
     }
 
     sensorSelect.addEventListener('change',updateThresholdPresentation);
-
     updateThresholdPresentation();
-}
+})();

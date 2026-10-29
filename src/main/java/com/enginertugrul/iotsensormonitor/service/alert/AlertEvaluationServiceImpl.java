@@ -19,7 +19,7 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
 
 
 
-    private final Logger LOGGER = LoggerFactory.getLogger(AlertEvaluationServiceImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(AlertEvaluationServiceImpl.class);
     private final AlertRuleRepository alertRuleRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final AlertTriggeredEventFactory alertTriggeredEventFactory;
@@ -57,14 +57,14 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
 
 
         if (!rule.canTriggerAt(recordedAt)) {
-            LOGGER.info("Alert suppressed by cooldown. " + "alertRuleId={}, sensorId={}", rule.getId(), reading.getSensor().getId());
+            logger.info("Alert suppressed by cooldown. alertRuleId={}, sensorId={}", rule.getId(), reading.getSensor().getId());
             return;
         }
 
         rule.markTriggered(recordedAt, clock.instant());
         eventPublisher.publishEvent(alertTriggeredEventFactory.from(rule,reading));
 
-        LOGGER.info( "Alert triggered. alertRuleId={}, " + "sensorId={}, sensorType={}", rule.getId(), reading.getSensor().getId(),reading.getSensor().getType());
+        logger.info("Alert triggered. alertRuleId={}, sensorId={}, sensorType={}", rule.getId(), reading.getSensor().getId(), reading.getSensor().getType());
 
     }
 
