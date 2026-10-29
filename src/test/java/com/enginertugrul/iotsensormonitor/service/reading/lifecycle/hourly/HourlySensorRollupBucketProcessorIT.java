@@ -31,7 +31,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -362,8 +361,7 @@ class HourlySensorRollupBucketProcessorIT {
                         && sensor.getId().equals(checkpoint.getSensor().getId())
                         && END.equals(checkpoint.getCoveredUntil())));
 
-        assertThatThrownBy(() -> processor.advanceNextClosedHour(snapshot,END))
-                .isExactlyInstanceOf(InvalidDataAccessApiUsageException.class).cause().isSameAs(failure);
+        assertThatThrownBy(() -> processor.advanceNextClosedHour(snapshot,END)).isSameAs(failure);
 
         assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
         assertThat(summaryRows(sensor)).containsExactlyElementsOf(summariesBefore);
