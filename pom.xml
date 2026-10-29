@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.enginertugrul</groupId>
@@ -13,18 +13,22 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>iot-sensor-monitor</name>
     <description>iot-sensor-monitor</description>
-    <url/>
+    <url>https://github.com/enginertugrul/iot-sensor-monitor</url>
     <licenses>
-        <license/>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+        </license>
     </licenses>
     <developers>
-        <developer/>
+        <developer>
+            <id>enginertugrul</id>
+            <name>Engin Ertuğrul</name>
+            <url>https://github.com/enginertugrul</url>
+        </developer>
     </developers>
     <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
+        <url>https://github.com/enginertugrul/iot-sensor-monitor</url>
     </scm>
     <properties>
         <java.version>21</java.version>
