@@ -13,27 +13,27 @@ import lombok.Setter;
 @Setter
 public class SensorCreateForm {
 
-    @NotNull
+    @NotNull(message = "{sensors.typeRequired}")
     private SensorType type = SensorType.TEMPERATURE;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{sensors.nameRequired}")
+    @Size(max = 100, message = "{sensors.nameLength}")
     private String name;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{sensors.cityRequired}")
+    @Size(max = 100, message = "{sensors.cityLength}")
     private String city;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{sensors.districtRequired}")
+    @Size(max = 100, message = "{sensors.districtLength}")
     private String district;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "{sensors.installationLocationRequired}")
+    @Size(max = 100, message = "{sensors.installationLocationLength}")
     private String installationLocation;
 
-    @NotBlank
-    @Size(max = 64)
+    @NotBlank(message = "{sensors.timezoneRequired}")
+    @Size(max = 64, message = "{sensors.timezoneLength}")
     @ValidZoneId
     private String timezone = "UTC";
 }

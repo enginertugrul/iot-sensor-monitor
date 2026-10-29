@@ -22,30 +22,30 @@ import lombok.Setter;
 @PasswordsMatch
 public class RegisterUserForm implements PasswordConfirmation {
 
-    @NotBlank
-    @Email
-    @Size(max = 320)
+    @NotBlank(message = "{auth.emailRequired}")
+    @Email(message = "{auth.emailInvalid}")
+    @Size(max = 320, message = "{auth.emailLength}")
     private String email;
 
 
-    @NotBlank
+    @NotBlank(message = "{auth.passwordRequired}")
     @Size(min = 8, message = "{auth.passwordTooShort}")
     @MaxUtf8Bytes(value = 72, message = "{auth.passwordTooLong}")
     private String password;
 
 
-    @NotBlank
+    @NotBlank(message = "{auth.confirmPasswordRequired}")
     private String confirmPassword;
 
 
-    @NotNull
+    @NotNull(message = "{preferences.languageRequired}")
     private PreferredLanguage preferredLanguage = PreferredLanguage.ENGLISH;
 
-    @NotNull
+    @NotNull(message = "{preferences.temperatureUnitRequired}")
     private TemperatureUnit preferredTemperatureUnit = TemperatureUnit.CELSIUS;
 
-    @NotBlank
-    @Size(max = 64)
+    @NotBlank(message = "{preferences.timezoneRequired}")
+    @Size(max = 64, message = "{preferences.timezoneLength}")
     @ValidZoneId
     private String preferredTimezone = "UTC";
 
