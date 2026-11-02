@@ -1,8 +1,15 @@
 package com.enginertugrul.iotsensormonitor.validation;
 
+import com.enginertugrul.iotsensormonitor.support.timezone.TimezoneCatalog;
+import com.enginertugrul.iotsensormonitor.support.timezone.TimezoneOptionDTO;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,13 +34,37 @@ class ZoneIdValidatorTest {
             "Europe/Istanbul",
             "America/New_York",
             "Asia/Kathmandu",
+            "Etc/GMT-3"
+    })
+    void acceptsAvailableRegionIds(String value) {
+        assertThat(validator.isValid(value,null)).isTrue();
+    }
+
+
+
+    @Test
+    void acceptsEveryTimezoneOfferedByTheCatalog() {
+        TimezoneCatalog catalog = new TimezoneCatalog(Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"),ZoneOffset.UTC));
+
+        assertThat(catalog.getTimezoneOptions())
+                .extracting(TimezoneOptionDTO::id)
+                .isNotEmpty()
+                .allMatch(id -> validator.isValid(id,null));
+    }
+
+
+
+    @ParameterizedTest
+    @ValueSource(strings = {
             "Z",
             "+03:00",
             "-05:30",
-            "UTC+03:00"
+            "UTC+03:00",
+            "GMT+03:00",
+            "UT"
     })
-    void acceptsRegionIdsAndSupportedOffsetIds(String value) {
-        assertThat(validator.isValid(value,null)).isTrue();
+    void rejectsOffsetIdsOutsideTheCatalog(String value) {
+        assertThat(validator.isValid(value,null)).isFalse();
     }
 
 

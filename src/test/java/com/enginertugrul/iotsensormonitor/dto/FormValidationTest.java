@@ -145,11 +145,11 @@ class FormValidationTest {
     @ParameterizedTest
     @MethodSource("timezoneFields")
     void wiresTimezoneValidationToAccountAndSensorForms(Class<?> formType,String property) {
-        for (String timezone : new String[]{"UTC","Europe/Istanbul","Asia/Kathmandu","+03:00"}) {
+        for (String timezone : new String[]{"UTC","Europe/Istanbul","Asia/Kathmandu","Etc/GMT-3"}) {
             assertThat(validator.validateValue(formType,property,timezone)).isEmpty();
         }
 
-        for (String timezone : new String[]{"Europe/Not_A_Zone","utc"," UTC","UTC "}) {
+        for (String timezone : new String[]{"Europe/Not_A_Zone","utc"," UTC","UTC ","+03:00","UTC+03:00"}) {
             assertValueViolation(formType,property,timezone,ValidZoneId.class);
         }
     }
