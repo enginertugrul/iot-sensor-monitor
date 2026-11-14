@@ -3,7 +3,6 @@ package com.enginertugrul.iotsensormonitor.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import java.time.DateTimeException;
 import java.time.ZoneId;
 
 public class ZoneIdValidator implements ConstraintValidator<ValidZoneId, String> {
@@ -14,11 +13,6 @@ public class ZoneIdValidator implements ConstraintValidator<ValidZoneId, String>
             return true;
         }
 
-        try {
-            ZoneId.of(value);
-            return true;
-        } catch (DateTimeException ex) {
-            return false;
-        }
+        return ZoneId.getAvailableZoneIds().contains(value);
     }
 }
