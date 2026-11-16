@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.enginertugrul</groupId>
     <artifactId>iot-sensor-monitor</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>iot-sensor-monitor</name>
     <description>iot-sensor-monitor</description>
     <url>https://github.com/enginertugrul/iot-sensor-monitor</url>

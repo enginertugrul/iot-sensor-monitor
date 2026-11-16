@@ -1363,7 +1363,7 @@ The workflow runs on pull requests to `master`, on pushes to `master`, on manual
 The workflow runs when a GitHub release is published:
 
 1. The `verify` job calls `ci.yml`, so an image is published only after all three CI jobs pass.
-2. The `publish` job checks its configuration: the `DOCKERHUB_IMAGE` and `DOCKERHUB_USERNAME` repository variables, the `DOCKERHUB_TOKEN` secret, and a release tag that is a valid Docker tag, such as `v1.0.0`.
+2. The `publish` job checks its configuration: the `DOCKERHUB_IMAGE` and `DOCKERHUB_USERNAME` repository variables, the `DOCKERHUB_TOKEN` secret, and a release tag that is a valid Docker tag, such as `1.0.0`.
 3. It builds the image for `linux/amd64` and `linux/arm64` and pushes it to Docker Hub with the release tag. A release that is not a pre-release also gets the `latest` tag.
 4. The image gets standard OCI metadata labels (title, source, revision, version), an SBOM, and minimal build provenance. An SBOM (software bill of materials) lists the packages inside the image. Provenance records how the image was built and from which commit.
 
